@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#182a27">
+  <title>Sovereign — A Fantasy Kingdom Sim</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="world" aria-label="Interactive isometric kingdom. Use WASD to pan, mouse wheel to zoom, and click to select."></canvas>
+  <div id="vignette"></div>
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="Sovereign home"><span class="brand-crest">♜</span><span>SOVEREIGN<small>A FANTASY KINGDOM SIM</small></span></a>
+    <div class="resources">
+      <div class="resource treasury"><span class="coin">✦</span><div><strong id="gold">1,500</strong><small>ROYAL TREASURY</small></div><span id="income" class="income">+0</span></div>
+      <div class="resource"><span class="resource-icon">⚔</span><div><strong id="hero-count">0 <em>/ 12</em></strong><small>HEROES</small></div></div>
+      <div class="resource day-resource"><span class="resource-icon sun">☀</span><div><strong id="day">Day 1</strong><small id="day-phase">THE MORNING WATCH</small></div></div>
+    </div>
+    <div class="time-controls"><button id="pause" title="Pause (Space)" aria-label="Pause game">Ⅱ</button><div class="speed-group"><button data-speed="1" class="active" title="Normal speed (1)">1×</button><button data-speed="2" title="Double speed (2)">2×</button><button data-speed="3" title="Triple speed (3)">3×</button></div><span class="divider"></span><button id="sound" title="Enable sound" aria-label="Enable sound">♫</button><button id="help" title="How to play" aria-label="How to play">?</button></div>
+  </header>
+  <main id="game-ui">
+    <aside class="quest-panel panel">
+      <div class="eyebrow"><span class="tiny-diamond">◆</span> THE ROYAL CAMPAIGN</div>
+      <h1>The Young Kingdom</h1>
+      <p class="quest-flavor">Every great realm begins<br>with a little ambition.</p>
+      <div class="quest-rule"></div>
+      <div class="objective-heading"><span>Secure the realm</span><span id="lair-count">0 / 4</span></div>
+      <div class="objective-progress"><i id="quest-progress"></i></div>
+      <div id="objectives"></div>
+      <div class="palace-condition"><span>♜</span><span>Keep your Palace standing</span><span id="palace-condition">◆</span></div>
+      <button id="quest-toggle" class="text-button">Hide objectives <span>⌃</span></button>
+    </aside>
+    <div class="realm-label"><span>✧</span> THE KINGDOM OF ALDERWICK <span>✧</span></div>
+    <aside id="inspector" class="inspector panel"></aside>
+    <div id="notifications" aria-live="polite"></div>
+    <div id="mode-hint" class="mode-hint hidden"></div>
+    <div id="paused-label" class="paused-label hidden">Ⅱ &nbsp; KINGDOM PAUSED</div>
+    <section class="bottom-deck">
+      <div class="advisor panel"><div class="advisor-portrait">♝</div><div><div class="eyebrow">YOUR ROYAL ADVISOR</div><p id="advisor-text">A kingdom needs heroes, Your Majesty. Start with a Warriors’ Guild.</p></div><button id="next-tip" title="Next advice" aria-label="Next advice">›</button></div>
+      <div class="command-panel panel"><div class="command-tabs"><button data-tab="build" class="active"><span>♜</span> Construct</button><button data-tab="recruit"><span>⚔</span> Recruit</button><button data-tab="bounty"><span>⚑</span> Bounties</button><button data-tab="spells"><span>✧</span> Royal magic</button><div class="deck-label">YOUR KINGDOM, YOUR DECREE</div></div><div id="command-cards" class="command-cards"></div><div class="command-footer"><span id="command-description">Lay the foundations of a flourishing kingdom.</span><span><kbd>SHIFT</kbd> build multiple <span class="footer-dot">·</span> <kbd>ESC</kbd> cancel</span></div></div>
+    </section>
+    <aside class="minimap-panel panel"><div class="minimap-title"><span>THE BORDERLANDS</span><button id="center" title="Center on Palace (F)" aria-label="Center on Palace">⌖</button></div><canvas id="minimap" width="230" height="146" aria-label="Kingdom minimap. Click to navigate."></canvas><div class="minimap-footer"><span><i class="map-key friendly"></i>Your kingdom</span><span><i class="map-key hostile"></i>Hostile</span><button id="zoom-out" title="Zoom out" aria-label="Zoom out">−</button><button id="zoom-in" title="Zoom in" aria-label="Zoom in">+</button></div></aside>
+    <div class="controls-hint"><kbd>W A S D</kbd> pan <span>·</span> scroll to zoom <span>·</span> <kbd>SPACE</kbd> pause</div>
+  </main>
+  <div id="tooltip" class="tooltip hidden"></div>
+  <section id="welcome" class="welcome">
+    <div class="welcome-content"><div class="eyebrow">A KINGDOM AWAITS ITS SOVEREIGN</div><div class="welcome-ornament">─── ✧ ───</div><h2>A crown.<br>A kingdom.<br><em>A little chaos.</em></h2><p>Raise a realm in the untamed borderlands.<br>Build guilds, entice heroes, and let adventure unfold.<br>You wear the crown. They choose the quest.</p><button id="start" class="gold-button">Begin your reign <span>→</span></button><div class="welcome-foot">CHAPTER I <span>◆</span> THE YOUNG KINGDOM</div></div>
+    <div class="welcome-map-caption"><span>✧</span> Alderwick, on the edge of the known world</div>
+  </section>
+  <div id="modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-label="Game information"><div id="modal-content" class="modal panel"></div></div>
+  <script src="js/util.js"></script><script src="js/data.js"></script><script src="js/sprites.js"></script><script src="js/world.js"></script><script src="js/entities.js"></script><script src="js/ai.js"></script><script src="js/game.js"></script><script src="js/render.js"></script><script src="js/input.js"></script><script src="js/ui.js"></script><script src="js/sound.js"></script><script src="js/main.js"></script>
+</body>
+</html>
