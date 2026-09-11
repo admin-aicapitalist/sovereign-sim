@@ -4,7 +4,7 @@ const root=path.join(__dirname,'..');
 let draws=0;
 const context=new Proxy({createLinearGradient:()=>({addColorStop(){}}),createRadialGradient:()=>({addColorStop(){}}),drawImage(){draws++;}},{get(o,k){return k in o?o[k]:()=>{};},set(o,k,v){o[k]=v;return true;}});
 const sandbox={console,Math,Map,Set,Number,Array,Object,String,Infinity,document:{createElement:()=>({width:0,height:0,getContext:()=>context})}};sandbox.window=sandbox;vm.createContext(sandbox);
-for(const file of ['util','data','sprites','mapgen','world','entities','alchemy','ai','game'])vm.runInContext(fs.readFileSync(path.join(root,'js',file+'.js'),'utf8'),sandbox,{filename:file+'.js'});
+for(const file of ['util','data','sprites','mapgen','world','entities','alchemy','loot','ai','sanitation','game'])vm.runInContext(fs.readFileSync(path.join(root,'js',file+'.js'),'utf8'),sandbox,{filename:file+'.js'});
 const G=sandbox.G;G.headless=true;const mapSeed=process.argv[2]??41972;
 function run(seconds,action){for(let t=0;t<seconds&&!G.result;t+=.1){if(action&&Math.floor(t*10)%10===0)action();G.update(.1);}finite();}
 function finite(){assert(Number.isFinite(G.gold)&&G.gold>=0,'treasury remains finite and non-negative');for(const e of [...G.units,...G.buildings])for(const key of ['x','y','hp'])assert(Number.isFinite(e[key]),`${e.type}.${key} is finite`);}

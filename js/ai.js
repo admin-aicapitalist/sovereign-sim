@@ -7,6 +7,7 @@
     if(u.hp<u.maxHp*.3||(u.state==='Resting'||u.state==='Fleeing')&&u.hp<u.maxHp*.86){const home=nearest(u,buildings('temple'))||u.home&&!u.home.dead&&u.home||G.palace;if(G.dist(u,home)<3.5){u.state='Resting';u.target=null;u.path=[];u.hp=Math.min(u.maxHp,u.hp+(home.type==='temple'?11:7));}else go(u,home,'Fleeing');return;}
     const close=G.units.filter(e=>!e.dead&&e.hostile&&G.dist(e,u)<u.data.range+3);const enemy=nearest(u,close);
     if(enemy){u.target=enemy;u.state='Fighting '+enemy.data.name;return;}
+    if(G.seekLoot(u))return;
     if(G.potionShoppingList(u).length){const shop=nearest(u,buildings('marketplace'));if(shop&&(G.dist(u,shop)<9||!u.goal)){if(G.dist(u,shop)<3){G.buyPotions(u,shop);u.goal=null;}else{go(u,shop,'Buying potions');return;}}}
     let best=null,bestScore=.045;for(const f of G.flags){if(f.dead||f.target?.dead)continue;const threat=f.target?Math.max(.8,(f.target.data.damage||14)/14+(f.target.hp/500)):1;const affinity=f.type==='explore'?(u.type==='ranger'?2.5:u.type==='thief'?1.7:.55):u.data.affinity;const score=f.reward/(30*threat)*affinity*u.bravery*(1+(u.level-1)*.18)*(u.hp/u.maxHp)/(1+G.dist(u,f)*.08);if(score>bestScore){best=f;bestScore=score;}}
     if(best){u.goal=best;if(best.type==='attack'){u.target=best.target;u.state='Answering a bounty';}else if(G.dist(u,best)<1.9){best.dead=true;u.gold+=best.reward;u.xp+=20;G.reveal(best.x,best.y,9);G.notify(u.name+' claimed an exploration bounty.');G.fxAt(u.x,u.y,'level');u.goal=null;}else go(u,best,'Exploring for gold');return;}

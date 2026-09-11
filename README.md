@@ -63,6 +63,14 @@ are documented in [`tools/art/README.md`](tools/art/README.md).
 5. **The staff runs itself**: peasants build and repair, tax collectors walk the streets
    hauling gold back to the Palace (guard them!), palace guards hold the gate,
    guard towers shoot on sight.
+6. **Recover treasure:** heroes collect gold pouches and potion drops when nearby
+   ground is safe. Select a monster or lair to see its possible drops; select a
+   pouch or chest to inspect its contents. Gold belongs to the collecting hero.
+7. **Watch overcrowding:** six completed cottages are safe. Cottages 7–10 can
+   sustain one rat sewer, 11–14 two, and so on. The campaign panel shows the
+   warning and countdown. Clear sewers and protect your homes before expanding.
+   Select a cottage → **Demolish · no refund** to reduce housing; construction costs
+   and stored taxes are lost.
 
 **Replay a map:** the title screen and Help (?) show the current seed. In Help or
 the end-of-game screen, **Replay this map** opens a link with `?seed=12345`. You can
@@ -92,6 +100,8 @@ Plain JS, one global namespace `G`, classic script load order (see `index.html`)
 | `js/world.js` | forests and scenery, construction sites, walkability, fog of war |
 | `js/entities.js` | units/buildings, movement, combat, projectiles, XP, flags |
 | `js/alchemy.js` | potion research, personal shopping, inventory and combat buffs |
+| `js/loot.js` | seeded treasure drops, physical pickup, safe recovery and inventory overflow |
+| `js/sanitation.js` | overcrowding pressure, safe sewer placement and recurring rat outbreaks |
 | `js/ai.js` | the brains: hero utility AI (bounty scoring, shopping, resting, fleeing), worker/guard/monster AI |
 | `js/game.js` | sim loop, economy, lair spawning, player actions, win/lose, hints |
 | `js/render.js` | camera, pre-rendered terrain, depth-sorted scene, fx, minimap |
@@ -110,6 +120,12 @@ Plain JS, one global namespace `G`, classic script load order (see `index.html`)
   long-detour pathfinding.
 * `node test/alchemy.js` — research prerequisites, payments, pause/resume, hero shopping,
   potion use and expiry, taxes, thief recruitment and damage, and monster combat.
+* `node test/loot.js` — drop ranges, separate RNG, no duplicate payouts, hero pickup,
+  inventory overflow, guards/spells, safe pathfinding, fog, and reset behavior.
+* `node test/sanitation.js` — housing thresholds, grace periods, recurrence, safe
+  sewer placement across seeded regions, rat caps, reward suppression, and campaign counts.
+* `node test/loot-browser.mjs` — real loot selection, desktop/mobile contents,
+  autonomous recovery, end-game totals, overcrowding warnings and rat sewers.
 * `node test/alchemy-browser.mjs` — desktop/mobile research and thief controls, inventory,
   and research progress using Chrome on port 9227. Run browser suites sequentially.
 * `node test/smoke.js` — headless simulation: sprites generate, an unattended kingdom
@@ -145,6 +161,25 @@ Plain JS, one global namespace `G`, classic script load order (see `index.html`)
   potions, flee faster than they fight, and bill you nothing for the drama.
 * The economy is a loop: monster gold → hero purses → shops → tax pools → collectors →
   treasury → your next guild.
+* Monsters now leave recoverable gold: rats 12–24, goblins 22–38, skeletons 26–46,
+  and trolls 180–300. Goblins have a 15% Healing drop chance; skeletons 12% Stoneskin.
+  Trolls always drop two Healing potions and have a 50% Strength chance.
+* Lair chests contain 45–75 gold for sewers, 70–110 for goblin camps, and 95–145
+  for graveyards, with a guaranteed Healing potion. Camps have a 40% Strength
+  chance and graveyards a 60% Stoneskin chance. The existing 180/220/260 gold
+  crown rewards remain separate from heroes' treasure.
+* Found potions work before research, without unlocking shop recipes. Heroes
+  leave supplies beyond their carrying capacity for others. Guards, towers and
+  spells leave drops too. Loot remains until collected; repeated monster drops
+  on the same tile merge. Unclaimed loot prevents building over that tile.
+* Overcrowding allows one sewer per four cottages beyond six, rounded up. Each
+  missing sewer appears after 60 game seconds, opens with two rats, and breeds
+  another every 18 seconds, up to six living rats per sewer. Clearing it grants
+  another 60 seconds before recurrence if housing remains above the safe limit.
+  Sewer placement preserves buildings, roads and water; rats can emerge directly
+  if no safe sewer plot exists. Existing sewers still need clearing after cottages
+  are lost. Urban infestations grant no gold, potions, crown rewards or experience,
+  and do not count toward the eight campaign lairs.
 * Lairs spawn waves on a timer, hurry reinforcements when attacked, and rally their
   brood to defend — assaulting a camp is a commitment.
 * Thieves (110 gold) train at the Thieves’ Guild (325 gold, four beds). They travel

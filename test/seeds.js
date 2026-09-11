@@ -2,7 +2,7 @@
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict'),crypto=require('node:crypto');
 let entropy=100;
 const sandbox={console,crypto:{getRandomValues(array){array[0]=entropy++;return array;}}};sandbox.window=sandbox;vm.createContext(sandbox);
-for(const name of ['util','data','mapgen','world','entities','alchemy','ai','game'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../js',name+'.js'),'utf8'),sandbox,{filename:name+'.js'});
+for(const name of ['util','data','mapgen','world','entities','alchemy','loot','ai','sanitation','game'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../js',name+'.js'),'utf8'),sandbox,{filename:name+'.js'});
 const G=sandbox.G;G.headless=true;
 const signature=()=>crypto.createHash('sha256').update(JSON.stringify([G.LEVEL,G.tiles.map(t=>[t.kind,t.blocked,t.noise]),G.trees,G.decor])).digest('hex');
 const waterSignature=()=>G.tiles.filter(t=>t.kind==='water'||t.kind==='bridge').map(t=>t.y*G.MAP+t.x).join(',');

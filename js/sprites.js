@@ -97,7 +97,32 @@
       else {if(type==='skeleton'){line(c,[[-4,-22],[4,-18]],'#d5ccb0',2);line(c,[[-4,-18],[4,-15]],'#d5ccb0',2);ellipse(c,-2,-28,1,1,'#516051');ellipse(c,1,-28,1,1,'#516051');}if(type==='goblin')poly(c,[[-4,-30],[-12,-32],[-5,-25]],'#9da873');line(c,[[5,-22],[11,-13]],cloth,3);line(c,[[11,-13],[attack?24:15,attack?-22:-27]],type==='troll'?'#837147':'#bfc4a9',big?4:2);}
     }c.restore();return o;
   }
-  G.makeSprites=function(){Object.keys(G.BUILDINGS).forEach(k=>S[k]=building(k));for(const type of Object.keys(G.UNITS)){delete S['idle_'+type];S['unit_'+type]=[];for(let f=0;f<4;f++)S['unit_'+type].push(unit(type,f,false));S['attack_'+type]=unit(type,1,true);}for(let i=0;i<6;i++){S['pine'+i]=tree('pine',i);S['oak'+i]=tree('oak',i);}S.flag=surface(64,82);shadow(S.flag.ctx,25,74,10,3);flag(S.flag.ctx,25,37,'#c17958');S.explore=surface(64,82);shadow(S.explore.ctx,25,74,10,3);flag(S.explore.ctx,25,37,'#d5ba79');};
+  function treasure(chest){
+    const o=surface(56,48,4),c=o.ctx,r=G.rng(chest?713:811);
+    Object.assign(o,{anchor:[28,37],bounds:[5,7,53,45],pixelArt:false,category:'loot'});
+    shadow(c,28,38,20,7);
+    if(chest){
+      poly(c,[[8,23],[30,31],[30,42],[8,33]],grad(c,8,22,30,42,'#976b3d','#4f3828'),'#302e25');
+      poly(c,[[30,31],[49,22],[49,34],[30,42]],grad(c,30,29,49,39,'#64472e','#352e26'),'#302e25');
+      poly(c,[[8,23],[27,15],[49,22],[30,31]],'#392e20','#b19862');
+      for(let i=0;i<28;i++){const a=r(),b=r(),x=10+a*19+b*18,y=23-a*7+b*6;ellipse(c,x,y,2.2,1.1,i%3?'#c6a34e':'#efda8c');line(c,[[x-1,y-.4],[x+.8,y-.5]],'#f8e3a3',.35);}
+      // Raised wooden lid, iron bands, worn plank edges and brass rivets.
+      poly(c,[[8,23],[27,15],[27,7],[8,14]],grad(c,8,9,27,24,'#ad7d48','#5c422e'),'#392d24');
+      for(let i=0;i<13;i++){const y=15+i*.65;line(c,[[9,y],[26,y-7]],i%2?'#d3a56950':'#392c2650',.45);}
+      for(const x of [12,23]){line(c,[[x,12.5-(x-8)*.36],[x,23-(x-8)*.42]],'#586164',2.1);line(c,[[x,25+(x-8)*.36],[x,34+(x-8)*.4]],'#586164',2);ellipse(c,x,31+(x-8)*.35,.7,.6,'#d0b776');}
+      for(let i=0;i<14;i++){const x=9+r()*19,y=27+(x-8)*.36+r()*5;line(c,[[x,y],[Math.min(29,x+3),y+1]],'#d2a16030',.4);}
+      line(c,[[8,33],[30,42],[49,34]],'#bd935347',.8);
+      poly(c,[[29,31],[33,30],[33,36],[29,37]],'#c2a164','#3e3930');ellipse(c,31,34,.6,.8,'#34372c');
+    }else{
+      c.fillStyle=grad(c,16,19,37,38,'#baa375','#685638');c.beginPath();c.moveTo(22,19);c.bezierCurveTo(15,24,11,35,21,39);c.bezierCurveTo(35,43,42,35,35,25);c.lineTo(31,19);c.closePath();c.fill();
+      for(let i=0;i<18;i++){const x=19+r()*15,y=25+r()*11;line(c,[[x,y],[x+1,y-2]],'#d9c18b28',.5);}
+      poly(c,[[22,19],[20,13],[27,15],[34,12],[31,20]],'#8e754b','#4e432d');
+      line(c,[[21,20],[32,20],[34,23],[37,22]],'#d6bb7c',1.2);line(c,[[24,22],[21,35]],'#483d2945',.8);
+      for(let i=0;i<9;i++){const x=34+r()*15,y=35+r()*6;ellipse(c,x,y,2.2,1.05,'#b28e3f');ellipse(c,x,y-.55,2.1,.9,i%2?'#e8ca74':'#cab060');line(c,[[x-1,y-1],[x+.5,y-1]],'#f5dfa3',.4);}
+    }
+    return o;
+  }
+  G.makeSprites=function(){S.loot_chest=treasure(true);S.loot_pouch=treasure(false);Object.keys(G.BUILDINGS).forEach(k=>S[k]=building(k));for(const type of Object.keys(G.UNITS)){delete S['idle_'+type];S['unit_'+type]=[];for(let f=0;f<4;f++)S['unit_'+type].push(unit(type,f,false));S['attack_'+type]=unit(type,1,true);}for(let i=0;i<6;i++){S['pine'+i]=tree('pine',i);S['oak'+i]=tree('oak',i);}S.flag=surface(64,82);shadow(S.flag.ctx,25,74,10,3);flag(S.flag.ctx,25,37,'#c17958');S.explore=surface(64,82);shadow(S.explore.ctx,25,74,10,3);flag(S.explore.ctx,25,37,'#d5ba79');};
   G.loadSpriteAssets=function(){
     if(typeof Image==='undefined')return Promise.resolve([]);
     const buildings=Object.entries(G.spriteAssets||{}).map(([key,asset])=>new Promise(resolve=>{

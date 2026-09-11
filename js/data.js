@@ -1,6 +1,7 @@
 (function () {
   G.MAP = 88;
   G.ZOOM_MIN = .35; G.ZOOM_MAX = 2.1;
+  G.SANITATION={safeCottages:6,cottagesPerSewer:4,incubation:60,ratInterval:18};
   G.CAMPAIGN = [
     {type:'sewer',name:'The Old Sewer'},
     {type:'graveyard',name:'Haunted Graveyard'},
@@ -20,7 +21,7 @@
     marketplace: { name:'Marketplace', short:'Marketplace', subtitle:'A little trade, a little prosperity', hp:700, size:2, cost:250, sight:6, buildTime:12, tax:6, description:'Research Healing, Strength and Stoneskin potions. Heroes buy unlocked recipes with their own gold; collectors bring the proceeds to your treasury.' },
     temple: { name:'Temple of Light', short:'Temple', subtitle:'A sanctuary for the weary', hp:900, size:2, cost:400, sight:7, buildTime:17, description:'Unlocks Healing Light. Heroes recover faster near the temple and can return to their adventures sooner.' },
     tower: { name:'Guard Tower', short:'Guard Tower', subtitle:'An ever-watchful eye', hp:800, size:1, cost:200, sight:9, buildTime:11, damage:21, range:7, attackRate:1.4, description:'Shoots approaching monsters. A wise investment near your borders, and an excellent answer to trolls.' },
-    house: { name:'Peasant Cottage', short:'Cottage', subtitle:'A place to call home', hp:320, size:1, cost:100, sight:5, buildTime:8, tax:3, description:'A warm home for your subjects. Produces a small, steady stream of taxable income.' },
+    house: { name:'Peasant Cottage', short:'Cottage', subtitle:'A place to call home', hp:320, size:1, cost:100, sight:5, buildTime:8, tax:3, description:'A warm home for your subjects. Produces taxable income. More than six completed cottages attract rat sewers; every four excess cottages can sustain another infestation.' },
     sewer: { name:'The Old Sewer', subtitle:'Something stirs below', hp:950, size:2, hostile:true, interval:52, spawn:'rat', reward:180, description:'A forgotten drain teeming with giant rats. Destroy it to make the kingdom safer.' },
     graveyard: { name:'Haunted Graveyard', subtitle:'No rest for the wicked', hp:1500, size:2, hostile:true, interval:60, spawn:'skeleton', reward:260, description:'Restless skeletons rise beneath the old chapel. Its ancient stones must fall.' },
     goblin: { name:'Goblin Camp', subtitle:'Unwelcome neighbors', hp:1250, size:2, hostile:true, interval:56, spawn:'goblin', reward:220, description:'A crude goblin stronghold. It calls defenders when attacked; send heroes with a generous bounty.' }
@@ -33,10 +34,23 @@
     guard:{name:'Palace Guard',hp:210,damage:17,range:1.35,speed:1.5,rate:1.25,armor:4,sight:6,color:'#92aeb2'},
     peasant:{name:'Peasant',hp:75,damage:3,range:1,speed:1.45,rate:2,armor:0,sight:5,color:'#c3b083'},
     collector:{name:'Tax Collector',hp:95,damage:0,range:0,speed:1.7,rate:2,armor:0,sight:4,color:'#b29258'},
-    rat:{name:'Giant Rat',hp:70,damage:8,range:1,speed:1.7,rate:1.4,armor:0,sight:5,color:'#938574',hostile:true,loot:18,xp:12},
-    goblin:{name:'Goblin Raider',hp:135,damage:15,range:1.1,speed:1.55,rate:1.5,armor:3,sight:6,color:'#8ca56b',hostile:true,loot:30,xp:20},
-    skeleton:{name:'Restless Skeleton',hp:170,damage:18,range:1.2,speed:1.25,rate:1.6,armor:6,sight:6,color:'#d4ccb0',hostile:true,loot:36,xp:24},
-    troll:{name:'Hill Troll',hp:1300,damage:48,range:1.6,speed:1.05,rate:2,armor:9,sight:9,color:'#758b63',hostile:true,loot:240,regeneration:3,xp:120}
+    rat:{name:'Giant Rat',hp:70,damage:8,range:1,speed:1.7,rate:1.4,armor:0,sight:5,color:'#938574',hostile:true,xp:12},
+    goblin:{name:'Goblin Raider',hp:135,damage:15,range:1.1,speed:1.55,rate:1.5,armor:3,sight:6,color:'#8ca56b',hostile:true,xp:20},
+    skeleton:{name:'Restless Skeleton',hp:170,damage:18,range:1.2,speed:1.25,rate:1.6,armor:6,sight:6,color:'#d4ccb0',hostile:true,xp:24},
+    troll:{name:'Hill Troll',hp:1300,damage:48,range:1.6,speed:1.05,rate:2,armor:9,sight:9,color:'#758b63',hostile:true,regeneration:3,xp:120}
+  };
+  G.LOOT = {
+    monsters:{
+      rat:{gold:[12,24],potions:[]},
+      goblin:{gold:[22,38],potions:[['healing',.15]]},
+      skeleton:{gold:[26,46],potions:[['stoneskin',.12]]},
+      troll:{gold:[180,300],potions:[['healing',1,2],['strength',.5]]}
+    },
+    lairs:{
+      sewer:{gold:[45,75],potions:[['healing',1]]},
+      goblin:{gold:[70,110],potions:[['healing',1],['strength',.4]]},
+      graveyard:{gold:[95,145],potions:[['healing',1],['stoneskin',.6]]}
+    }
   };
   G.POTIONS = {
     healing:{name:'Healing',symbol:'✚',research:150,time:25,price:18,capacity:2,heal:110,description:'Restores 110 health. Used automatically below 45% health.'},

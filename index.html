@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#29251f">
   <title>Sovereign — A Fantasy Kingdom Sim</title>
-  <link rel="stylesheet" href="style.css?v=4f300ec7beae">
+  <link rel="stylesheet" href="style.css?v=caad0ba072aa">
 </head>
 <body>
   <canvas id="world" aria-label="Interactive isometric kingdom. Use WASD to pan, mouse wheel to zoom, and click to select."></canvas>
@@ -23,6 +23,7 @@
     <aside class="quest-panel panel">
       <div class="eyebrow"><span class="tiny-diamond">◆</span> THE ROYAL CAMPAIGN</div>
       <h1>The Young Kingdom</h1>
+      <div id="sanitation-status" class="sanitation-status"></div>
       <p class="quest-flavor">Every great realm begins<br>with a little ambition.</p>
       <div class="quest-rule"></div>
       <div class="objective-heading"><span>Secure the realm</span><span id="lair-count">0 / 8</span></div>
@@ -54,18 +55,20 @@
   <script src="assets/art/buildings/buildings-sprites.js?v=1b7086a701fd"></script>
   <script src="assets/art/units/units-sprites.js?v=50b9ce0f461b"></script>
   <script src="assets/art/environment/environment-sprites.js?v=66582fe218fa"></script>
-  <script src="js/data.js?v=02cb6d33d0ad"></script>
-  <script src="js/sprites.js?v=a26fb2a6567a"></script>
+  <script src="js/data.js?v=dbdeb4bcc447"></script>
+  <script src="js/sprites.js?v=94e6c36d62e0"></script>
   <script src="js/mapgen.js?v=73082047941f"></script>
-  <script src="js/world.js?v=34730cbfaba9"></script>
-  <script src="js/entities.js?v=9eac55e52ce8"></script>
+  <script src="js/world.js?v=c331bec2a0fd"></script>
+  <script src="js/entities.js?v=d54550ec5a1f"></script>
   <script src="js/alchemy.js?v=627da16a7449"></script>
-  <script src="js/ai.js?v=c18aebef06a9"></script>
-  <script src="js/game.js?v=a189dd2b45bc"></script>
+  <script src="js/loot.js?v=03911e26dead"></script>
+  <script src="js/ai.js?v=d44e7b786d99"></script>
+  <script src="js/sanitation.js?v=9a31169ecb6e"></script>
+  <script src="js/game.js?v=571cc366b5f3"></script>
   <script src="js/environment.js?v=c3f2bdf20872"></script>
-  <script src="js/render.js?v=189b792464c5"></script>
-  <script src="js/input.js?v=105116f51194"></script>
-  <script src="js/ui.js?v=25f40f7a9c8b"></script>
+  <script src="js/render.js?v=841d19eb164a"></script>
+  <script src="js/input.js?v=c3edbca3b0b0"></script>
+  <script src="js/ui.js?v=a4bdc18cb409"></script>
   <script src="js/sound.js?v=40f5b83f6e41"></script>
   <script src="js/main.js?v=f11fdb2a01ac"></script>
 </body>

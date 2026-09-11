@@ -17,6 +17,6 @@
     G.reveal(home.x,home.y,13);
   };
   G.updateVision=function(){G.tiles.forEach(t=>t.visible=false);for(const b of G.buildings)if(!b.dead&&!b.hostile)G.reveal(b.x,b.y,b.data.sight||5);for(const u of G.units)if(!u.dead&&!u.hostile)G.reveal(u.x,u.y,u.data.sight);G.vision=G.vision.filter(v=>v.until>G.time);G.vision.forEach(v=>G.reveal(v.x,v.y,v.r));};
-  G.canPlace=function(type,x,y){const d=G.BUILDINGS[type];if(!d||d.hostile||type==='palace')return false;for(let yy=y;yy<y+d.size;yy++)for(let xx=x;xx<x+d.size;xx++){const t=G.tile(xx,yy);if(!t||!t.explored||t.blocked||t.kind==='water'||t.kind==='bridge')return false;}return !G.buildings.some(b=>!b.dead&&Math.abs(b.x-(x+d.size/2))<(b.data.size+d.size)/2+.35&&Math.abs(b.y-(y+d.size/2))<(b.data.size+d.size)/2+.35);};
+  G.canPlace=function(type,x,y){const d=G.BUILDINGS[type];if(!d||d.hostile||type==='palace')return false;if(G.loot.some(p=>!p.dead&&p.x>=x&&p.x<x+d.size&&p.y>=y&&p.y<y+d.size))return false;for(let yy=y;yy<y+d.size;yy++)for(let xx=x;xx<x+d.size;xx++){const t=G.tile(xx,yy);if(!t||!t.explored||t.blocked||t.kind==='water'||t.kind==='bridge')return false;}return !G.buildings.some(b=>!b.dead&&Math.abs(b.x-(x+d.size/2))<(b.data.size+d.size)/2+.35&&Math.abs(b.y-(y+d.size/2))<(b.data.size+d.size)/2+.35);};
   G.findBuildingSite=function(type){return G.tiles.filter(t=>G.dist(t,G.palace)<10&&G.canPlace(type,t.x,t.y)).sort((a,b)=>G.dist(a,G.palace)-G.dist(b,G.palace))[0]||null;};
 })();

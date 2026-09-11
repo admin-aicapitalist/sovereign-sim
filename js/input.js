@@ -5,7 +5,10 @@
         const x=((sx-p.x)/z-layout.x)/layout.scale,y=((sy-p.y)/z-layout.y)/layout.scale;
         if(!G.spriteContainsPoint(sprite,x,y))continue;
         if(!result||b.x+b.y>result.x+result.y)result=b;
-      }}return result;
+      }}if(result)return result;
+    for(const loot of G.loot){if(loot.dead||!G.isVisible(loot.x,loot.y))continue;const p=G.worldToScreen(loot.x,loot.y),z=G.camera.zoom;
+      if(Math.abs(sx-p.x)<23*z&&sy>p.y-28*z&&sy<p.y+9*z&&(!result||loot.x+loot.y>result.x+result.y))result=loot;
+    }return result;
   };
   G.setMode=function(type,key){G.mode=type?{type,key}:null;G.ui?.updateCommands();G.ui?.modeHint();document.getElementById('world').style.cursor=type?'crosshair':'default';};
   G.changeZoom=function(factor,x,y){const vp=G.viewport();x=x??vp.width/2;y=y??vp.height*.46;const before=G.screenToWorld(x,y);G.camera.zoom=G.clamp(G.camera.zoom*factor,G.ZOOM_MIN,G.ZOOM_MAX);const after=G.screenToWorld(x,y),a=G.iso(before.x,before.y),b=G.iso(after.x,after.y);G.camera.x+=a.x-b.x;G.camera.y+=a.y-b.y;};
