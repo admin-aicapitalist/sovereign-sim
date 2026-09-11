@@ -19,6 +19,8 @@ await send('Runtime.enable');await send('Page.enable');
 await send('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
 await send('Page.navigate',{url:gameUrl});await ready();
 await ev('G.spriteAssetsReady');
+await ev('document.fonts.ready.then(()=>true)');
+assert.equal(await ev('[...document.fonts].length===3 && [...document.fonts].every(f=>f.status==="loaded")'),true,'bundled heading, body and italic fonts load');
 assert.equal(await ev('G.sprites.palace.assetLoaded'),true,'exported Palace loads before play');
 assert.deepEqual(await ev('[G.sprites.palace.canvas.width,G.sprites.palace.canvas.height]'),await ev('G.spriteAssets.palace.sourceSize'),'Palace keeps the source texture resolution');
 assert.equal(await ev('G.sprites.palace.pixelArt'),false,'Palace uses smooth scaling');

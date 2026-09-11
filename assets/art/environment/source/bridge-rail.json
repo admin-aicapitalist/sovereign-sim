@@ -1,0 +1,18 @@
+{
+  "logical_size": [
+    96,
+    96
+  ],
+  "ground_anchor_normalized": [
+    0.5000002980232239,
+    0.597979724407196
+  ],
+  "ortho_scale": 4.242640687119286,
+  "camera_elevation_degrees": 30,
+  "shadow_radius": 8,
+  "key": "bridge-rail",
+  "render_size": [
+    1280,
+    1280
+  ]
+}

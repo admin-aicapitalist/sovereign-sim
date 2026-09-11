@@ -53,13 +53,14 @@ def make_pixelorama(palace, shadow):
 
 
 def version_runtime_scripts():
-    """Refresh script URLs so an ordinary reload picks up regenerated artwork and code."""
+    """Refresh scripts and styles so ordinary reloads pick up artwork, code and UI."""
     for page in (ROOT / "index.html", ROOT / "test/spritesheet.html"):
         def version(match):
             asset_path = page.parent / match[2]
             digest = hashlib.sha256(asset_path.read_bytes()).hexdigest()[:12]
             return f'{match[1]}{match[2]}?v={digest}{match[3]}'
-        page.write_text(re.sub(r'(<script src=")([^"?]+)(?:\?[^\"]*)?(")', version, page.read_text()))
+        html = re.sub(r'(<script src=")([^"?]+)(?:\?[^\"]*)?(")', version, page.read_text())
+        page.write_text(re.sub(r'(<link rel="stylesheet" href=")([^"?]+)(?:\?[^\"]*)?(")', version, html))
 
 
 def main():

@@ -18,7 +18,7 @@ POSES = ['idle'] + [f'walk-{i}' for i in range(4)] + [f'attack-{i}' for i in ran
 def preview(sprites, animated=False):
     width, height = (1280, 800) if animated else (1900, 1120)
     cell_w, cell_h = width // 5, (height - 120) // 2
-    scale = 4.1 if animated else 6.2
+    scale = 3.3 if animated else 6.2
     base = Image.new('RGBA', (width, height), '#22332b')
     d = ImageDraw.Draw(base)
     d.text((width // 2, 40), 'S O V E R E I G N   /   T H E   B O R D E R L A N D S',
@@ -38,7 +38,7 @@ def preview(sprites, animated=False):
             img = images[pose]
             ratio = img.info['density']
             img = img.resize((round(img.width / ratio * scale), round(img.height / ratio * scale)), Image.Resampling.LANCZOS)
-            x, y = i % 5 * cell_w + cell_w / 2, i // 5 * cell_h + 110 + cell_h - 72
+            x, y = i % 5 * cell_w + cell_w / 2, i // 5 * cell_h + 110 + cell_h - (95 if animated else 105)
             board.alpha_composite(img, (round(x - anchor[0] * scale), round(y - anchor[1] * scale)))
         frames.append(board.convert('RGB'))
     return frames

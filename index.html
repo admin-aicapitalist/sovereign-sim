@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#182a27">
+  <meta name="theme-color" content="#29251f">
   <title>Sovereign — A Fantasy Kingdom Sim</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=eb60c835a49c">
 </head>
 <body>
   <canvas id="world" aria-label="Interactive isometric kingdom. Use WASD to pan, mouse wheel to zoom, and click to select."></canvas>
   <div id="vignette"></div>
   <header class="topbar">
-    <a class="brand" href="#" aria-label="Sovereign home"><span class="brand-crest">♜</span><span>SOVEREIGN<small>A FANTASY KINGDOM SIM</small></span></a>
+    <a class="brand" href="#" aria-label="Sovereign home"><span class="brand-crest" aria-hidden="true"><svg viewBox="0 0 40 44" fill="none"><path d="M8 17 13 23 20 12 27 23 32 17 29 31H11Z" fill="currentColor"/><path d="M11 35H29M20 4V9M17.5 6.5H22.5" stroke="currentColor" stroke-width="2"/><circle cx="8" cy="15" r="2" fill="currentColor"/><circle cx="32" cy="15" r="2" fill="currentColor"/></svg></span><span>SOVEREIGN<small>A FANTASY KINGDOM SIM</small></span></a>
     <div class="resources">
       <div class="resource treasury"><span class="coin">✦</span><div><strong id="gold">1,500</strong><small>ROYAL TREASURY</small></div><span id="income" class="income">+0</span></div>
       <div class="resource"><span class="resource-icon">⚔</span><div><strong id="hero-count">0 <em>/ 12</em></strong><small>HEROES</small></div></div>
@@ -45,10 +45,10 @@
   </main>
   <div id="tooltip" class="tooltip hidden"></div>
   <section id="welcome" class="welcome">
-    <div class="welcome-content"><div class="eyebrow">A KINGDOM AWAITS ITS SOVEREIGN</div><div class="welcome-ornament">─── ✧ ───</div><h2>A crown.<br>A kingdom.<br><em>A little chaos.</em></h2><p>Raise a realm in the untamed borderlands.<br>Build guilds, entice heroes, and let adventure unfold.<br>You wear the crown. They choose the quest.</p><button id="start" class="gold-button">Begin your reign <span>→</span></button><div class="welcome-foot">CHAPTER I <span>◆</span> THE YOUNG KINGDOM</div></div>
+    <div class="welcome-content"><div class="eyebrow">A KINGDOM AWAITS ITS SOVEREIGN</div><div class="welcome-ornament">─── ✧ ───</div><h2>A crown.<br>A kingdom.<br><em>A little chaos.</em></h2><p>Raise a realm in the untamed borderlands.<br> Build guilds, entice heroes, and let adventure unfold.<br> You wear the crown. They choose the quest.</p><button id="start" class="gold-button">Begin your reign <span>→</span></button><div class="welcome-foot">CHAPTER I <span>◆</span> THE YOUNG KINGDOM</div></div>
     <div class="welcome-map-caption"><span>✧</span> Alderwick, on the edge of the known world</div>
   </section>
   <div id="modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-label="Game information"><div id="modal-content" class="modal panel"></div></div>
-  <script src="js/util.js?v=17e52e337b7f"></script><script src="assets/art/palace/palace-sprite.js?v=a193d54d59be"></script><script src="assets/art/buildings/buildings-sprites.js?v=4be605ee31dd"></script><script src="assets/art/units/units-sprites.js?v=40c6dd8b1c3e"></script><script src="js/data.js?v=f0e5df544564"></script><script src="js/sprites.js?v=c1b2f9b2ad25"></script><script src="js/world.js?v=688f6437006c"></script><script src="js/entities.js?v=24ffd14cf0fd"></script><script src="js/ai.js?v=34b4b1b607a5"></script><script src="js/game.js?v=e3a65ee1dfdc"></script><script src="js/render.js?v=ba66bfb0108d"></script><script src="js/input.js?v=0c5db65f458b"></script><script src="js/ui.js?v=ad953250e6f1"></script><script src="js/sound.js?v=40f5b83f6e41"></script><script src="js/main.js?v=0f6984d7216f"></script>
+  <script src="js/util.js?v=17e52e337b7f"></script><script src="assets/art/palace/palace-sprite.js?v=a193d54d59be"></script><script src="assets/art/buildings/buildings-sprites.js?v=4be605ee31dd"></script><script src="assets/art/units/units-sprites.js?v=40c6dd8b1c3e"></script><script src="assets/art/environment/environment-sprites.js?v=66582fe218fa"></script><script src="js/data.js?v=f0e5df544564"></script><script src="js/sprites.js?v=7e2ab78a03c7"></script><script src="js/world.js?v=688f6437006c"></script><script src="js/entities.js?v=24ffd14cf0fd"></script><script src="js/ai.js?v=34b4b1b607a5"></script><script src="js/game.js?v=e3a65ee1dfdc"></script><script src="js/environment.js?v=49c30a2f5262"></script><script src="js/render.js?v=d7a55df7f0ef"></script><script src="js/input.js?v=0c5db65f458b"></script><script src="js/ui.js?v=c3df6e05a490"></script><script src="js/sound.js?v=40f5b83f6e41"></script><script src="js/main.js?v=0f6984d7216f"></script>
 </body>
 </html>

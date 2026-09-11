@@ -12,6 +12,8 @@ Play: **https://sovereign-432652279722.us-central1.run.app/**
 - The Palace runtime assets are `assets/art/palace/palace-hires.png` and `palace-sprite.js`; Blender/Pixelorama source files and authoring tools stay out of the container.
 - The other ten building textures and `assets/art/buildings/buildings-sprites.js` are included through an explicit allowlist; master renders and preview sheets are excluded.
 - Ten character atlases and `assets/art/units/units-sprites.js` use the same allowlist approach; Blender scenes, master poses and animated previews are excluded.
+- Locally bundled Cinzel and Alegreya fonts, with their OFL notices, are included in `assets/fonts/`. The stylesheet URL is content-versioned alongside scripts to refresh cached menus.
+- The environment allowlist includes 35 runtime images and `assets/art/environment/environment-sprites.js`; scenery source scenes and terrain preview sheets are excluded.
 
 From the project root, deploy updates with:
 

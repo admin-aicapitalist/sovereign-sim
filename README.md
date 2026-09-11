@@ -5,10 +5,16 @@ classic 2000-era fantasy kingdom management games: you are the monarch, not the 
 You raise buildings, recruit heroes and post gold bounties — but the heroes decide for
 themselves whether your coin is worth the danger.
 
-All artwork is original. All eleven building types and ten character types use
-high-resolution sprites made with Blender and Pillow; scenery is drawn procedurally at load time. Sounds are
+All artwork is original. All eleven building types, ten character types, and the
+woodland and scenery use high-resolution artwork made with Blender and Pillow.
+Textured grass, soil, roads, rivers and paving are composed from the map at load time. Sounds are
 synthesized with WebAudio (no audio files), and there are **zero runtime dependencies
 and no build step**.
+
+The menus use parchment, dark wood, brass trim and crimson selections. Cinzel titles
+and Alegreya body text are bundled locally; font attribution and OFL licenses are in
+[`assets/fonts/`](assets/fonts/README.md). No external font service is required.
+[Interface preview](assets/art/ui/interface-preview.png) · [Title screen](assets/art/ui/welcome-preview.png).
 
 The art targets late-90s isometric-RTS production values: full-resolution painted
 sprites with warm/cool directional lighting, gradient-shaded walls and roofs, soft
@@ -66,6 +72,8 @@ Plain JS, one global namespace `G`, classic script load order (see `index.html`)
 | `assets/art/palace/palace-sprite.js` | generated Palace image manifest: dimensions, bounds, and ground anchor |
 | `assets/art/buildings/buildings-sprites.js` | generated manifests for the other ten buildings, with selection outlines and effect positions |
 | `assets/art/units/units-sprites.js` | ten character atlases: idle, walk and action poses, floor anchors, selection bounds |
+| `assets/art/environment/environment-sprites.js` | 35 tree, scenery and terrain texture manifests |
+| `js/environment.js` | textured terrain, road and river boundaries, water animation, bridge rails, scenery, bounded terrain cache |
 | `js/world.js` | seeded map gen, walkability, fog of war |
 | `js/entities.js` | units/buildings, movement, combat, projectiles, XP, flags |
 | `js/ai.js` | the brains: hero utility AI (bounty scoring, shopping, resting, fleeing), worker/guard/monster AI |
@@ -83,6 +91,9 @@ Plain JS, one global namespace `G`, classic script load order (see `index.html`)
   no NaNs. Run it after any balance change.
 * `test/spritesheet.html` — renders imported and generated sprites on one page
   (`?only=units|bld|misc`).
+* `node test/environment.mjs` — browser checks for terrain detail, river animation,
+  bridge navigation, cache limits and image fallbacks, with Retina screenshots of
+  town, river and pond. Run sequentially with the other browser tests.
 * `node test/browser.mjs` — optional real-browser interaction checks using Node 22+
   and a Chrome instance started with `--remote-debugging-port=9227` and a separate
   `--user-data-dir`. No test dependencies are needed. Exercises construction,
@@ -115,8 +126,11 @@ Editable sources and export instructions are in the
 [building collection guide](assets/art/buildings/README.md). Heroes, workers and
 monsters share the same lighting and materials, with editable models and
 animated previews in the [character guide](assets/art/units/README.md).
+The [environment guide](assets/art/environment/README.md) covers detailed pine and
+oak forests, autumn foliage, textured ground, worn paving, riverbanks, reeds,
+wildflowers, rocks, fallen wood and timber bridges.
 The game retains the textures' full resolution and scales them smoothly while
-preserving their ground positions. It loads building and character images before starting and
+preserving their ground positions. It loads artwork before starting and
 retains individual procedural fallbacks if images are unavailable. The map includes feathered fog, animated water, smoke,
 trees, flags, and combat particles. The interface adapts to narrow screens; drag
 the map with a finger and use the minimap's zoom controls. Sound starts with

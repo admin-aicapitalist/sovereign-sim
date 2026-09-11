@@ -1,0 +1,1045 @@
+{
+  "pine0": {
+    "w": 83.0,
+    "h": 128.0,
+    "anchor": [
+      41.00001907348633,
+      113.1941442489624
+    ],
+    "bounds": [
+      3.0,
+      2.5,
+      80.75,
+      117.75
+    ],
+    "category": "tree",
+    "src": "pine0.png?v=93992593ecc4",
+    "sourceSize": [
+      664,
+      1024
+    ],
+    "pixelArt": false,
+    "scene": "source/pine0.blend",
+    "crop": [
+      312,
+      136,
+      976,
+      1160
+    ],
+    "master_render_size": [
+      1280,
+      1280
+    ]
+  },
+  "pine1": {
+    "w": 72.0,
+    "h": 119.0,
+    "anchor": [
+      35.00001907348633,
+      104.1941442489624
+    ],
+    "bounds": [
+      2.75,
+      2.375,
+      68.75,
+      108.75
+    ],
+    "category": "tree",
+    "src": "pine1.png?v=7c260c373a0b",
+    "sourceSize": [
+      576,
+      952
+    ],
+    "pixelArt": false,
+    "scene": "source/pine1.blend",
+    "crop": [
+      360,
+      208,
+      936,
+      1160
+    ],
+    "master_render_size": [
+      1280,
+      1280
+    ]
+  },
+  "pine2": {
+    "w": 70.0,
+    "h": 136.0,
+    "anchor": [
+      34.00001907348633,
+      121.1941442489624
+    ],
+    "bounds": [
+      2.875,
+      2.25,
+      67.25,
+      125.75
+    ],
+    "category": "tree",
+    "src": "pine2.png?v=54fbf1c4ef28",
+    "sourceSize": [
+      560,
+      1088
+    ],
+    "pixelArt": false,
+    "scene": "source/pine2.blend",
+    "crop": [
+      368,
+      72,
+      928,
+      1160
+    ],
+    "master_render_size": [
+      1280,
+      1280
+    ]
+  },
+  "pine3": {
+    "w": 85.0,
+    "h": 117.0,
+    "anchor": [
+      42.00001907348633,
+      102.1941442489624
+    ],
+    "bounds": [
+      3.25,
+      2.625,
+      82.125,
+      106.75
+    ],
+    "category": "tree",
+    "src": "pine3.png?v=2f19209ce37f",
+    "sourceSize": [
+      680,
+      936
+    ],
+    "pixelArt": false,
+    "scene": "source/pine3.blend",
+    "crop": [
+      304,
+      224,
+      984,
+      1160
+    ],
+    "master_render_size": [
+      1280,
+      1280
+    ]
+  },
+  "pine4": {
+    "w": 76.0,
+    "h": 131.0,
+    "anchor": [
+      37.00001907348633,
+      116.1941442489624
+    ],
+    "bounds": [
+      2.625,
+      2.875,
+      73.625,
+      120.75
+    ],
+    "category": "tree",
+    "src": "pine4.png?v=908cd71c6da0",
+    "sourceSize": [
+      608,
+      1048
+    ],
+    "pixelArt": false,
+    "scene": "source/pine4.blend",
+    "crop": [
+      344,
+      112,
+      952,
+      1160
+    ],
+    "master_render_size": [
+      1280,
+      1280
+    ]
+  },
+  "pine5": {
+    "w": 81.0,
+    "h": 118.0,
+    "anchor": [
+      39.00001907348633,
+      103.1941442489624
+    ],
+    "bounds": [
+      2.375,
+      3.125,
+      77.75,
+      107.75
+    ],
+    "category": "tree",
+    "src": "pine5.png?v=013f4a7136fb",
+    "sourceSize": [
+      648,
+      944
+    ],
+    "pixelArt": false,
+    "scene": "source/pine5.blend",
+    "crop": [
+      328,
+      216,
+      976,
+      1160
+    ],
+    "master_render_size": [
+      1280,
+      1280
+    ]
+  },
+  "oak0": {
+    "w": 87.0,
+    "h": 114.0,
+    "anchor": [
+      43.00001907348633,
+      99.1941442489624
+    ],
+    "bounds": [
+      2.25,
+      2.875,
+      84.625,
+      106.125
+    ],
+    "category": "tree",
+    "src": "oak0.png?v=565fb1f2383b",
+    "sourceSize": [
+      696,
+      912
+    ],
+    "pixelArt": false,
+    "scene": "source/oak0.blend",
+    "crop": [
+      296,
+      248,
+      992,
+      1160
+    ],
+    "master_render_size": [
+      1280,
+      1280
+    ]
+  },
+  "oak1": {
+    "w": 87.0,
+    "h": 110.0,
+    "anchor": [
+      43.00001907348633,
+      95.1941442489624
+    ],
+    "bounds": [
+      2.125,
+      2.5,
+      84.375,
+      102.125
+    ],
+    "category": "tree",
+    "src": "oak1.png?v=406fafed836c",
+    "sourceSize": [
+      696,
+      880
+    ],
+    "pixelArt": false,
+    "scene": "source/oak1.blend",
+    "crop": [
+      296,
+      280,
+      992,
+      1160
+    ],
+    "master_render_size": [
+      1280,
+      1280
+    ]
+  },
+  "oak2": {
+    "w": 84.0,
+    "h": 122.0,
+    "anchor": [
+      42.00001907348633,
+      107.1941442489624
+    ],
+    "bounds": [
+      2.375,
+      2.375,
+      81.75,
+      114.125
+    ],
+    "category": "tree",
+    "src": "oak2.png?v=4f388e667cd8",
+    "sourceSize": [
+      672,
+      976
+    ],
+    "pixelArt": false,
+    "scene": "source/oak2.blend",
+    "crop": [
+      304,
+      184,
+      976,
+      1160
+    ],
+    "master_render_size": [
+      1280,
+      1280
+    ]
+  },
+  "oak3": {
+    "w": 83.0,
+    "h": 109.0,
+    "anchor": [
+      41.00001907348633,
+      94.1941442489624
+    ],
+    "bounds": [
+      2.375,
+      2.75,
+      80.5,
+      101.125
+    ],
+    "category": "tree",
+    "src": "oak3.png?v=688e2f22eb19",
+    "sourceSize": [
+      664,
+      872
+    ],
+    "pixelArt": false,
+    "scene": "source/oak3.blend",
+    "crop": [
+      312,
+      288,
+      976,
+      1160
+    ],
+    "master_render_size": [
+      1280,
+      1280
+    ]
+  },
+  "oak4": {
+    "w": 90.0,
+    "h": 116.0,
+    "anchor": [
+      44.00001907348633,
+      101.1941442489624
+    ],
+    "bounds": [
+      2.25,
+      2.75,
+      87.0,
+      108.125
+    ],
+    "category": "tree",
+    "src": "oak4.png?v=3b0f266940a4",
+    "sourceSize": [
+      720,
+      928
+    ],
+    "pixelArt": false,
+    "scene": "source/oak4.blend",
+    "crop": [
+      288,
+      232,
+      1008,
+      1160
+    ],
+    "master_render_size": [
+      1280,
+      1280
+    ]
+  },
+  "oak5": {
+    "w": 85.0,
+    "h": 112.0,
+    "anchor": [
+      42.00001907348633,
+      97.1941442489624
+    ],
+    "bounds": [
+      2.75,
+      2.625,
+      82.125,
+      104.125
+    ],
+    "category": "tree",
+    "src": "oak5.png?v=3f4ce812223f",
+    "sourceSize": [
+      680,
+      896
+    ],
+    "pixelArt": false,
+    "scene": "source/oak5.blend",
+    "crop": [
+      304,
+      264,
+      984,
+      1160
+    ],
+    "master_render_size": [
+      1280,
+      1280
+    ]
+  },
+  "rock0": {
+    "w": 32.175,
+    "h": 25.349999999999998,
+    "anchor": [
+      15.825022888183593,
+      15.415090942382811
+    ],
+    "bounds": [
+      5.25,
+      2.55,
+      27.45,
+      20.7
+    ],
+    "category": "scenery",
+    "src": "rock0.png?v=4fd86bb33b8d",
+    "sourceSize": [
+      429,
+      338
+    ],
+    "pixelArt": false,
+    "scene": "source/rock0.blend",
+    "crop": [
+      429,
+      533,
+      858,
+      871
+    ],
+    "master_render_size": [
+      1280,
+      1280
+    ]
+  },
+  "rock1": {
+    "w": 34.125,
+    "h": 24.375,
+    "anchor": [
+      16.800022888183594,
+      14.440090942382811
+    ],
+    "bounds": [
+      2.775,
+      2.6999999999999997,
+      31.424999999999997,
+      21.825
+    ],
+    "category": "scenery",
+    "src": "rock1.png?v=c1fb0b094a87",
+    "sourceSize": [
+      455,
+      325
+    ],
+    "pixelArt": false,
+    "scene": "source/rock1.blend",
+    "crop": [
+      416,
+      546,
+      871,
+      871
+    ],
+    "master_render_size": [
+      1280,
+      1280
+    ]
+  },
+  "rock2": {
+    "w": 37.05,
+    "h": 28.275,
+    "anchor": [
+      16.800022888183594,
+      18.340090942382812
+    ],
+    "bounds": [
+      2.025,
+      2.625,
+      34.425,
+      25.724999999999998
+    ],
+    "category": "scenery",
+    "src": "rock2.png?v=76431782d782",
+    "sourceSize": [
+      494,
+      377
+    ],
+    "pixelArt": false,
+    "scene": "source/rock2.blend",
+    "crop": [
+      416,
+      494,
+      910,
+      871
+    ],
+    "master_render_size": [
+      1280,
+      1280
+    ]
+  },
+  "rock3": {
+    "w": 35.1,
+    "h": 23.4,
+    "anchor": [
+      15.825022888183593,
+      13.465090942382812
+    ],
+    "bounds": [
+      4.425,
+      2.4,
+      32.475,
+      20.25
+    ],
+    "category": "scenery",
+    "src": "rock3.png?v=4c38e32af028",
+    "sourceSize": [
+      468,
+      312
+    ],
+    "pixelArt": false,
+    "scene": "source/rock3.blend",
+    "crop": [
+      429,
+      559,
+      897,
+      871
+    ],
+    "master_render_size": [
+      1280,
+      1280
+    ]
+  },
+  "shrub0": {
+    "w": 37.05,
+    "h": 30.224999999999998,
+    "anchor": [
+      17.775022888183592,
+      21.265090942382812
+    ],
+    "bounds": [
+      2.6999999999999997,
+      2.25,
+      34.275,
+      26.474999999999998
+    ],
+    "category": "scenery",
+    "src": "shrub0.png?v=c99aed1e1066",
+    "sourceSize": [
+      494,
+      403
+    ],
+    "pixelArt": false,
+    "scene": "source/shrub0.blend",
+    "crop": [
+      403,
+      455,
+      897,
+      858
+    ],
+    "master_render_size": [
+      1280,
+      1280
+    ]
+  },
+  "shrub1": {
+    "w": 36.074999999999996,
+    "h": 33.15,
+    "anchor": [
+      17.775022888183592,
+      24.19009094238281
+    ],
+    "bounds": [
+      2.925,
+      2.55,
+      33.824999999999996,
+      27.224999999999998
+    ],
+    "category": "scenery",
+    "src": "shrub1.png?v=f990e519111f",
+    "sourceSize": [
+      481,
+      442
+    ],
+    "pixelArt": false,
+    "scene": "source/shrub1.blend",
+    "crop": [
+      403,
+      416,
+      884,
+      858
+    ],
+    "master_render_size": [
+      1280,
+      1280
+    ]
+  },
+  "shrub2": {
+    "w": 36.074999999999996,
+    "h": 32.175,
+    "anchor": [
+      17.775022888183592,
+      23.215090942382812
+    ],
+    "bounds": [
+      2.25,
+      2.775,
+      33.75,
+      28.349999999999998
+    ],
+    "category": "scenery",
+    "src": "shrub2.png?v=e1530c09fa00",
+    "sourceSize": [
+      481,
+      429
+    ],
+    "pixelArt": false,
+    "scene": "source/shrub2.blend",
+    "crop": [
+      403,
+      429,
+      884,
+      858
+    ],
+    "master_render_size": [
+      1280,
+      1280
+    ]
+  },
+  "flowers0": {
+    "w": 28.275,
+    "h": 23.4,
+    "anchor": [
+      13.875022888183594,
+      14.440090942382811
+    ],
+    "bounds": [
+      3.4499999999999997,
+      3.0749999999999997,
+      25.799999999999997,
+      20.325
+    ],
+    "category": "scenery",
+    "src": "flowers0.png?v=585257d6ef88",
+    "sourceSize": [
+      377,
+      312
+    ],
+    "pixelArt": false,
+    "scene": "source/flowers0.blend",
+    "crop": [
+      455,
+      546,
+      832,
+      858
+    ],
+    "master_render_size": [
+      1280,
+      1280
+    ]
+  },
+  "flowers1": {
+    "w": 32.175,
+    "h": 22.425,
+    "anchor": [
+      14.850022888183593,
+      13.465090942382812
+    ],
+    "bounds": [
+      2.6999999999999997,
+      3.2249999999999996,
+      29.849999999999998,
+      19.2
+    ],
+    "category": "scenery",
+    "src": "flowers1.png?v=a03c4af8fe72",
+    "sourceSize": [
+      429,
+      299
+    ],
+    "pixelArt": false,
+    "scene": "source/flowers1.blend",
+    "crop": [
+      442,
+      559,
+      871,
+      858
+    ],
+    "master_render_size": [
+      1280,
+      1280
+    ]
+  },
+  "grass0": {
+    "w": 29.25,
+    "h": 22.425,
+    "anchor": [
+      14.850022888183593,
+      13.465090942382812
+    ],
+    "bounds": [
+      2.4,
+      3.0749999999999997,
+      26.4,
+      19.65
+    ],
+    "category": "scenery",
+    "src": "grass0.png?v=f2f79a2b51fb",
+    "sourceSize": [
+      390,
+      299
+    ],
+    "pixelArt": false,
+    "scene": "source/grass0.blend",
+    "crop": [
+      442,
+      559,
+      832,
+      858
+    ],
+    "master_render_size": [
+      1280,
+      1280
+    ]
+  },
+  "grass1": {
+    "w": 28.275,
+    "h": 25.349999999999998,
+    "anchor": [
+      13.875022888183594,
+      16.390090942382812
+    ],
+    "bounds": [
+      2.625,
+      3.75,
+      25.424999999999997,
+      22.425
+    ],
+    "category": "scenery",
+    "src": "grass1.png?v=06e08c6f81f9",
+    "sourceSize": [
+      377,
+      338
+    ],
+    "pixelArt": false,
+    "scene": "source/grass1.blend",
+    "crop": [
+      455,
+      520,
+      832,
+      858
+    ],
+    "master_render_size": [
+      1280,
+      1280
+    ]
+  },
+  "reeds0": {
+    "w": 29.25,
+    "h": 31.2,
+    "anchor": [
+      14.850022888183593,
+      22.24009094238281
+    ],
+    "bounds": [
+      2.1,
+      2.175,
+      25.049999999999997,
+      25.5
+    ],
+    "category": "scenery",
+    "src": "reeds0.png?v=e38e77b4f80e",
+    "sourceSize": [
+      390,
+      416
+    ],
+    "pixelArt": false,
+    "scene": "source/reeds0.blend",
+    "crop": [
+      442,
+      442,
+      832,
+      858
+    ],
+    "master_render_size": [
+      1280,
+      1280
+    ]
+  },
+  "reeds1": {
+    "w": 30.224999999999998,
+    "h": 30.224999999999998,
+    "anchor": [
+      13.875022888183594,
+      21.265090942382812
+    ],
+    "bounds": [
+      3.2249999999999996,
+      2.1,
+      27.9,
+      24.525
+    ],
+    "category": "scenery",
+    "src": "reeds1.png?v=755f969b1ffd",
+    "sourceSize": [
+      403,
+      403
+    ],
+    "pixelArt": false,
+    "scene": "source/reeds1.blend",
+    "crop": [
+      455,
+      455,
+      858,
+      858
+    ],
+    "master_render_size": [
+      1280,
+      1280
+    ]
+  },
+  "stump": {
+    "w": 44.85,
+    "h": 30.224999999999998,
+    "anchor": [
+      21.675022888183594,
+      17.36509094238281
+    ],
+    "bounds": [
+      2.175,
+      2.25,
+      42.225,
+      27.45
+    ],
+    "category": "scenery",
+    "src": "stump.png?v=7f5672d373a7",
+    "sourceSize": [
+      598,
+      403
+    ],
+    "pixelArt": false,
+    "scene": "source/stump.blend",
+    "crop": [
+      351,
+      507,
+      949,
+      910
+    ],
+    "master_render_size": [
+      1280,
+      1280
+    ]
+  },
+  "log": {
+    "w": 36.074999999999996,
+    "h": 30.224999999999998,
+    "anchor": [
+      17.775022888183592,
+      19.315090942382813
+    ],
+    "bounds": [
+      5.325,
+      2.475,
+      30.224999999999998,
+      26.174999999999997
+    ],
+    "category": "scenery",
+    "src": "log.png?v=fe6d7c367041",
+    "sourceSize": [
+      481,
+      403
+    ],
+    "pixelArt": false,
+    "scene": "source/log.blend",
+    "crop": [
+      403,
+      481,
+      884,
+      884
+    ],
+    "master_render_size": [
+      1280,
+      1280
+    ]
+  },
+  "bridge-rail": {
+    "w": 42.9,
+    "h": 40.949999999999996,
+    "anchor": [
+      21.675028610229493,
+      29.131053543090818
+    ],
+    "bounds": [
+      2.475,
+      2.025,
+      40.875,
+      38.25
+    ],
+    "category": "scenery",
+    "src": "bridge-rail.png?v=b501c06b31ea",
+    "sourceSize": [
+      572,
+      546
+    ],
+    "pixelArt": false,
+    "scene": "source/bridge-rail.blend",
+    "crop": [
+      351,
+      377,
+      923,
+      923
+    ],
+    "master_render_size": [
+      1280,
+      1280
+    ]
+  },
+  "terrain-grass": {
+    "w": 256,
+    "h": 128,
+    "anchor": [
+      0,
+      0
+    ],
+    "bounds": [
+      0,
+      0,
+      256,
+      128
+    ],
+    "category": "terrain",
+    "src": "terrain-grass.png?v=573617aa9ec4",
+    "sourceSize": [
+      1536,
+      768
+    ],
+    "pixelArt": false
+  },
+  "terrain-dirt": {
+    "w": 256,
+    "h": 128,
+    "anchor": [
+      0,
+      0
+    ],
+    "bounds": [
+      0,
+      0,
+      256,
+      128
+    ],
+    "category": "terrain",
+    "src": "terrain-dirt.png?v=fa76e49c2326",
+    "sourceSize": [
+      1536,
+      768
+    ],
+    "pixelArt": false
+  },
+  "terrain-road": {
+    "w": 256,
+    "h": 128,
+    "anchor": [
+      0,
+      0
+    ],
+    "bounds": [
+      0,
+      0,
+      256,
+      128
+    ],
+    "category": "terrain",
+    "src": "terrain-road.png?v=63342b14fd93",
+    "sourceSize": [
+      1536,
+      768
+    ],
+    "pixelArt": false
+  },
+  "terrain-paving": {
+    "w": 256,
+    "h": 128,
+    "anchor": [
+      0,
+      0
+    ],
+    "bounds": [
+      0,
+      0,
+      256,
+      128
+    ],
+    "category": "terrain",
+    "src": "terrain-paving.png?v=0644a0394835",
+    "sourceSize": [
+      1536,
+      768
+    ],
+    "pixelArt": false
+  },
+  "terrain-water": {
+    "w": 256,
+    "h": 128,
+    "anchor": [
+      0,
+      0
+    ],
+    "bounds": [
+      0,
+      0,
+      256,
+      128
+    ],
+    "category": "terrain",
+    "src": "terrain-water.png?v=f00c01724030",
+    "sourceSize": [
+      1536,
+      768
+    ],
+    "pixelArt": false
+  },
+  "terrain-water-glints": {
+    "w": 256,
+    "h": 128,
+    "anchor": [
+      0,
+      0
+    ],
+    "bounds": [
+      0,
+      0,
+      256,
+      128
+    ],
+    "category": "terrain",
+    "src": "terrain-water-glints.png?v=91ccbb6320ae",
+    "sourceSize": [
+      1536,
+      768
+    ],
+    "pixelArt": false
+  },
+  "bridge-deck": {
+    "w": 64,
+    "h": 32,
+    "anchor": [
+      32,
+      0
+    ],
+    "bounds": [
+      0,
+      0,
+      64,
+      32
+    ],
+    "category": "terrain",
+    "src": "bridge-deck.png?v=f1b25effe53c",
+    "sourceSize": [
+      384,
+      192
+    ],
+    "pixelArt": false
+  }
+}

@@ -6,6 +6,9 @@ The [remaining building collection](../../assets/art/buildings/README.md) provid
 ten matching high-resolution buildings and monster lairs with editable Blender scenes.
 The [character collection](../../assets/art/units/README.md) adds ten matching heroes,
 workers and monsters, with 80 high-resolution poses and editable Blender timelines.
+The [environment collection](../../assets/art/environment/README.md) provides
+35 tree, scenery and ground images, matching lighting, editable Blender scenes,
+and reproducible seamless terrain materials.
 
 Installed on this Apple Silicon Mac on 2026-09-11. These are optional authoring
 tools; the browser game still runs without them.
@@ -93,7 +96,10 @@ logical canvas. Character masters are 960×960, based on a 96×96 logical canvas
 Both exporters crop transparent margins and preserve native pixel density and
 foot anchors. Characters use one idle, four walk and three action frames packed
 in one atlas per type, with horizontal mirroring for facing. Peasants hammer while
-building or repairing. Trees remain procedural 112×156 logical sprites.
+building or repairing. Tree masters are 1280×1280 on a 160×160 logical canvas;
+small props use the same master resolution on a 96×96 logical canvas. Ground
+materials have six texture pixels per logical pixel and are cached in sections
+at a resolution appropriate to the current zoom and display.
 
 `js/sprites.js` loads the imported manifests before play and retains procedural
 fallbacks (240×240 buildings and 64×76 characters, rasterized at twice those

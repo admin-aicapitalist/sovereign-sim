@@ -1,7 +1,7 @@
 (function () {
   G.sprites = {};
   const S = G.sprites;
-  function surface(w,h,scale=2) { const c=document.createElement('canvas'); c.width=w*scale;c.height=h*scale;const x=c.getContext('2d');x.scale(scale,scale);return {canvas:c,ctx:x,w,h}; }
+  function surface(w,h,scale=2) { const c=document.createElement('canvas'); c.width=Math.round(w*scale);c.height=Math.round(h*scale);const x=c.getContext('2d');x.scale(scale,scale);return {canvas:c,ctx:x,w,h}; }
   function poly(c,pts,fill,stroke) { c.beginPath();pts.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.closePath();c.fillStyle=fill;c.fill();if(stroke){c.strokeStyle=stroke;c.lineWidth=.6;c.stroke();} }
   function grad(c,x,y,x2,y2,a,b) { const g=c.createLinearGradient(x,y,x2,y2);g.addColorStop(0,a);g.addColorStop(1,b);return g; }
   function line(c,pts,color,width=1) { c.beginPath();pts.forEach((p,i)=>i?c.lineTo(...p):c.moveTo(...p));c.strokeStyle=color;c.lineWidth=width;c.stroke(); }
@@ -106,7 +106,7 @@
         sprite.ctx.imageSmoothingQuality='high';
         sprite.ctx.drawImage(img,0,0,asset.w,asset.h);
         Object.assign(sprite,{anchor:asset.anchor,bounds:asset.bounds,pixelArt:asset.pixelArt,
-          hitRows:asset.hitRows,effects:asset.effects,assetLoaded:true});
+          hitRows:asset.hitRows,effects:asset.effects,category:asset.category,assetLoaded:true});
         S[key]=sprite;resolve(true);
       };
       img.onerror=()=>{console.warn('Using procedural sprite fallback for '+key);resolve(false);};

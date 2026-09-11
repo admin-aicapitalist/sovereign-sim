@@ -1,0 +1,18 @@
+{
+  "logical_size": [
+    96,
+    96
+  ],
+  "ground_anchor_normalized": [
+    0.5000002384185791,
+    0.5769801139831543
+  ],
+  "ortho_scale": 5.4,
+  "camera_elevation_degrees": 30,
+  "shadow_radius": 10,
+  "key": "rock3",
+  "render_size": [
+    1280,
+    1280
+  ]
+}

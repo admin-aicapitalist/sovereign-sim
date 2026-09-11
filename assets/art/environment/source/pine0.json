@@ -1,0 +1,18 @@
+{
+  "logical_size": [
+    160,
+    160
+  ],
+  "ground_anchor_normalized": [
+    0.5000001192092896,
+    0.813713401556015
+  ],
+  "ortho_scale": 9.8,
+  "camera_elevation_degrees": 30,
+  "shadow_radius": 23,
+  "key": "pine0",
+  "render_size": [
+    1280,
+    1280
+  ]
+}
