@@ -31,8 +31,8 @@ const raster=await ev(`(()=>{
  return {opaque,animated:pa.some((v,i)=>v!==pb[i])};
 })()`);
 assert(raster.opaque,'ground remains opaque across adjacent cached chunks');assert(raster.animated,'river highlights move over time');
-for(const zoom of [.55,1.12,2.1]){
- const stats=await ev(`(()=>{G.camera.zoom=${zoom};for(const [x,y]of[[20,21],[35,20],[7,33],[35,9]]){const p=G.iso(x,y);G.camera.x=p.x;G.camera.y=p.y;G.render(0);}return G.environment.stats()})()`);
+for(const zoom of [.35,1.12,2.1]){
+ const stats=await ev(`(()=>{G.camera.zoom=${zoom};for(const [x,y]of[[20,21],[35,20],[7,33],[35,9],[70,73],[60,59],[85,85]]){const p=G.iso(x,y);G.camera.x=p.x;G.camera.y=p.y;G.render(0);}return G.environment.stats()})()`);
  assert(stats.bytes<=stats.maxBytes&&stats.chunks>0,JSON.stringify(stats));
 }
 console.log('✓ Native environment assets, unchanged navigation, bridge rails, opaque chunk boundaries, animated water, bounded terrain cache.');

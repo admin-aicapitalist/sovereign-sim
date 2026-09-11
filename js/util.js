@@ -23,13 +23,13 @@ window.G = window.G || {};
     const open = new G.Heap(), seen = new Map(), key = (x,y) => y * G.MAP + x;
     const first = { x:sx, y:sy, g:0, f:0, parent:null }; open.push(first); seen.set(key(sx,sy),first);
     let visits = 0;
-    while (open.items.length && visits++ < 2600) {
-      const n = open.pop(); if (n.closed) continue; n.closed = true;
+    while (open.items.length && visits < G.MAP * G.MAP) {
+      const n = open.pop(); if (n.closed || seen.get(key(n.x,n.y)) !== n) continue; n.closed = true; visits++;
       if (n.x === tx && n.y === ty) { const path = []; let p = n; while (p.parent) { path.unshift({ x:p.x+.5, y:p.y+.5 }); p = p.parent; } return path; }
       for (let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++) {
         if (!dx && !dy) continue; const x=n.x+dx,y=n.y+dy;
         if (!G.walkable(x,y) || (dx && dy && (!G.walkable(n.x+dx,n.y) || !G.walkable(n.x,n.y+dy)))) continue;
-        const g = n.g + (dx && dy ? 1.414 : 1), k=key(x,y), old=seen.get(k);
+        const g = n.g + (dx && dy ? Math.SQRT2 : 1), k=key(x,y), old=seen.get(k);
         if (old && old.g <= g) continue;
         const next = { x,y,g,f:g+Math.hypot(tx-x,ty-y),parent:n }; seen.set(k,next); open.push(next);
       }

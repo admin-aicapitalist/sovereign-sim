@@ -39,7 +39,12 @@ are documented in [`tools/art/README.md`](tools/art/README.md).
 
 ## Level 1 — The Young Kingdom
 
-* **Win:** destroy all 4 monster lairs (Sewer, Haunted Graveyard, 2 Goblin Camps).
+* **Map:** 88 × 88 tiles (four times the original area), with three river crossings,
+  a large eastern lake, forest roads and open settlement clearings. The original
+  kingdom begins in the northwest; the frontier extends east and south.
+  [View the expanded map](assets/art/environment/map-overview.png).
+* **Win:** destroy all 8 monster lairs. The four distant frontier lairs begin
+  spawning additional enemies once discovered or attacked.
 * **Lose:** your Palace falls.
 
 ### How to play
@@ -86,11 +91,16 @@ Plain JS, one global namespace `G`, classic script load order (see `index.html`)
 
 ### Testing / QA
 
+* `node test/world.js` — deterministic large-map generation, reachable lairs and
+  settlements, bridge crossings, distant worker travel, frontier activation and
+  long-detour pathfinding.
 * `node test/smoke.js` — headless simulation: sprites generate, an unattended kingdom
   survives the early game, a scripted playthrough **must win**, the lose path triggers,
   no NaNs. Run it after any balance change.
 * `test/spritesheet.html` — renders imported and generated sprites on one page
   (`?only=units|bld|misc`).
+* `node test/map.mjs` — desktop/mobile minimap navigation to every map corner,
+  camera limits, extended zoom, campaign counts and terrain-cache checks.
 * `node test/environment.mjs` — browser checks for terrain detail, river animation,
   bridge navigation, cache limits and image fallbacks, with Retina screenshots of
   town, river and pond. Run sequentially with the other browser tests.

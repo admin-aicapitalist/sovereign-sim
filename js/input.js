@@ -8,7 +8,7 @@
       }}return result;
   };
   G.setMode=function(type,key){G.mode=type?{type,key}:null;G.ui?.updateCommands();G.ui?.modeHint();document.getElementById('world').style.cursor=type?'crosshair':'default';};
-  G.changeZoom=function(factor,x,y){const vp=G.viewport();x=x??vp.width/2;y=y??vp.height*.46;const before=G.screenToWorld(x,y);G.camera.zoom=G.clamp(G.camera.zoom*factor,.55,2.1);const after=G.screenToWorld(x,y),a=G.iso(before.x,before.y),b=G.iso(after.x,after.y);G.camera.x+=a.x-b.x;G.camera.y+=a.y-b.y;};
+  G.changeZoom=function(factor,x,y){const vp=G.viewport();x=x??vp.width/2;y=y??vp.height*.46;const before=G.screenToWorld(x,y);G.camera.zoom=G.clamp(G.camera.zoom*factor,G.ZOOM_MIN,G.ZOOM_MAX);const after=G.screenToWorld(x,y),a=G.iso(before.x,before.y),b=G.iso(after.x,after.y);G.camera.x+=a.x-b.x;G.camera.y+=a.y-b.y;};
   G.initInput=function(){const c=document.getElementById('world');c.addEventListener('contextmenu',e=>e.preventDefault());
     c.addEventListener('pointerdown',e=>{if(G.welcoming||G.modalOpen)return;c.setPointerCapture(e.pointerId);drag={button:e.button,x:e.clientX,y:e.clientY,lastX:e.clientX,lastY:e.clientY,moved:false};if(e.button===2)c.style.cursor='grabbing';});
     c.addEventListener('pointermove',e=>{G.pointer.x=e.clientX;G.pointer.y=e.clientY;G.pointer.world=G.screenToWorld(e.clientX,e.clientY);overWorld=true;if(drag){const dx=e.clientX-drag.lastX,dy=e.clientY-drag.lastY;if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>5)drag.moved=true;if(drag.button===2||e.pointerType==='touch'&&drag.moved){G.camera.x-=dx/G.camera.zoom;G.camera.y-=dy/G.camera.zoom;}drag.lastX=e.clientX;drag.lastY=e.clientY;}if(!G.mode&&!drag)G.hovered=G.hitTest(e.clientX,e.clientY);});
@@ -20,5 +20,5 @@
     window.addEventListener('keyup',e=>G.keys[e.key.toLowerCase()]=false);window.addEventListener('blur',()=>{G.keys={};drag=null;});
     document.getElementById('minimap').addEventListener('pointerdown',e=>G.minimapNavigate(e.clientX,e.clientY));
   };
-  G.updateCamera=function(dt){if(G.welcoming||G.modalOpen)return;const k=G.keys,s=440*dt/G.camera.zoom,vp=G.viewport();let dx=(k.d||k.arrowright?1:0)-(k.a||k.arrowleft?1:0),dy=(k.s||k.arrowdown?1:0)-(k.w||k.arrowup?1:0);if(overWorld&&!drag&&G.pointer.x>0){if(G.pointer.x<8)dx--;if(G.pointer.x>vp.width-8)dx++;if(G.pointer.y<90&&G.pointer.y>81)dy--;if(G.pointer.y>vp.height-8)dy++;}G.camera.x=G.clamp(G.camera.x+dx*s,-1100,1100);G.camera.y=G.clamp(G.camera.y+dy*s,80,1320);if(dx||dy)G.pointer.world=G.screenToWorld(G.pointer.x,G.pointer.y);};
+  G.updateCamera=function(dt){if(G.welcoming||G.modalOpen)return;const k=G.keys,s=440*dt/G.camera.zoom,vp=G.viewport();let dx=(k.d||k.arrowright?1:0)-(k.a||k.arrowleft?1:0),dy=(k.s||k.arrowdown?1:0)-(k.w||k.arrowup?1:0);if(overWorld&&!drag&&G.pointer.x>0){if(G.pointer.x<8)dx--;if(G.pointer.x>vp.width-8)dx++;if(G.pointer.y<90&&G.pointer.y>81)dy--;if(G.pointer.y>vp.height-8)dy++;}G.camera.x+=dx*s;G.camera.y+=dy*s;G.clampCamera();if(dx||dy)G.pointer.world=G.screenToWorld(G.pointer.x,G.pointer.y);};
 })();

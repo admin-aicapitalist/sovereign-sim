@@ -1,5 +1,27 @@
 (function () {
-  G.MAP = 44;
+  G.MAP = 88;
+  G.ZOOM_MIN = .35; G.ZOOM_MAX = 2.1;
+  G.LEVEL = {
+    lairs: [
+      {type:'sewer',x:8,y:11,name:'The Old Sewer'},
+      {type:'graveyard',x:29,y:8,name:'Haunted Graveyard'},
+      {type:'goblin',x:8,y:28,name:'Western Goblin Camp'},
+      {type:'goblin',x:36,y:30,name:'Eastern Goblin Camp'},
+      {type:'goblin',x:68,y:18,name:'Pinewatch Camp',frontier:true},
+      {type:'sewer',x:67,y:47,name:'Reedwater Sewer',frontier:true},
+      {type:'graveyard',x:52,y:70,name:'Ashen Graveyard',frontier:true},
+      {type:'goblin',x:17,y:67,name:'Southwood Camp',frontier:true}
+    ],
+    clearings: [[51,23,6],[48,44,6],[21,48,7],[70,73,7]],
+    roads: [
+      [[20,32],[20,47],[20,70],[7,78]],
+      [[20,47],[35,47],[48,47],[68,47],[79,38]],
+      [[36,20],[51,20],[69,19],[80,10]],
+      [[36,31],[49,33],[51,20]],
+      [[49,33],[48,47],[46,60],[48,71],[70,73],[81,80]],
+      [[20,70],[35,70],[48,71]]
+    ]
+  };
   G.BUILDINGS = {
     palace: { name:'Royal Palace', subtitle:'The heart of your kingdom', hp:2600, size:3, cost:0, sight:12, tax:9, description:'Your seat of power. Peasants and tax collectors serve the crown, while royal guards defend its gates.' },
     warriors: { name:'Warriors’ Guild', short:'Warriors’ Guild', subtitle:'Where courage finds a home', hp:850, size:2, cost:350, sight:7, buildTime:15, recruits:'warrior', capacity:4, description:'Recruits stalwart warriors. Brave, heavily armored heroes who favor attack bounties and a good brawl.' },
@@ -31,5 +53,5 @@
     farsight:{name:'Far Sight',cost:35,cooldown:18,symbol:'◉',description:'Lift the fog over a distant area for 45 seconds. Knowledge is the first step to conquest.'}
   };
   G.NAMES = { warrior:['Aldric the Bold','Bram Ironheart','Ser Cedric','Elara Brightblade','Oswin the Stout','Rowan Ashford','Freya the Fearless','Sir Peregrin'], ranger:['Wren Farwalker','Robin of the Vale','Ivy Greenmantle','Finn Swiftarrow','Hazel Woodward','Lark the Keen'], wizard:['Orin the Wise','Mira Starweaver','Althea Moonfall','Erasmus the Odd','Sylas Emberhand'] };
-  G.TIPS = ['A kingdom needs heroes, Your Majesty. Start with a Warriors’ Guild.','Heroes choose their own adventures. A gold bounty makes yours more tempting.','Build a Marketplace. Heroes buy potions, and their coin comes home as taxes.','Rangers love to wander. Exploration flags help them find the places you care about.','Your peasants repair damaged buildings. Give them time, and keep the monsters away.','The Temple unlocks Healing Light. A timely blessing can turn a desperate battle.','A Guard Tower is a comfort. Two are a rather firmer statement.','Select a bounty flag to raise its reward. Great danger deserves great incentive.','Four lairs stand between us and peace. Your Palace must endure.'];
+  G.TIPS = ['A kingdom needs heroes, Your Majesty. Start with a Warriors’ Guild.','Heroes choose their own adventures. A gold bounty makes yours more tempting.','Build a Marketplace. Heroes buy potions, and their coin comes home as taxes.','Rangers love to wander. Exploration flags help them find the places you care about.','Your peasants repair damaged buildings. Give them time, and keep the monsters away.','The Temple unlocks Healing Light. A timely blessing can turn a desperate battle.','A Guard Tower is a comfort. Two are a rather firmer statement.','Select a bounty flag to raise its reward. Great danger deserves great incentive.','Eight lairs stand between us and peace. Follow the roads into the frontier.'];
 })();

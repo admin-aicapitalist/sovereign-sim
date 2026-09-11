@@ -121,7 +121,8 @@
     return canvas;
   }
   E.drawGround=function(ctx,rect,pixelsPerUnit){
-    const x0=Math.floor(rect.x/CHUNK),x1=Math.floor((rect.x+rect.w)/CHUNK),y0=Math.floor(rect.y/CHUNK),y1=Math.floor((rect.y+rect.h)/CHUNK);
+    const x0=Math.max(Math.floor(-G.MAP*G.TW/2/CHUNK),Math.floor(rect.x/CHUNK)),x1=Math.min(Math.ceil(G.MAP*G.TW/2/CHUNK)-1,Math.floor((rect.x+rect.w)/CHUNK)),y0=Math.max(0,Math.floor(rect.y/CHUNK)),y1=Math.min(Math.ceil(G.MAP*G.TH/CHUNK)-1,Math.floor((rect.y+rect.h)/CHUNK));
+    if(x0>x1||y0>y1)return;
     detail=pixelsPerUnit<=1.35?1:pixelsPerUnit<=2.7?2:4;
     const count=(x1-x0+1)*(y1-y0+1);
     while(detail>1&&count*(CHUNK+GUTTER*2)**2*detail**2*4>MAX_BYTES)detail/=2;
