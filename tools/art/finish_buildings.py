@@ -11,7 +11,7 @@ from PIL import Image, ImageDraw, ImageFilter
 from finish_palace import font, version_runtime_scripts
 
 ROOT=Path(__file__).resolve().parents[2]
-KEYS=("warriors","rangers","wizards","marketplace","temple","tower","house","sewer","graveyard","goblin")
+KEYS=("warriors","rangers","wizards","marketplace","temple","tower","house","sewer","graveyard","goblin","thieves")
 
 
 def main():
@@ -78,12 +78,12 @@ def main():
     manifest+="    G.spriteAssets[key] = asset;\n  }\n})();\n"
     (args.output/"buildings-sprites.js").write_text(manifest)
     (args.output/"buildings.json").write_text(json.dumps(info,indent=2)+"\n")
-    board=Image.new("RGBA",(1900,1120),(34,51,43,255))
+    board=Image.new("RGBA",(2280,1120),(34,51,43,255))
     d=ImageDraw.Draw(board)
-    d.text((950,43),"S O V E R E I G N   /   T H E   B O R D E R L A N D S",font=font(27,True),fill="#e8dbc0",anchor="mm")
-    d.text((950,81),"KINGDOM BUILDINGS & MONSTER LAIRS  ·  TERRACOTTA / WEATHERED STONE / CRIMSON",font=font(13),fill="#aebba0",anchor="mm")
+    d.text((1140,43),"S O V E R E I G N   /   T H E   B O R D E R L A N D S",font=font(27,True),fill="#e8dbc0",anchor="mm")
+    d.text((1140,81),"KINGDOM BUILDINGS & MONSTER LAIRS  ·  TERRACOTTA / WEATHERED STONE / CRIMSON",font=font(13),fill="#aebba0",anchor="mm")
     for i,(name,sprite) in enumerate(previews):
-        x,y=(i%5)*380,(i//5)*490+112
+        x,y=(i%6)*380,(i//6)*490+112
         d.rounded_rectangle((x+12,y,x+368,y+471),radius=5,fill="#2d4338",outline="#697253")
         img=sprite.copy()
         img.thumbnail((332,373),Image.Resampling.LANCZOS)

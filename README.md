@@ -5,7 +5,7 @@ classic 2000-era fantasy kingdom management games: you are the monarch, not the 
 You raise buildings, recruit heroes and post gold bounties — but the heroes decide for
 themselves whether your coin is worth the danger.
 
-All artwork is original. All eleven building types, ten character types, and the
+All artwork is original. All twelve building types, eleven character types, and the
 woodland and scenery use high-resolution artwork made with Blender and Pillow.
 Textured grass, soil, roads, rivers and paving are composed from the map at load time. Sounds are
 synthesized with WebAudio (no audio files), and there are **zero runtime dependencies
@@ -50,9 +50,9 @@ are documented in [`tools/art/README.md`](tools/art/README.md).
 ### How to play
 
 1. **Build** (bottom bar): start with a Warriors' Guild; add a Marketplace early so
-   heroes can spend their loot — their spending becomes your taxes.
+   select it and choose **Potions & research** to unlock supplies heroes can buy.
 2. **Recruit**: select a guild → Recruit. Warriors brawl, Rangers explore and shoot,
-   Wizards rain fireballs but bruise easily.
+   Wizards rain fireballs but bruise easily; Thieves strike enemies distracted by allies.
 3. **Bounty Flags**: heroes ignore orders but love gold. Click the flag tool, then a
    monster or lair. Select the flag to raise the reward — braver prices buy braver heroes.
    Exploration Flags pay the first hero (usually a ranger) to scout a spot.
@@ -75,12 +75,13 @@ Plain JS, one global namespace `G`, classic script load order (see `index.html`)
 | `js/data.js` | every balance table: buildings, units, spells, flags, level layout |
 | `js/sprites.js` | procedural sprites, imported asset loading, and building placement anchors |
 | `assets/art/palace/palace-sprite.js` | generated Palace image manifest: dimensions, bounds, and ground anchor |
-| `assets/art/buildings/buildings-sprites.js` | generated manifests for the other ten buildings, with selection outlines and effect positions |
-| `assets/art/units/units-sprites.js` | ten character atlases: idle, walk and action poses, floor anchors, selection bounds |
+| `assets/art/buildings/buildings-sprites.js` | generated manifests for the other eleven buildings, with selection outlines and effect positions |
+| `assets/art/units/units-sprites.js` | eleven character atlases: idle, walk and action poses, floor anchors, selection bounds |
 | `assets/art/environment/environment-sprites.js` | 35 tree, scenery and terrain texture manifests |
 | `js/environment.js` | textured terrain, road and river boundaries, water animation, bridge rails, scenery, bounded terrain cache |
 | `js/world.js` | seeded map gen, walkability, fog of war |
 | `js/entities.js` | units/buildings, movement, combat, projectiles, XP, flags |
+| `js/alchemy.js` | potion research, personal shopping, inventory and combat buffs |
 | `js/ai.js` | the brains: hero utility AI (bounty scoring, shopping, resting, fleeing), worker/guard/monster AI |
 | `js/game.js` | sim loop, economy, lair spawning, player actions, win/lose, hints |
 | `js/render.js` | camera, pre-rendered terrain, depth-sorted scene, fx, minimap |
@@ -94,6 +95,10 @@ Plain JS, one global namespace `G`, classic script load order (see `index.html`)
 * `node test/world.js` — deterministic large-map generation, reachable lairs and
   settlements, bridge crossings, distant worker travel, frontier activation and
   long-detour pathfinding.
+* `node test/alchemy.js` — research prerequisites, payments, pause/resume, hero shopping,
+  potion use and expiry, taxes, thief recruitment and damage, and monster combat.
+* `node test/alchemy-browser.mjs` — desktop/mobile research and thief controls, inventory,
+  and research progress using Chrome on port 9227. Run browser suites sequentially.
 * `node test/smoke.js` — headless simulation: sprites generate, an unattended kingdom
   survives the early game, a scripted playthrough **must win**, the lose path triggers,
   no NaNs. Run it after any balance change.
@@ -125,7 +130,20 @@ Plain JS, one global namespace `G`, classic script load order (see `index.html`)
   treasury → your next guild.
 * Lairs spawn waves on a timer, hurry reinforcements when attacked, and rally their
   brood to defend — assaulting a camp is a commitment.
-* A Hill Troll pays the kingdom a visit at the 10-minute mark. Build a tower or two.
+* Thieves (110 gold) train at the Thieves’ Guild (325 gold, four beds). They travel
+  quickly and deal 14 bonus damage to a monster fighting another living ally.
+* Monsters have more health and damage; goblins, skeletons and trolls also have
+  stronger armor. Lairs are sturdier. A 1,300-health Hill Troll arrives at ten minutes
+  and regenerates 3 health/second after six seconds without taking damage.
+* Select a completed Marketplace → **Potions & research**. Healing costs 150 gold
+  and takes 25 seconds; Strength costs 250/40s and Stoneskin costs 300/45s. Both
+  advanced recipes require Healing. One project runs at a time; recipes unlock
+  kingdom-wide, and research pauses while no completed Marketplace survives.
+* Heroes buy supplies with personal gold. Recruitment includes 24 gold for supplies.
+  Healing sells for 18 gold (carry two, restore 110 health below 45% health); Strength
+  sells for 30 (carry one, +35% attack for 25s); Stoneskin sells for 28 (carry one,
+  +4 armor for 25s). Combat potions activate near an enemy. Select a hero to see
+  their purse, inventory, armor and active effects. Shopping revenue requires collection.
 
 ### Presentation and audio
 

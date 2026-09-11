@@ -11,13 +11,13 @@ from PIL import Image, ImageDraw, ImageFilter
 from finish_palace import font, version_runtime_scripts
 
 ROOT = Path(__file__).resolve().parents[2]
-KEYS = ('warrior', 'ranger', 'wizard', 'guard', 'peasant', 'collector', 'rat', 'goblin', 'skeleton', 'troll')
+KEYS = ('warrior', 'ranger', 'wizard', 'guard', 'peasant', 'collector', 'rat', 'goblin', 'skeleton', 'troll', 'thief')
 POSES = ['idle'] + [f'walk-{i}' for i in range(4)] + [f'attack-{i}' for i in range(3)]
 
 
 def preview(sprites, animated=False):
-    width, height = (1280, 800) if animated else (1900, 1120)
-    cell_w, cell_h = width // 5, (height - 120) // 2
+    width, height = (1536, 800) if animated else (2280, 1120)
+    cell_w, cell_h = width // 6, (height - 120) // 2
     scale = 3.3 if animated else 6.2
     base = Image.new('RGBA', (width, height), '#22332b')
     d = ImageDraw.Draw(base)
@@ -26,7 +26,7 @@ def preview(sprites, animated=False):
     d.text((width // 2, 78), 'HEROES, WORKERS & MONSTERS  ·  IDLE / WALK / ACTION',
            font=font(12 if animated else 14), fill='#aebba0', anchor='mm')
     for i, (name, _, __) in enumerate(sprites):
-        x, y = i % 5 * cell_w, i // 5 * cell_h + 110
+        x, y = i % 6 * cell_w, i // 6 * cell_h + 110
         d.rounded_rectangle((x + 10, y, x + cell_w - 10, y + cell_h - 14), radius=5,
                             fill='#2d4338', outline='#697253')
         d.text((x + cell_w // 2, y + cell_h - 43), name,
@@ -38,7 +38,7 @@ def preview(sprites, animated=False):
             img = images[pose]
             ratio = img.info['density']
             img = img.resize((round(img.width / ratio * scale), round(img.height / ratio * scale)), Image.Resampling.LANCZOS)
-            x, y = i % 5 * cell_w + cell_w / 2, i // 5 * cell_h + 110 + cell_h - (95 if animated else 105)
+            x, y = i % 6 * cell_w + cell_w / 2, i // 6 * cell_h + 110 + cell_h - (95 if animated else 105)
             board.alpha_composite(img, (round(x - anchor[0] * scale), round(y - anchor[1] * scale)))
         frames.append(board.convert('RGB'))
     return frames

@@ -15,7 +15,7 @@ const clickXY=async(x,y)=>{await send('Input.dispatchMouseEvent',{type:'mouseMov
 const click=async selector=>{const p=await ev(`(()=>{const r=document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2}})()`);await clickXY(p.x,p.y);};
 const key=async(key,code)=>{await send('Input.dispatchKeyEvent',{type:'keyDown',key,code});await send('Input.dispatchKeyEvent',{type:'keyUp',key,code});await delay(100);};
 const shot=async name=>fs.writeFile(path.join(os.tmpdir(),'sovereign-'+name+'.png'),Buffer.from((await send('Page.captureScreenshot',{format:'png'})).data,'base64'));
-await send('Runtime.enable');await send('Page.enable');
+await send('Runtime.enable');await send('Page.enable');errors.length=0;
 await send('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
 await send('Page.navigate',{url:gameUrl});await ready();
 await ev('G.spriteAssetsReady');
@@ -24,7 +24,7 @@ assert.equal(await ev('[...document.fonts].length===3 && [...document.fonts].eve
 assert.equal(await ev('G.sprites.palace.assetLoaded'),true,'exported Palace loads before play');
 assert.deepEqual(await ev('[G.sprites.palace.canvas.width,G.sprites.palace.canvas.height]'),await ev('G.spriteAssets.palace.sourceSize'),'Palace keeps the source texture resolution');
 assert.equal(await ev('G.sprites.palace.pixelArt'),false,'Palace uses smooth scaling');
-assert.equal(await ev('Object.keys(G.BUILDINGS).every(key=>{const s=G.sprites[key],a=G.spriteAssets[key];return s.assetLoaded&&!s.pixelArt&&s.canvas.width===a.sourceSize[0]&&s.canvas.height===a.sourceSize[1]})'),true,'all eleven buildings retain their full-resolution textures');
+assert.equal(await ev('Object.keys(G.BUILDINGS).every(key=>{const s=G.sprites[key],a=G.spriteAssets[key];return s.assetLoaded&&!s.pixelArt&&s.canvas.width===a.sourceSize[0]&&s.canvas.height===a.sourceSize[1]})'),true,'all buildings retain their full-resolution textures');
 console.log('INITIAL',await ev('({sprites:Object.keys(G.sprites).length,buildings:G.buildings.length,units:G.units.length,welcome:G.welcoming,canvas:[document.querySelector("canvas").width,document.querySelector("canvas").height]})'));
 await shot('welcome');
 await click('#start');await delay(800);assert.equal(await ev('G.welcoming'),false);await key(' ','Space');assert.equal(await ev('G.paused'),true);await shot('game');
@@ -85,7 +85,7 @@ const unitChecks=await ev(`(()=>{
   return results;
 })()`);
 for(const {type,...checks} of unitChecks)assert(Object.values(checks).every(Boolean),JSON.stringify({type,...checks}));
-console.log('✓ All ten characters: native atlases, stable anchors, idle/walk/attack and work frames, mirrored drawing, selection at three zooms, portraits.');
+console.log('✓ All characters: native atlases, stable anchors, idle/walk/attack and work frames, mirrored drawing, selection at three zooms, portraits.');
 const palaceRoof=await ev('(()=>{const p=G.worldToScreen(G.palace.x,G.palace.y);return{x:p.x,y:p.y-80*G.camera.zoom}})()');
 await clickXY(palaceRoof.x,palaceRoof.y);assert.equal(await ev('G.selected===G.palace'),true,'Palace roof selects the building');
 assert.equal(await ev('document.querySelector(".inspect-title").textContent'),await ev('G.palace.data.name'));
@@ -132,10 +132,10 @@ if(new URL(gameUrl).protocol==='file:'||['localhost','127.0.0.1'].includes(new U
   assert.equal(await ev('document.querySelectorAll(".sprite").length'),await ev('Object.keys(G.BUILDINGS).length'));
   console.log('✓ Sprite gallery loads every building using the game manifests.');
   await send('Page.navigate',{url:new URL('test/spritesheet.html?only=units',gameUrl).href});
-  for(let i=0;i<100;i++){if(await ev('document.querySelectorAll(".sprite").length===80'))break;await delay(100);}
-  assert.equal(await ev('document.querySelectorAll(".sprite").length'),80,'gallery shows every character pose, without moving shared atlas canvases between cards');
+  for(let i=0;i<100;i++){if(await ev('!!window.G?.UNITS&&document.querySelectorAll(".sprite").length===Object.keys(G.UNITS).length*8'))break;await delay(100);}
+  assert.equal(await ev('document.querySelectorAll(".sprite").length'),await ev('Object.keys(G.UNITS).length*8'),'gallery shows every character pose, without moving shared atlas canvases between cards');
   assert.equal(await ev('[...document.querySelectorAll(".sprite canvas")].every(c=>c.width>0&&c.height>0&&c.width<1000&&c.height<1000)'),true,'gallery crops individual frames');
-  console.log('✓ Character gallery displays all 80 high-resolution poses.');
+  console.log('✓ Character gallery displays every high-resolution pose.');
 }
 assert.equal(errors.length,0,JSON.stringify(errors));console.log('✓ Desktop and mobile render with no JavaScript errors at '+gameUrl);
 await send('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});await ws.close();

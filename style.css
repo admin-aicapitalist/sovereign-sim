@@ -149,6 +149,24 @@ button:hover:not(:disabled) { color: var(--gold-light); }
 .inspect-description { font: 14px/1.5 var(--serif); color: #65543e; padding: 12px 0 0; margin: 0; }
 .inspect-action { width: 100%; border: 1px solid #6b3a26; background: linear-gradient(#914c36, #703629); box-shadow: inset 0 0 0 1px #e1b7773b, 0 2px 3px #5b402c26; padding: 10px 5px; margin-top: 13px; font-size: 14px; font-weight: 600; color: #fff0ce; border-radius: 2px; }
 .inspect-action:hover:not(:disabled) { background: linear-gradient(#a15b3e, #843e2c); color: #fff4d7; }
+.hero-supplies, .research-status { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 10px; color: #65543e; font: 13px/1.5 var(--serif); }
+.supply-caption { font-weight: 700; margin-bottom: 5px; }
+.supply-item { display: flex; align-items: center; gap: 5px; }
+.supply-item b { width: 18px; text-align: center; color: #893d31; }
+.supply-item strong { margin-left: auto; }
+.active-buffs { color: #52643a; font-weight: 700; margin-top: 6px; }
+.research-status progress { display: block; width: 100%; height: 8px; margin-top: 7px; accent-color: #8c6b36; }
+.recipe-list { display: grid; gap: 12px; }
+.recipe { padding: 15px; border: 1px solid #a786535e; background: #fff7dc38; box-shadow: inset 0 0 18px #aa77300a; }
+.recipe-heading { display: flex; align-items: center; gap: 13px; }
+.recipe-heading h3 { margin: 0 0 4px; font: 600 18px/1.3 var(--display); color: #513725; }
+.recipe-heading span, .recipe-cost { font: 13px/1.4 var(--serif); color: #756247; }
+.recipe-heading .potion-seal { display: grid; place-items: center; flex: 0 0 40px; height: 44px; border: 2px solid #b39256; border-radius: 9px 9px 15px 15px; box-shadow: inset 0 0 0 3px #ead7ad66; background: #8e4234; color: #f3dfb7; font: 26px/1 var(--serif); }
+.strength .potion-seal { background: #967343; }
+.stoneskin .potion-seal { background: #66755a; }
+.modal .recipe p { margin: 9px 0; font: 15px/1.4 var(--serif); }
+.recipe .inspect-action { margin-top: 10px; }
+.recipe .inspect-action:disabled { opacity: .7; color: #57452e; border-color: #b49a71; background: #c3b28f40; box-shadow: none; }
 
 /* Illustrated command cards sit in a dark wooden tray. */
 .bottom-deck { position: fixed; left: 24px; right: 285px; bottom: 36px; max-width: 1080px; }

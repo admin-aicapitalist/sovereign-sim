@@ -31,6 +31,7 @@ assets/art/buildings/*
 !assets/art/buildings/sewer.png
 !assets/art/buildings/graveyard.png
 !assets/art/buildings/goblin.png
+!assets/art/buildings/thieves.png
 !assets/art/units/
 assets/art/units/*
 !assets/art/units/units-sprites.js
@@ -44,6 +45,7 @@ assets/art/units/*
 !assets/art/units/goblin.png
 !assets/art/units/skeleton.png
 !assets/art/units/troll.png
+!assets/art/units/thief.png
 !assets/art/environment/
 assets/art/environment/*
 !assets/art/environment/environment-sprites.js

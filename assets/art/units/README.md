@@ -1,11 +1,11 @@
 # Sovereign characters
 
-Ten original Blender miniatures match the buildings' isometric camera, warm
+Eleven original Blender miniatures match the buildings' isometric camera, warm
 daylight, muted materials, crimson heraldry, aged metal, leather, and ivory.
 
 | Heroes | Crown staff | Monsters |
 |---|---|---|
-| Warrior, Ranger, Wizard | Palace Guard, Peasant, Tax Collector | Giant Rat, Goblin Raider, Restless Skeleton, Hill Troll |
+| Warrior, Ranger, Wizard, Thief | Palace Guard, Peasant, Tax Collector | Giant Rat, Goblin Raider, Restless Skeleton, Hill Troll |
 
 ![Character collection](units-preview.png)
 
@@ -28,7 +28,7 @@ blender --background --factory-startup --python-exit-code 1 --python tools/art/r
 ```
 
 For one character, add `--only warrior` to the render command. The exporter reads
-all ten characters. For faster drafts, use `--resolution 384 --samples 16 --poses idle
+all eleven characters. For faster drafts, use `--resolution 384 --samples 16 --poses idle
 --output /tmp/sovereign-units-draft`; drafts are not suitable for the runtime exporter.
 
 `source/<type>.blend` contains editable geometry, materials, camera and lighting,
@@ -55,4 +55,4 @@ character atlas is unavailable, that character retains all its procedural poses.
 Selection, recruitment cards and inspector portraits use the same imported art.
 
 Source scenes, master renders, metadata and previews are authoring files; the
-hosting build includes only the ten atlases and their JavaScript manifest.
+hosting build includes only the eleven atlases and their JavaScript manifest.

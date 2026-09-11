@@ -16,7 +16,7 @@ import render_palace as art
 ROOT=Path(__file__).resolve().parents[2]
 TYPES={"warrior":"Warrior","ranger":"Ranger","wizard":"Wizard","guard":"Palace Guard",
        "peasant":"Peasant","collector":"Tax Collector","rat":"Giant Rat",
-       "goblin":"Goblin Raider","skeleton":"Restless Skeleton","troll":"Hill Troll"}
+       "goblin":"Goblin Raider","skeleton":"Restless Skeleton","troll":"Hill Troll","thief":"Thief"}
 POSES=["idle"]+[f"walk-{i}" for i in range(4)]+[f"attack-{i}" for i in range(3)]
 TAU=math.tau
 g=None
@@ -224,6 +224,7 @@ def humanoid(type,pose):
     gob=type=="goblin";skel=type=="skeleton";wizard=type=="wizard"
     skin=M["bone"] if skel else M["goblin"] if gob else M["skin"]
     shirt=M["chain"] if armored else M["olive"] if type=="ranger" else M["violet"] if wizard else M["redDark"] if type=="collector" else M["linen"] if type=="peasant" else M["leather"]
+    if type=="thief":shirt=M["charcoal"]
     group("Boots, articulated legs and knees")
     for side in (-1,1):
         lift=max(0,math.sin(phase+(math.pi if side<0 else 0)))*.13 if pose.startswith('walk') else 0
@@ -266,6 +267,11 @@ def humanoid(type,pose):
             if type=="ranger":cape(bob,phase,M["oliveDark"],.91,.40)
             for zz in (1.14,1.28,1.43):
                 line([(-.12,-.214,zz+bob),(.12,-.214,zz+.05+bob)],.011,M["linen"])
+        elif type=="thief":
+            cape(bob,phase,M["charcoal"],.84,.37)
+            line([(-.25,-.15,1.60+bob),(0,-.22,1.35+bob),(.22,-.17,1.10+bob)],.035,M["leather"])
+            pouch(-.25,-.055,1.04+bob,.12)
+            g.poly([(-.19,-.185,.85+bob),(.11,-.20,.82+bob),(.12,-.21,1.07+bob),(-.20,-.18,1.07+bob)],M["redDark"])
         elif type=="peasant":
             for side in (-1,1):
                 g.poly([(side*.07,-.195,.81+bob),(side*.22,-.167,.83+bob),(side*.30,-.146,1.53+bob),(side*.16,-.185,1.59+bob)],M["leatherLight"])
@@ -322,6 +328,13 @@ def humanoid(type,pose):
             x=.21+(i%3)*.031;y=.25+(i//3)*.039
             g.rod((x,y,1.58+bob),(x+.04,y,2.01+bob),.012,M["wood"],6)
             g.poly([(x+.022,y,1.88+bob),(x+.063,y,1.95+bob),(x+.04,y,2.02+bob)],M["ivory"])
+    elif type=="thief":
+        group("Charcoal hood and masked face")
+        for side in (-1,1):
+            ellipsoid((side*.176,.033,1.99+bob),(.061,.177,.22),M["charcoal"])
+        loft([(0,.025,2.09+bob,.21,.195),(0,.05,2.25+bob,.13,.14),(0,.11,2.34+bob,.025,.025)],M["charcoal"])
+        loft([(0,.018,1.65+bob,.23,.18),(0,.018,1.78+bob,.135,.13)],M["charcoal"])
+        g.poly([(-.14,-.145,1.93+bob),(.14,-.145,1.93+bob),(.12,-.15,1.81+bob),(0,-.19,1.76+bob),(-.12,-.15,1.81+bob)],M["charcoal"])
     elif wizard:
         group("Pointed hat and silver beard")
         loft([(0,0,2.09+bob,.30,.25),(0,0,2.15+bob,.30,.25)],M["violetDark"])
@@ -347,6 +360,10 @@ def humanoid(type,pose):
     if type=="warrior":
         sword(right,weapon)
         shield((left[0],left[1],left[2]+.12),.97)
+    elif type=="thief":
+        group("Twin steel daggers")
+        sword(right,weapon,.56)
+        sword(left,(0,-.5,.6),.43)
     elif type=="guard":
         group("Royal halberd")
         h=Vector(right);v=Vector(weapon).normalized();t=Vector((1,0,0));n=v.cross(t).normalized()
@@ -496,7 +513,7 @@ def troll(pose):
 
 
 def materials():
-    colors={"skin":"d2aa81","leather":"72573d","leatherLight":"957650","leatherDark":"4d4434",
+    colors={"charcoal":"46484b","skin":"d2aa81","leather":"72573d","leatherLight":"957650","leatherDark":"4d4434",
             "linen":"d9ceb1","trousers":"565b4b","olive":"7b8956","oliveDark":"526845",
             "red":"b52e20","redDark":"7d3828","ivory":"ece6cf","brass":"b89c63",
             "steel":"aab5b4","steelLight":"dce0d7","chain":"646f6e","dark":"202c29",

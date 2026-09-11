@@ -3,9 +3,9 @@
 The first rendered asset is the [Sovereign Royal Palace](../../assets/art/palace/README.md),
 with an editable Blender scene, Pixelorama project, and transparent pixel sprites.
 The [remaining building collection](../../assets/art/buildings/README.md) provides
-ten matching high-resolution buildings and monster lairs with editable Blender scenes.
-The [character collection](../../assets/art/units/README.md) adds ten matching heroes,
-workers and monsters, with 80 high-resolution poses and editable Blender timelines.
+eleven matching high-resolution buildings and monster lairs with editable Blender scenes.
+The [character collection](../../assets/art/units/README.md) adds eleven matching heroes,
+workers and monsters, with 88 high-resolution poses and editable Blender timelines.
 The [environment collection](../../assets/art/environment/README.md) provides
 35 tree, scenery and ground images, matching lighting, editable Blender scenes,
 and reproducible seamless terrain materials.

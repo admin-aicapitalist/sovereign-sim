@@ -26,6 +26,7 @@ TYPES = {
     "temple": "Temple of Light", "tower": "Guard Tower",
     "house": "Peasant Cottage", "sewer": "The Old Sewer",
     "graveyard": "Haunted Graveyard", "goblin": "Goblin Camp",
+    "thieves": "Thieves’ Guild",
 }
 TAU = math.tau
 g = None
@@ -593,6 +594,39 @@ def build_goblin():
     barrel(1.91,.16,s=.85)
     crate(-2.0,.56,s=.54)
     shield(-.16,-.9,2.07,.65)
+
+
+def build_thieves():
+    paving()
+    group("Weathered thieves' counting house")
+    timber_hall(.6,.65,3.5,3.65,2.9,1.6)
+    door(.6,-1.22,w=.8,h=1.7)
+    group("Lookout tower and shadowed passage")
+    stone_block(-1.83,.65,.23,1.62,2.2,3.8)
+    timber_hall(-1.83,.65,1.78,2.3,4.05,1.3,windows=False)
+    for z in (1.2,2.7,3.45):
+        art.window((-1.83,-.52),0,z,.27,.6)
+    group("Balcony, iron bars and brass key sign")
+    g.box((.6,-1.53,2.12),(2.5,.9,.13),art.woods[0])
+    for i in range(10):
+        x=-.58+i*2.35/9
+        g.rod((x,-1.86,2.19),(x,-1.86,2.78),.02,art.iron)
+    for x in (-.58,1.77):
+        g.rod((x,-1.86,.24),(x,-1.86,2.12),.065,art.woods[0])
+        g.rod((x,-1.86,2.19),(x,-1.86,2.87),.023,art.iron)
+    g.rod((-.58,-1.86,2.78),(1.77,-1.86,2.78),.027,art.iron)
+    art.banner((1.58,-1.28),0,1.18,.4,.8)
+    g.rod((2.39,-.65,2.55),(2.95,-.65,2.55),.035,art.iron)
+    g.box((2.89,-.65,2.2),(.08,.72,.53),art.woods[0])
+    round_ring((2.94,-.81,2.29),.105,(1,0,0),art.gold_light,.025)
+    g.rod((2.94,-.72,2.24),(2.94,-.45,2.08),.025,art.gold_light)
+    g.rod((2.94,-.5,2.11),(2.94,-.57,2.02),.025,art.gold_light)
+    for x,y in ((-2.36,-1.86),(2.47,2.36)):
+        barrel(x,y,s=.8)
+    crate(2.47,-1.65,s=.6)
+    crate(2.5,-2.34,s=.43)
+    stairs(.6,-2.28,1.18,3)
+    chimney(1.7,1.5,4.02,.95)
 
 
 BUILDERS={key:globals()["build_"+key] for key in TYPES}

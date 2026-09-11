@@ -1,6 +1,6 @@
 # Sovereign building collection
 
-Ten original buildings rendered with the Royal Palace's shared materials,
+Eleven original buildings rendered with the Royal Palace's shared materials,
 terracotta tiles, grey stone, crimson heraldry, surface wear, 30-degree isometric
 camera, and warm afternoon lighting. Every building has a 1920×1920 master.
 Transparent margins are cropped from the runtime textures without resampling.
@@ -10,6 +10,7 @@ Their pixel density and physical proportions remain consistent in the game.
 |---|---|
 | Warriors’ Guild | Stone hall, crenellated armory, heraldic shields, weapons rack |
 | Rangers’ Lodge | Timber frame, veranda, archery targets, hunting sign |
+| Thieves’ Guild | Timber lookout, shadowed doorway, balcony, brass key sign and crates |
 | Wizards’ Guild | Octagonal tower, brass armillary, alchemist's annex, arcane stones |
 | Marketplace | Striped awning, produce counters, trade sign, provision crates |
 | Temple of Light | Buttressed nave, rose window, open belfry, votive garden |
@@ -43,9 +44,9 @@ selection, health bars, and animated effects. Image and script URLs are versione
 when exporting, so a page reload picks up changed assets. Direct `file://` play
 continues to work. Each missing image falls back to its procedural sprite.
 
-Only the ten runtime textures and manifest are included in the hosting package.
+Only the eleven runtime textures and manifest are included in the hosting package.
 Source scenes, master renders, preview sheets, and metadata stay in the workspace.
 
-Verification covers all eleven building textures, source pixel density, selection
+Verification covers all twelve building textures, source pixel density, selection
 at three zoom levels, transparent corners, matching construction and completed
 placement, inspector portraits, desktop/mobile gameplay, and independent fallbacks.
