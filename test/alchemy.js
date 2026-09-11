@@ -3,7 +3,7 @@ const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),asse
 const sandbox={console};sandbox.window=sandbox;vm.createContext(sandbox);
 for(const name of ['util','data','world','entities','alchemy','ai','game'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../js',name+'.js'),'utf8'),sandbox,{filename:name+'.js'});
 const G=sandbox.G;G.headless=true;
-function setup(){G.reset();G.units=[];return G.addBuilding('marketplace',19,24);}
+function setup(){G.reset(41972);G.units=[];return G.addBuilding('marketplace',19,24);}
 let market=setup(),gold=G.gold;
 assert.equal(G.researchPotion('unknown',market),false);assert.equal(G.researchPotion('__proto__',market),false);
 assert.equal(G.researchPotion('healing',G.palace),false);
@@ -73,5 +73,5 @@ for(const [type,old] of Object.entries({rat:{hp:40,damage:5,armor:0},goblin:{hp:
 setup();const troll=G.addUnit('troll',40,40);troll.hp=1000;troll.lastHit=G.time;troll.think=100;
 G.time=5;G.updateEntities(1);assert.equal(troll.hp,1000);G.time=7;G.updateEntities(1);assert.equal(troll.hp,1003);
 troll.hp=troll.maxHp-1;G.updateEntities(1);assert.equal(troll.hp,troll.maxHp);
-G.reset();assert.equal(Object.keys(G.alchemy.unlocked).length,0);assert.equal(G.alchemy.project,null);assert.equal(G.stats.potionsBought,0);
+G.reset(41972);assert.equal(Object.keys(G.alchemy.unlocked).length,0);assert.equal(G.alchemy.project,null);assert.equal(G.stats.potionsBought,0);
 console.log('✓ Stronger monsters prolong combat and hurt more; trolls regenerate after a respite; new kingdoms reset research.');

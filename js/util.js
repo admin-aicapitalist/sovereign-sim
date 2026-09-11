@@ -8,6 +8,21 @@ window.G = window.G || {};
   G.iso = (x, y) => ({ x: (x - y) * G.TW / 2, y: (x + y) * G.TH / 2 });
   G.uniso = (x, y) => ({ x: x / G.TW + y / G.TH, y: y / G.TH - x / G.TW });
   G.rng = function (seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };
+  G.normalizeSeed = function (value) {
+    if (value == null || String(value).trim() === '') return null;
+    const text = String(value).trim(), number = Number(text);
+    if (/^\d+$/.test(text) && Number.isInteger(number) && number <= 0xffffffff) return number;
+    // Named seeds work too; show the resulting unsigned number for easy sharing.
+    let hash = 2166136261;
+    for (let i = 0; i < text.length; i++) hash = Math.imul(hash ^ text.charCodeAt(i), 16777619);
+    return hash >>> 0;
+  };
+  G.newSeed = function () {
+    const bytes = new Uint32Array(1);
+    let seed = window.crypto?.getRandomValues ? window.crypto.getRandomValues(bytes)[0] : Math.floor(Math.random() * 4294967296);
+    if (seed === G.seed) seed = (seed + 1) >>> 0;
+    return seed;
+  };
   G.random = G.rng(41972);
   G.pick = a => a[Math.floor(G.random() * a.length)];
   G.escape = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

@@ -41,7 +41,9 @@ are documented in [`tools/art/README.md`](tools/art/README.md).
 
 * **Map:** 88 × 88 tiles (four times the original area), with three river crossings,
   a large eastern lake, forest roads and open settlement clearings. The original
-  kingdom begins in the northwest; the frontier extends east and south.
+  kingdom begins in the northwest; the frontier extends east and south. Each launch
+  gets a fresh RNG seed that varies forests, scenery, waterways and local road bends.
+  Campaign landmarks and bridge crossings anchor a reachable road network.
   [View the expanded map](assets/art/environment/map-overview.png).
 * **Win:** destroy all 8 monster lairs. The four distant frontier lairs begin
   spawning additional enemies once discovered or attacked.
@@ -49,8 +51,8 @@ are documented in [`tools/art/README.md`](tools/art/README.md).
 
 ### How to play
 
-1. **Build** (bottom bar): start with a Warriors' Guild; add a Marketplace early so
-   select it and choose **Potions & research** to unlock supplies heroes can buy.
+1. **Build** (bottom bar): start with a Warriors' Guild; add a Marketplace early,
+   then select it and choose **Potions & research** to unlock supplies heroes can buy.
 2. **Recruit**: select a guild → Recruit. Warriors brawl, Rangers explore and shoot,
    Wizards rain fireballs but bruise easily; Thieves strike enemies distracted by allies.
 3. **Bounty Flags**: heroes ignore orders but love gold. Click the flag tool, then a
@@ -61,6 +63,13 @@ are documented in [`tools/art/README.md`](tools/art/README.md).
 5. **The staff runs itself**: peasants build and repair, tax collectors walk the streets
    hauling gold back to the Palace (guard them!), palace guards hold the gate,
    guard towers shoot on sight.
+
+**Replay a map:** the title screen and Help (?) show the current seed. In Help or
+the end-of-game screen, **Replay this map** opens a link with `?seed=12345`. You can
+also use a name, such as `?seed=Alderwick`. The same seed reproduces the same map
+and initial population. Normal reloads and new kingdoms choose a fresh seed; an
+explicit seed in the URL keeps that map for reloads and restarts. Remove `seed`
+from the URL to return to random maps.
 
 Controls: click select/build · right-drag pan · wheel zoom · WASD/arrows/edge scroll ·
 Space pause · 1/2/3 speed · F centre on Palace · Esc cancel · Shift-click places multiple.
@@ -92,6 +101,9 @@ Plain JS, one global namespace `G`, classic script load order (see `index.html`)
 
 ### Testing / QA
 
+* `node test/seeds.js` — random seed selection and deterministic replay, plus 100
+  generated maps checked for dry foundations, reachable lairs/settlements/units,
+  river crossings and starting construction space.
 * `node test/world.js` — deterministic large-map generation, reachable lairs and
   settlements, bridge crossings, distant worker travel, frontier activation and
   long-detour pathfinding.
@@ -101,10 +113,12 @@ Plain JS, one global namespace `G`, classic script load order (see `index.html`)
   and research progress using Chrome on port 9227. Run browser suites sequentially.
 * `node test/smoke.js` — headless simulation: sprites generate, an unattended kingdom
   survives the early game, a scripted playthrough **must win**, the lose path triggers,
-  no NaNs. Run it after any balance change.
+  no NaNs. Run it after any balance change. Pass a numeric or named seed to check
+  another map, e.g. `node test/smoke.js Alderwick` (default fixture: `41972`).
 * `test/spritesheet.html` — renders imported and generated sprites on one page
   (`?only=units|bld|misc`).
-* `node test/map.mjs` — desktop/mobile minimap navigation to every map corner,
+* `node test/map.mjs` — launch/reload randomization, replay links, pinned maps,
+  restart terrain refresh, and desktop/mobile minimap navigation to every map corner,
   camera limits, extended zoom, campaign counts and terrain-cache checks.
 * `node test/environment.mjs` — browser checks for terrain detail, river animation,
   bridge navigation, cache limits and image fallbacks, with Retina screenshots of
@@ -118,6 +132,7 @@ Plain JS, one global namespace `G`, classic script load order (see `index.html`)
   and independent missing-image fallbacks;
   screenshots go to the system temporary directory.
 * Debug URL params on `index.html`:
+  `?seed=41972` (reproducible map; omit for a fresh seed) ·
   `?demo=1` (one of every unit near the palace) · `?demo=2` (pre-built town) ·
   `?auto=1` (skip start screen) · `?t=240` (fast-forward sim seconds) · `?zoom=1.5`.
 

@@ -23,7 +23,7 @@ try{
   await send('Runtime.enable');await send('Page.enable');
   await send('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
   errors.length=0; // Runtime.enable replays errors from the previous page.
-  await send('Page.navigate',{url:new URL('?auto=1',url).href});
+  await send('Page.navigate',{url:new URL('?seed=41972&auto=1',url).href});
   for(let i=0;i<150;i++){if(await ev('!!window.G?.ui&&typeof G.start==="function"'))break;await delay(100);}
   await ev('G.spriteAssetsReady');await ev('G.paused=true;G.ui.update(true)');
   assert.equal(await ev('G.sprites.thieves.assetLoaded&&G.sprites.idle_thief.assetLoaded'),true,'guild and thief artwork load');

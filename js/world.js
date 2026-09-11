@@ -6,26 +6,32 @@
   G.isExplored=(x,y)=>{const t=G.tile(x,y);return !!t&&t.explored;};
   G.reveal=function(x,y,r,permanent=true){for(let yy=Math.floor(y-r);yy<=y+r;yy++)for(let xx=Math.floor(x-r);xx<=x+r;xx++){const t=G.tile(xx,yy);if(t&&Math.hypot(xx-x,yy-y)<r){t.visible=true;if(permanent)t.explored=true;}}};
   G.generateWorld=function(){
-    const r=G.rng(82741);G.tiles=[];G.trees=[];G.decor=[];G.vision=[];
+    const r=G.rng(G.seed),shape=G.rng(G.seed^0x9e3779b9),between=(a,b)=>G.lerp(a,b,shape());
+    // Separate terrain and detail streams from the live simulation RNG.
+    const riverBase=between(31.5,32.5),riverBend=between(2.3,3.6),riverPhase=between(-.15,.15),riverWidth=between(3.6,5.2);
+    const pondRadius=between(3.2,4.6),lakeX=between(60,64),lakeY=between(58,60),lakeRX=between(7.5,10),lakeRY=between(5,7.5);
+    const pondX=between(63,68),pondY=between(5,9),northRadius=between(2.5,4),shorePhase=between(0,Math.PI*2);
+    const forestX=between(0,Math.PI*2),forestY=between(0,Math.PI*2),forestMix=between(0,Math.PI*2),roadPhase=between(0,Math.PI*2);
+    G.tiles=[];G.trees=[];G.decor=[];G.vision=[];
     const segments=G.LEVEL.roads.flatMap(road=>road.slice(1).map((p,i)=>[road[i],p]));
     const segmentDistance=(x,y,a,b)=>{const dx=b[0]-a[0],dy=b[1]-a[1],t=G.clamp(((x-a[0])*dx+(y-a[1])*dy)/(dx*dx+dy*dy),0,1);return Math.hypot(x-a[0]-t*dx,y-a[1]-t*dy);};
     for(let y=0;y<G.MAP;y++)for(let x=0;x<G.MAP;x++){
-      const river=32+Math.sin(y*.16)*3.1+Math.sin(y*.4)*.8,water=x>river&&x<river+4.5;
-      const pond=Math.hypot((x-7)*.9,(y-33)*1.2)<4.2;
-      const lake=((x-60)/9.5)**2+((y-59)/6.5)**2<1+Math.sin(x*.7+y*.5)*.1;
-      const northPond=Math.hypot((x-65)*.9,(y-7)*1.2)<3.7;
-      const oldRoad=Math.abs(y-21-Math.sin(x*.23)*.65)<.9&&x>8&&x<33||Math.abs(x-20+Math.sin(y*.3)*.5)<.85&&y>8&&y<34;
+      const river=riverBase+Math.sin(y*.16+riverPhase)*riverBend+Math.sin(y*.4)*.8,water=x>river&&x<river+riverWidth;
+      const pond=Math.hypot((x-7)*.9,(y-34)*1.2)<pondRadius;
+      const lake=((x-lakeX)/lakeRX)**2+((y-lakeY)/lakeRY)**2<1+Math.sin(x*.7+y*.5+shorePhase)*.1;
+      const northPond=Math.hypot((x-pondX)*.9,(y-pondY)*1.2)<northRadius;
+      const oldRoad=Math.abs(y-21-Math.sin(x*.23+roadPhase)*.65)<.9&&x>8&&x<33||Math.abs(x-20+Math.sin(y*.3+roadPhase)*.5)<.85&&y>8&&y<34;
       const roadDistance=Math.min(...segments.map(([a,b])=>segmentDistance(x+.5,y+.5,a,b)));
       const path=oldRoad||roadDistance<1;
       const t={x,y,kind:water||pond||lake||northPond?'water':path?'path':'grass',noise:r(),blocked:false,explored:false,visible:false};
       if(water&&[20,47,70].some(crossing=>Math.abs(y-crossing)<=1))t.kind='bridge';
       // Keep broad, buildable verges along frontier routes and around settlements.
-      t.clearing=roadDistance<2.3||G.LEVEL.clearings.some(([cx,cy,radius])=>Math.hypot(x-cx,y-cy)<radius)||G.LEVEL.lairs.some(l=>Math.hypot(x-l.x-1,y-l.y-1)<3.4);
+      t.clearing=roadDistance<2.3||Math.hypot(x-21,y-4)<5.2||G.LEVEL.clearings.some(([cx,cy,radius])=>Math.hypot(x-cx,y-cy)<radius)||G.LEVEL.lairs.some(l=>Math.hypot(x-l.x-1,y-l.y-1)<5.2);
       G.tiles.push(t);
     }
     for(let y=1;y<G.MAP-1;y++)for(let x=1;x<G.MAP-1;x++){
       const t=G.tile(x,y),center=Math.hypot((x-20)*.9,(y-21)*1.1);
-      const forest=(Math.sin(x*.19)+Math.cos(y*.17)+Math.sin((x+y)*.09))/3;
+      const forest=(Math.sin(x*.19+forestX)+Math.cos(y*.17+forestY)+Math.sin((x+y)*.09+forestMix))/3;
       const density=x<44&&y<44?(center>15?.54:.18):forest>.12?.52:forest>-.3?.24:.08;
       if(t.kind==='grass'&&center>6.8&&!t.clearing&&r()<density){
         G.trees.push({x:x+.25+r()*.5,y:y+.25+r()*.5,type:(r()<.67?'pine':'oak')+Math.floor(r()*6),scale:.7+r()*.52});t.blocked=true;

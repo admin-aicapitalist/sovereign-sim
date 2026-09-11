@@ -2,11 +2,11 @@
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
 const sandbox={console};sandbox.window=sandbox;vm.createContext(sandbox);
 for(const name of ['util','data','world','entities','alchemy','ai','game'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../js',name+'.js'),'utf8'),sandbox,{filename:name+'.js'});
-const G=sandbox.G;G.headless=true;G.reset();
+const G=sandbox.G;G.headless=true;G.reset(41972);
 assert.equal(G.MAP,88);assert.equal(G.tiles.length,88*88);
 assert.equal(G.buildings.filter(b=>b.hostile).length,8);
 const signature=()=>JSON.stringify([G.tiles.map(t=>[t.kind,t.blocked]),G.trees,G.decor]);
-const original=signature();G.reset();assert.equal(signature(),original,'map generation is reproducible');
+const original=signature();G.reset(41972);assert.equal(signature(),original,'map generation is reproducible');
 assert(!G.isExplored(70,73),'distant frontier starts under fog');
 const validate=route=>{for(let i=0;i<route.length;i++){const p=route[i];assert(G.walkable(p.x,p.y),'route stays on open ground');if(i){const a=route[i-1],dx=p.x-a.x,dy=p.y-a.y;assert(Math.abs(dx)<=1&&Math.abs(dy)<=1,'adjacent route steps');if(dx&&dy)assert(G.walkable(a.x+dx,a.y)&&G.walkable(a.x,a.y+dy),'no diagonal corner cutting');}}};
 for(const b of G.buildings){if(!b.hostile)continue;
@@ -27,7 +27,7 @@ for(let i=0;i<2000&&worker.path.length;i++)G.moveUnit(worker,.2);
 assert(G.dist(worker,{x:70.5,y:73.5})<.01,'workers travel to distant settlements');
 console.log('✓ Deterministic 88×88 world, all eight lairs and settlement clearings reachable, three bridge crossings, distant construction and worker travel.');
 
-G.reset();const remote=G.buildings.find(b=>b.dormant);remote.spawnTimer=.01;const count=G.units.length;G.update(.1);
+G.reset(41972);const remote=G.buildings.find(b=>b.dormant);remote.spawnTimer=.01;const count=G.units.length;G.update(.1);
 assert(remote.dormant&&G.units.length===count,'undiscovered lairs do not send extra waves');
 G.reveal(remote.x,remote.y,4);G.update(.1);assert(!remote.dormant&&remote.spawnTimer>1,'exploration awakens a frontier lair with time before its next wave');
 const lairs=G.buildings.filter(b=>b.hostile);for(const b of lairs.slice(0,4))G.kill(b,null);G.update(.1);assert.equal(G.result,null,'four remaining frontier lairs prevent an early victory');
