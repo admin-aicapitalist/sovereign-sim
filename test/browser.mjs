@@ -15,7 +15,7 @@ const clickXY=async(x,y)=>{await send('Input.dispatchMouseEvent',{type:'mouseMov
 const click=async selector=>{const p=await ev(`(()=>{const r=document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2}})()`);await clickXY(p.x,p.y);};
 const key=async(key,code)=>{await send('Input.dispatchKeyEvent',{type:'keyDown',key,code});await send('Input.dispatchKeyEvent',{type:'keyUp',key,code});await delay(100);};
 const shot=async name=>fs.writeFile(path.join(os.tmpdir(),'sovereign-'+name+'.png'),Buffer.from((await send('Page.captureScreenshot',{format:'png'})).data,'base64'));
-await send('Runtime.enable');await send('Page.enable');errors.length=0;
+await send('Runtime.enable');await send('Page.enable');errors.length=0;await send('Page.bringToFront');await send('Emulation.setFocusEmulationEnabled',{enabled:true});
 await send('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
 await send('Page.navigate',{url:gameUrl+'?seed=41972'});await ready();
 await ev('G.spriteAssetsReady');
@@ -36,15 +36,15 @@ const buildingChecks=await ev(`(()=>{
     G.units=[];G.flags=[];G.selected=null;G.hovered=null;
     for(const type of Object.keys(G.BUILDINGS)){
       const layout=G.buildingSpriteLayout(type),s=layout.sprite,data=G.BUILDINGS[type];
-      const b={...G.palace,type,data,hostile:false,x:20.5,y:20.5,progress:1};G.buildings=[b];
+      const b={...G.palace,type,data,hostile:false,x:G.palace.x,y:G.palace.y,progress:1};G.buildings=[b];
       const y=Math.floor(s.h*.6),row=s.hitRows?.[y];
       const u=row?(row[0]+row[1])/2:(s.bounds[0]+s.bounds[2])/2;
       const v=row?y+.5:(s.bounds[1]+s.bounds[3])/2;
       const hits=[.55,1.12,2.1].every(z=>{G.camera.zoom=z;const p=G.worldToScreen(b.x,b.y);return G.hitTest(p.x+(layout.x+u*layout.scale)*z,p.y+(layout.y+v*layout.scale)*z)===b;});
       const clearCorners=!s.hitRows||!G.spriteContainsPoint(s,0,0);
       let last;ctx.drawImage=function(image,...args){if(image===s.canvas)last=args;return drawImage.call(this,image,...args);};
-      G.pointer.world={x:12.2,y:12.2};G.mode={type:'build',key:type};G.render(0);const ghost=JSON.stringify(last);
-      b.x=12+data.size/2;b.y=12+data.size/2;G.mode=null;last=null;G.render(0);const placed=JSON.stringify(last);
+      G.pointer.world={x:G.palace.tx-6+.2,y:G.palace.ty-6+.2};G.mode={type:'build',key:type};G.render(0);const ghost=JSON.stringify(last);
+      b.x=G.palace.tx-6+data.size/2;b.y=G.palace.ty-6+data.size/2;G.mode=null;last=null;G.render(0);const placed=JSON.stringify(last);
       const portrait=document.createElement('canvas');G.ui.thumbnail(portrait,type);
       let portraitVisible=true;
       if(location.protocol!=='file:'){const pixels=portrait.getContext('2d').getImageData(0,0,180,100).data;portraitVisible=pixels.some((value,i)=>i%4===3&&value>0);}
@@ -63,7 +63,7 @@ const unitChecks=await ev(`(()=>{
     G.buildings=[];G.flags=[];G.selected=null;G.hovered=null;
     for(const type of Object.keys(G.UNITS)){
       const asset=G.unitAssets[type],idle=G.sprites['idle_'+type];
-      const u={...saved.units[0],type,data:G.UNITS[type],hero:false,hostile:false,x:20.5,y:20.5,path:[],attacking:0,anim:0,state:'Idle',facing:1};G.units=[u];
+      const u={...saved.units[0],type,data:G.UNITS[type],hero:false,hostile:false,x:G.palace.x,y:G.palace.y,path:[],attacking:0,anim:0,state:'Idle',facing:1};G.units=[u];
       const frames=[idle,...G.sprites['unit_'+type],...G.sprites['attack_'+type]];
       const native=frames.every(s=>s.assetLoaded&&s.canvas===idle.canvas&&s.canvas.width===asset.sourceSize[0]&&s.canvas.height===asset.sourceSize[1]&&s.frame[2]/s.w===10&&s.frame[3]/s.h===10);
       const stable=frames.every(s=>JSON.stringify(s.anchor)===JSON.stringify(idle.anchor));
@@ -100,10 +100,10 @@ assert.equal(await ev(`(()=>{
 })()`),true,'new Palace tower, steps, and roof remain selectable across zoom levels');
 console.log('✓ Imported Palace, inspector portrait, and selection at minimum/default/maximum zoom.');
 await key('Escape','Escape');
-await click('.command-card');assert.equal(await ev('G.mode.key'),'warriors');const site=await ev('G.worldToScreen(16.25,18.25)');await clickXY(site.x,site.y);assert.equal(await ev('G.buildings.filter(b=>b.type==="warriors").length'),1);assert.equal(await ev('G.mode'),null);assert.equal(await ev('Math.floor(G.gold)'),1150);
+await click('.command-card');assert.equal(await ev('G.mode.key'),'warriors');const site=await ev('(()=>{const p=G.findBuildingSite("warriors");return G.worldToScreen(p.x+.25,p.y+.25)})()');await clickXY(site.x,site.y);assert.equal(await ev('G.buildings.filter(b=>b.type==="warriors").length'),1);assert.equal(await ev('G.mode'),null);assert.equal(await ev('Math.floor(G.gold)'),1150);
 await ev('G.paused=false;for(let t=0;t<30;t+=.1)G.update(.1);G.paused=true;G.ui.update(true)');assert.equal(await ev('G.buildings.find(b=>b.type==="warriors").progress'),1);
 await click('#inspect-recruit');assert.equal(await ev('G.units.filter(u=>u.hero).length'),1);
-await click('[data-tab="bounty"]');await click('.command-card:nth-child(2)');const spot=await ev('G.worldToScreen(25.5,23.5)');await clickXY(spot.x,spot.y);assert.equal(await ev('G.flags.filter(f=>!f.dead).length'),1);await click('#raise-bounty');assert.equal(await ev('G.flags[0].reward'),150);await click('#cancel-bounty');assert.equal(await ev('G.flags[0].dead'),true);
+await click('[data-tab="bounty"]');await click('.command-card:nth-child(2)');const spot=await ev('G.worldToScreen(G.LEVEL.rally.x,G.LEVEL.rally.y)');await clickXY(spot.x,spot.y);assert.equal(await ev('G.flags.filter(f=>!f.dead).length'),1);await click('#raise-bounty');assert.equal(await ev('G.flags[0].reward'),150);await click('#cancel-bounty');assert.equal(await ev('G.flags[0].dead'),true);
 await click('[data-tab="spells"]');await click('.command-card:nth-child(3)');await clickXY(spot.x,spot.y);assert(await ev('G.cooldowns.farsight>0'));assert.equal(await ev('G.mode'),null);
 await click('[data-speed="3"]');assert.equal(await ev('G.speed'),3);assert.equal(await ev('G.paused'),false);await key(' ','Space');assert.equal(await ev('G.paused'),true);
 const zoom=await ev('G.camera.zoom');await click('#zoom-in');assert(await ev(`G.camera.zoom>${zoom}`));await key('f','KeyF');await click('#help');assert.equal(await ev('G.modalOpen'),true);await click('#close-help');assert.equal(await ev('G.modalOpen'),false);

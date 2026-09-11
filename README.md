@@ -39,12 +39,12 @@ are documented in [`tools/art/README.md`](tools/art/README.md).
 
 ## Level 1 — The Young Kingdom
 
-* **Map:** 88 × 88 tiles (four times the original area), with three river crossings,
-  a large eastern lake, forest roads and open settlement clearings. The original
-  kingdom begins in the northwest; the frontier extends east and south. Each launch
-  gets a fresh RNG seed that varies forests, scenery, waterways and local road bends.
-  Campaign landmarks and bridge crossings anchor a reachable road network.
-  [View the expanded map](assets/art/environment/map-overview.png).
+* **Map:** 88 × 88 tiles (four times the original area). Each launch generates a
+  **River Marches, Great Lake, or Coastal Realm** with a different shoreline,
+  kingdom location, lair placement, forest density and road network. Settlements
+  occupy dry ground, and roads connect them with bridges wherever water must be
+  crossed. Four clearings provide room to expand beyond the starting town.
+  [Compare three seeded regions](assets/art/environment/map-variants.png).
 * **Win:** destroy all 8 monster lairs. The four distant frontier lairs begin
   spawning additional enemies once discovered or attacked.
 * **Lose:** your Palace falls.
@@ -81,14 +81,15 @@ Plain JS, one global namespace `G`, classic script load order (see `index.html`)
 | file | role |
 |---|---|
 | `js/util.js` | iso math, seeded RNG, binary-heap A* pathfinding |
-| `js/data.js` | every balance table: buildings, units, spells, flags, level layout |
+| `js/data.js` | every balance table: buildings, units, spells, flags, campaign lairs |
 | `js/sprites.js` | procedural sprites, imported asset loading, and building placement anchors |
 | `assets/art/palace/palace-sprite.js` | generated Palace image manifest: dimensions, bounds, and ground anchor |
 | `assets/art/buildings/buildings-sprites.js` | generated manifests for the other eleven buildings, with selection outlines and effect positions |
 | `assets/art/units/units-sprites.js` | eleven character atlases: idle, walk and action poses, floor anchors, selection bounds |
 | `assets/art/environment/environment-sprites.js` | 35 tree, scenery and terrain texture manifests |
 | `js/environment.js` | textured terrain, road and river boundaries, water animation, bridge rails, scenery, bounded terrain cache |
-| `js/world.js` | seeded map gen, walkability, fog of war |
+| `js/mapgen.js` | seeded landforms, dry settlement placement, connected roads and bridges |
+| `js/world.js` | forests and scenery, construction sites, walkability, fog of war |
 | `js/entities.js` | units/buildings, movement, combat, projectiles, XP, flags |
 | `js/alchemy.js` | potion research, personal shopping, inventory and combat buffs |
 | `js/ai.js` | the brains: hero utility AI (bounty scoring, shopping, resting, fleeing), worker/guard/monster AI |
@@ -102,8 +103,8 @@ Plain JS, one global namespace `G`, classic script load order (see `index.html`)
 ### Testing / QA
 
 * `node test/seeds.js` — random seed selection and deterministic replay, plus 100
-  generated maps checked for dry foundations, reachable lairs/settlements/units,
-  river crossings and starting construction space.
+  generated maps checked for structural variety, dry foundations, reachable
+  lairs/settlements/units, bridge crossings and starting construction space.
 * `node test/world.js` — deterministic large-map generation, reachable lairs and
   settlements, bridge crossings, distant worker travel, frontier activation and
   long-detour pathfinding.
@@ -119,7 +120,8 @@ Plain JS, one global namespace `G`, classic script load order (see `index.html`)
   (`?only=units|bld|misc`).
 * `node test/map.mjs` — launch/reload randomization, replay links, pinned maps,
   restart terrain refresh, and desktop/mobile minimap navigation to every map corner,
-  camera limits, extended zoom, campaign counts and terrain-cache checks.
+  camera limits, extended zoom, campaign counts and terrain-cache checks. Captures
+  three distinct regions using seeds `0` (lake), `1` (coast) and `4` (river).
 * `node test/environment.mjs` — browser checks for terrain detail, river animation,
   bridge navigation, cache limits and image fallbacks, with Retina screenshots of
   town, river and pond. Run sequentially with the other browser tests.

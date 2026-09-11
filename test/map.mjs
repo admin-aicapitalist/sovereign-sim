@@ -13,12 +13,13 @@ const ev=async expression=>{const r=await send('Runtime.evaluate',{expression,re
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
 const ready=async()=>{for(let i=0;i<200;i++){if(await ev('typeof G!=="undefined"&&typeof G.start==="function"')){await ev('Promise.all([G.spriteAssetsReady,document.fonts.ready]).then(()=>true)');return;}await delay(100);}throw Error('World did not load');};
 const load=async target=>{const previous=loads;await send(target?'Page.navigate':'Page.reload',target?{url:target}:{});for(let i=0;i<200&&loads===previous;i++)await delay(100);assert(loads>previous,'navigation completes before reading the new map');await ready();};
-const snapshot=async()=>{const state=await ev('({seed:G.seed,map:JSON.stringify([G.tiles.map(t=>[t.kind,t.blocked,t.noise]),G.trees,G.decor])})');return{seed:state.seed,hash:createHash('sha256').update(state.map).digest('hex')};};
+const snapshot=async()=>{const state=await ev('({seed:G.seed,map:JSON.stringify([G.LEVEL,G.tiles.map(t=>[t.kind,t.blocked,t.noise]),G.trees,G.decor])})');return{seed:state.seed,hash:createHash('sha256').update(state.map).digest('hex')};};
 const clickXY=async(x,y)=>{await send('Input.dispatchMouseEvent',{type:'mouseMoved',x,y});await send('Input.dispatchMouseEvent',{type:'mousePressed',x,y,button:'left',clickCount:1});await send('Input.dispatchMouseEvent',{type:'mouseReleased',x,y,button:'left',clickCount:1});await delay(100);};
 const shot=async name=>fs.writeFile(path.join(os.tmpdir(),'sovereign-map-'+name+'.png'),Buffer.from((await send('Page.captureScreenshot',{format:'png'})).data,'base64'));
 await send('Page.enable');await send('Runtime.enable');
-errors.length=0;await send('Page.bringToFront');
+errors.length=0;await send('Page.bringToFront');await send('Emulation.setFocusEmulationEnabled',{enabled:true});
 await send('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
+if(!process.argv.includes('--capture-regions')){
 await load(url);const first=await snapshot();await load();const second=await snapshot();
 assert.notEqual(second.seed,first.seed,'an ordinary reload creates a fresh seed');assert.notEqual(second.hash,first.hash,'ordinary reload changes the world');
 await ev('G.start();G.paused=true;G.ui.showHelp()');
@@ -37,7 +38,7 @@ await load(new URL('?seed=0',url).href);assert.equal(await ev('G.seed'),0,'URL s
 console.log('✓ Random launches/reloads, displayed seed and replay link, repeatable pinned maps and fresh terrain on new kingdoms.');
 for(const [width,height,dpr] of [[1440,1000,1],[390,844,2]]){
   await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:dpr,mobile:width<581});
-  await send('Page.navigate',{url:url+'?seed=41972&auto=1'});await ready();await ev('G.paused=true;G.selected=null;G.ui.update(true)');
+  await load(new URL('?seed=41972&auto=1',url).href);await ev('G.paused=true;G.selected=null;G.ui.update(true)');
   assert.equal(await ev('G.MAP'),88);assert.equal(await ev('document.querySelector("#lair-count").textContent'),'0 / 8');
   assert.equal(await ev('document.querySelectorAll(".objective").length'),8);
   const points=[[.5,.5],[87.5,.5],[87.5,87.5],[.5,87.5],[70,73]];
@@ -52,11 +53,23 @@ for(const [width,height,dpr] of [[1440,1000,1],[390,844,2]]){
   console.log('✓ Minimap reaches all four corners and far settlements; camera bounds and expanded zoom range at '+width+'px.',stats.cache);
   await ev('G.ui.showHelp()');assert(await ev('document.querySelector("#modal-content").textContent.includes("Destroy all 8 lairs")'));await ev('G.ui.closeModal();G.stats.lairs=8;G.ui.showEnd("victory")');assert(await ev('document.querySelector(".end-stats").textContent.includes("8 / 8")'));
 }
+}
 await send('Emulation.setDeviceMetricsOverride',{width:2240,height:1440,deviceScaleFactor:1,mobile:false});
-await send('Page.navigate',{url:url+'?seed=41972&auto=1&zoom=.35'});await ready();
-await ev('(()=>{G.paused=true;G.selected=null;G.vision.push({x:44,y:44,r:150,until:100});G.updateVision();G.time=1;const p=G.iso(44,44);G.camera.x=p.x;G.camera.y=p.y;G.ui.update(true);G.render(0);})()');await shot('overview');
+const regions=[];
+for(const seed of [0,1,4]){
+  await load(new URL('?seed='+seed+'&auto=1&zoom=.35',url).href);
+  await ev('(()=>{G.paused=true;G.selected=null;G.vision.push({x:44,y:44,r:150,until:100});G.updateVision();G.time=1;const p=G.iso(44,44);G.camera.x=p.x;G.camera.y=p.y;G.ui.update(true);G.render(0);})()');
+  regions.push(await ev('({seed:G.seed,name:G.LEVEL.name,start:G.LEVEL.start,roads:JSON.stringify(G.LEVEL.roads)})'));
+  await shot('region-'+seed);
+  const canvas=await ev('document.querySelector("#world").toDataURL("image/png").split(",")[1]');
+  await fs.writeFile(path.join(os.tmpdir(),'sovereign-map-terrain-'+seed+'.png'),Buffer.from(canvas,'base64'));
+}
+assert.equal(new Set(regions.map(r=>r.name)).size,3,'seeds create three distinct geographic families');
+assert.equal(new Set(regions.map(r=>JSON.stringify(r.start))).size,3,'starting kingdoms move');
+assert.equal(new Set(regions.map(r=>r.roads)).size,3,'road networks change');
+console.log('✓ Rendered distinct regions:',regions.map(({roads,...region})=>region));
 await send('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
-await ev('(()=>{G.camera.zoom=1.12;const p=G.iso(60,59);G.camera.x=p.x;G.camera.y=p.y;G.render(0);})()');await shot('lake');
+await ev('(()=>{G.camera.zoom=1.12;const b=G.LEVEL.bridges[0],p=G.iso(b.x+.5,b.y+.5);G.camera.x=p.x;G.camera.y=p.y;G.render(0);})()');await shot('crossing');
 const render=await ev('(()=>{const timings=[];for(let i=0;i<8;i++){const start=performance.now();G.render(0);timings.push(performance.now()-start);}return {meanMs:timings.reduce((a,b)=>a+b)/timings.length,cache:G.environment.stats()};})()');
 assert(render.cache.bytes<=render.cache.maxBytes);console.log('Cached landscape render:',render);
 assert.equal(errors.length,0,JSON.stringify(errors));

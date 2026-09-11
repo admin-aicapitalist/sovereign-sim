@@ -21,7 +21,7 @@
       if(t.kind==='bridge'){diamond(c,p.x,p.y,'#8f835d');for(let i=0;i<8;i++)line(c,[[p.x-32+i*4,p.y+16-i*2],[p.x+i*4,p.y+32-i*2]],i%2?'#b5a178':'#a0926a',2.8);}
     }
     // A cobbled palace court joins the crossing roads.
-    for(let y=18;y<24;y++)for(let x=18;x<24;x++){if(Math.hypot(x-20.5,y-20.5)>3.6)continue;const p=G.iso(x,y);diamond(c,p.x,p.y,'#b2b29390');for(let i=0;i<12;i++){const a=r(),b=r();ellipse(c,p.x+(a-b)*29,p.y+(a+b)*15,2+r()*2,.8+r(),i%2?'#d1ccb080':'#7e8e7150');}}
+    for(let y=G.palace.ty-2;y<G.palace.ty+5;y++)for(let x=G.palace.tx-2;x<G.palace.tx+5;x++){if(Math.hypot(x-G.palace.x,y-G.palace.y)>3.6)continue;const p=G.iso(x,y);diamond(c,p.x,p.y,'#b2b29390');for(let i=0;i<12;i++){const a=r(),b=r();ellipse(c,p.x+(a-b)*29,p.y+(a+b)*15,2+r()*2,.8+r(),i%2?'#d1ccb080':'#7e8e7150');}}
     for(const d of G.decor){const p=G.iso(d.x,d.y);if(d.type==='rock'){shadowRock(c,p.x,p.y,d.seed);}else{for(let i=0;i<4;i++){let xx=p.x+(r()-.5)*15,yy=p.y+(r()-.5)*5;line(c,[[xx,yy],[xx,yy-3]],'#617d4f',.7);ellipse(c,xx,yy-3,1.1,.8,d.seed>.5?'#dac98b90':'#c7caa195');}}}
   };
   function shadowRock(c,x,y,s){ellipse(c,x+2,y+2,6+s*5,2+s*2,'#4a664538');poly(c,[[x-5-s*3,y],[x-3,y-4-s*4],[x+3+s*3,y-3],[x+7,y+1],[x+1,y+3]],'#9da58d');poly(c,[[x-5-s*3,y],[x-3,y-4-s*4],[x+1,y-2],[x+1,y+3]],'#b1b49a');}

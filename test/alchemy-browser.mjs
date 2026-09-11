@@ -20,7 +20,7 @@ const click=async selector=>{
 const shot=async name=>fs.writeFile(path.join(os.tmpdir(),'sovereign-'+name+'.png'),Buffer.from((await send('Page.captureScreenshot',{format:'png'})).data,'base64'));
 
 try{
-  await send('Runtime.enable');await send('Page.enable');
+  await send('Runtime.enable');await send('Page.enable');await send('Page.bringToFront');await send('Emulation.setFocusEmulationEnabled',{enabled:true});
   await send('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
   errors.length=0; // Runtime.enable replays errors from the previous page.
   await send('Page.navigate',{url:new URL('?seed=41972&auto=1',url).href});
@@ -28,9 +28,9 @@ try{
   await ev('G.spriteAssetsReady');await ev('G.paused=true;G.ui.update(true)');
   assert.equal(await ev('G.sprites.thieves.assetLoaded&&G.sprites.idle_thief.assetLoaded'),true,'guild and thief artwork load');
   await click('.command-card[aria-label^="Thieves"]');assert.equal(await ev('G.mode.key'),'thieves');
-  const p=await ev('G.worldToScreen(16.25,18.25)');await clickXY(p.x,p.y);
+  const p=await ev('(()=>{const p=G.findBuildingSite("thieves");return G.worldToScreen(p.x+.25,p.y+.25)})()');await clickXY(p.x,p.y);
   assert.equal(await ev('G.buildings.some(b=>b.type==="thieves"&&b.progress<1)'),true,'construct command places new guild');
-  await ev('G.build("marketplace",19,24);G.headless=true;G.paused=false;for(let i=0;i<600;i++)G.update(.1);G.paused=true;G.headless=false;G.selected=G.buildings.find(b=>b.type==="thieves");G.ui.update(true)');
+  await ev('(()=>{const p=G.findBuildingSite("marketplace");G.build("marketplace",p.x,p.y)})();G.headless=true;G.paused=false;for(let i=0;i<600;i++)G.update(.1);G.paused=true;G.headless=false;G.selected=G.buildings.find(b=>b.type==="thieves");G.ui.update(true)');
   assert.equal(await ev('G.selected.progress'),1,'peasants complete guild');
   const before=await ev('G.gold');await click('#inspect-recruit');
   assert.equal(await ev('G.units.filter(u=>u.type==="thief"&&u.hero).length'),1);

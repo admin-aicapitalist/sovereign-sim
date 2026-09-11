@@ -68,8 +68,13 @@
       }
     }
     for(const t of bridgeTiles){
-      if(G.tile(t.x,t.y-1)?.kind!=='bridge')E.rails.push({x:t.x+.5,y:t.y,key:'bridge-rail',scale:1});
-      if(G.tile(t.x,t.y+1)?.kind!=='bridge')E.rails.push({x:t.x+.5,y:t.y+1,key:'bridge-rail',scale:1});
+      if(t.bridgeAxis==='y'){
+        if(G.tile(t.x-1,t.y)?.kind!=='bridge')E.rails.push({x:t.x,y:t.y+.5,key:'bridge-rail',scale:1,flip:true});
+        if(G.tile(t.x+1,t.y)?.kind!=='bridge')E.rails.push({x:t.x+1,y:t.y+.5,key:'bridge-rail',scale:1,flip:true});
+      }else{
+        if(G.tile(t.x,t.y-1)?.kind!=='bridge')E.rails.push({x:t.x+.5,y:t.y,key:'bridge-rail',scale:1});
+        if(G.tile(t.x,t.y+1)?.kind!=='bridge')E.rails.push({x:t.x+.5,y:t.y+1,key:'bridge-rail',scale:1});
+      }
     }
     E.decor=E.decor.filter(d=>G.sprites[d.key]?.assetLoaded);
     E.rails=E.rails.filter(d=>G.sprites[d.key]?.assetLoaded);
@@ -104,7 +109,7 @@
     ctx.fillStyle='#88734f';ctx.fill(bridgePath);
     const deck=G.sprites['bridge-deck'];
     for(const t of bridgeTiles){const p=G.iso(t.x,t.y);if(!near(p,rect,70))continue;
-      if(deck?.assetLoaded)G.paintSprite(ctx,deck,p.x-32,p.y,64,32);
+      if(deck?.assetLoaded){ctx.save();ctx.translate(p.x,p.y);if(t.bridgeAxis==='y')ctx.scale(-1,1);G.paintSprite(ctx,deck,-32,0,64,32);ctx.restore();}
       else{ctx.strokeStyle='#b49a6c';ctx.lineWidth=2;for(let i=0;i<8;i++)G.art.line(ctx,[[p.x-32+i*4,p.y+16-i*2],[p.x+i*4,p.y+32-i*2]],'#b49a6c',2);}
     }
     ctx.restore();
@@ -144,7 +149,7 @@
     ctx.fillRect(rect.x,rect.y,rect.w,rect.h);ctx.restore();
   };
   E.layout=function(key,scale=1){const sprite=G.sprites[key];if(!sprite?.assetLoaded)return null;return{sprite,x:-sprite.anchor[0]*scale,y:-sprite.anchor[1]*scale,w:sprite.w*scale,h:sprite.h*scale};};
-  E.drawProp=function(ctx,prop){const layout=E.layout(prop.key,prop.scale);if(!layout)return;const p=G.iso(prop.x,prop.y);G.paintSprite(ctx,layout.sprite,p.x+layout.x,p.y+layout.y,layout.w,layout.h);};
+  E.drawProp=function(ctx,prop){const layout=E.layout(prop.key,prop.scale);if(!layout)return;const p=G.iso(prop.x,prop.y);ctx.save();ctx.translate(p.x,p.y);if(prop.flip)ctx.scale(-1,1);G.paintSprite(ctx,layout.sprite,layout.x,layout.y,layout.w,layout.h);ctx.restore();};
   E.drawTree=function(ctx,tree,time){
     const layout=E.layout(tree.type,tree.scale*.84);if(!layout)return false;
     const p=G.iso(tree.x,tree.y),sway=Math.sin(time*1.05+tree.x*.3+tree.y*.7)*.65;

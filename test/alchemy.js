@@ -1,9 +1,9 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
 const sandbox={console};sandbox.window=sandbox;vm.createContext(sandbox);
-for(const name of ['util','data','world','entities','alchemy','ai','game'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../js',name+'.js'),'utf8'),sandbox,{filename:name+'.js'});
+for(const name of ['util','data','mapgen','world','entities','alchemy','ai','game'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../js',name+'.js'),'utf8'),sandbox,{filename:name+'.js'});
 const G=sandbox.G;G.headless=true;
-function setup(){G.reset(41972);G.units=[];return G.addBuilding('marketplace',19,24);}
+function setup(){G.reset(41972);G.units=[];return G.addBuilding('marketplace',G.LEVEL.start.x,G.LEVEL.start.y+5);}
 let market=setup(),gold=G.gold;
 assert.equal(G.researchPotion('unknown',market),false);assert.equal(G.researchPotion('__proto__',market),false);
 assert.equal(G.researchPotion('healing',G.palace),false);
@@ -16,7 +16,7 @@ assert.equal(G.researchPotion('healing',market),false,'no duplicate project');
 G.paused=true;G.update(10);assert.equal(G.alchemy.project.remaining,25,'paused game freezes research');G.paused=false;
 G.update(10);assert.equal(G.alchemy.project.remaining,15);assert(!G.alchemy.unlocked.healing);
 market.dead=true;G.update(10);assert.equal(G.alchemy.project.remaining,15,'destroying the last market pauses research');
-market=G.addBuilding('marketplace',24,21,false);G.update(5);assert.equal(G.alchemy.project.remaining,15,'unfinished markets cannot research');
+market=G.addBuilding('marketplace',G.LEVEL.start.x+5,G.LEVEL.start.y,false);G.update(5);assert.equal(G.alchemy.project.remaining,15,'unfinished markets cannot research');
 market.progress=1;G.update(15);assert.equal(G.alchemy.project,null);assert(G.alchemy.unlocked.healing);
 gold=G.gold;assert.equal(G.researchPotion('healing',market),false);assert.equal(G.gold,gold);
 assert(G.researchPotion('strength',market));assert.equal(G.researchPotion('stoneskin',market),false,'one research project at a time');
@@ -46,7 +46,7 @@ const collector=G.addUnit('collector',market.x+2,market.y);G.thinkUnit(collector
 const first=G.addUnit('ranger',40,40),firstEnemy=G.addUnit('goblin',41,40);first.potions.strength=1;G.attack(first,firstEnemy,.1);assert.equal(G.projectiles.at(-1).damage,23,'potion buffs the first shot, even when AI just acquired its target');
 console.log('✓ Autonomous purchases, limited inventories, gold conservation, healing, combat buffs, expiry and tax delivery.');
 
-setup();const guild=G.addBuilding('thieves',16,18);gold=G.gold;const thief=G.recruit('thief',guild);
+setup();const guild=G.addBuilding('thieves',G.LEVEL.start.x-4,G.LEVEL.start.y);gold=G.gold;const thief=G.recruit('thief',guild);
 assert(thief&&thief.hero&&thief.name);assert.equal(thief.gold,24);assert.equal(G.gold,gold-110);
 for(let i=0;i<3;i++)assert(G.recruit('thief',guild));gold=G.gold;
 assert.equal(G.recruit('thief',guild),false);assert.equal(G.gold,gold);assert.equal(G.recruit('warrior',guild),false);

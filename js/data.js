@@ -1,27 +1,16 @@
 (function () {
   G.MAP = 88;
   G.ZOOM_MIN = .35; G.ZOOM_MAX = 2.1;
-  G.LEVEL = {
-    lairs: [
-      {type:'sewer',x:8,y:11,name:'The Old Sewer'},
-      {type:'graveyard',x:29,y:8,name:'Haunted Graveyard'},
-      {type:'goblin',x:8,y:28,name:'Western Goblin Camp'},
-      {type:'goblin',x:36,y:30,name:'Eastern Goblin Camp'},
-      {type:'goblin',x:68,y:18,name:'Pinewatch Camp',frontier:true},
-      {type:'sewer',x:67,y:47,name:'Reedwater Sewer',frontier:true},
-      {type:'graveyard',x:52,y:70,name:'Ashen Graveyard',frontier:true},
-      {type:'goblin',x:17,y:67,name:'Southwood Camp',frontier:true}
-    ],
-    clearings: [[51,23,6],[48,44,6],[21,48,7],[70,73,7]],
-    roads: [
-      [[20,32],[20,47],[20,70],[7,78]],
-      [[20,47],[35,47],[48,47],[68,47],[79,38]],
-      [[36,20],[51,20],[69,19],[80,10]],
-      [[36,31],[49,33],[51,20]],
-      [[49,33],[48,47],[46,60],[48,71],[70,73],[81,80]],
-      [[20,70],[35,70],[48,71]]
-    ]
-  };
+  G.CAMPAIGN = [
+    {type:'sewer',name:'The Old Sewer'},
+    {type:'graveyard',name:'Haunted Graveyard'},
+    {type:'goblin',name:'Briarclaw Camp'},
+    {type:'goblin',name:'Broken Fang Camp'},
+    {type:'goblin',name:'Pinewatch Camp',frontier:true},
+    {type:'sewer',name:'Reedwater Sewer',frontier:true},
+    {type:'graveyard',name:'Ashen Graveyard',frontier:true},
+    {type:'goblin',name:'Southwood Camp',frontier:true}
+  ];
   G.BUILDINGS = {
     palace: { name:'Royal Palace', subtitle:'The heart of your kingdom', hp:2600, size:3, cost:0, sight:12, tax:9, description:'Your seat of power. Peasants and tax collectors serve the crown, while royal guards defend its gates.' },
     warriors: { name:'Warriors’ Guild', short:'Warriors’ Guild', subtitle:'Where courage finds a home', hp:850, size:2, cost:350, sight:7, buildTime:15, recruits:'warrior', capacity:4, description:'Recruits stalwart warriors. Brave, heavily armored heroes who favor attack bounties and a good brawl.' },
