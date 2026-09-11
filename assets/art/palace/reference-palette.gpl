@@ -1,0 +1,29 @@
+GIMP Palette
+Name: Sovereign reference colours
+Columns: 5
+# Sampled from the user-provided city screenshot
+130  80  40  terracotta 1
+151 100  60  terracotta 2
+164 118  76  terracotta 3
+201 143  78  terracotta 4
+217 185 123  terracotta 5
+ 93  92  88  stone 1
+117 115 107  stone 2
+140 140 134  stone 3
+166 167 161  stone 4
+194 195 190  stone 5
+110  49  33  red 1
+174  43  24  red 2
+154  60  41  red 3
+172  68  41  red 4
+169  89  67  red 5
+ 87  97  44  foliage 1
+ 91 111  60  foliage 2
+113 118  78  foliage 3
+113 135  60  foliage 4
+130 149  84  foliage 5
+170 171 167  ivory 1
+180 179 171  ivory 2
+185 189 182  ivory 3
+202 201 190  ivory 4
+220 218 209  ivory 5

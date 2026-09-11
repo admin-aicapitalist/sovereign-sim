@@ -9,6 +9,9 @@ Play: **https://sovereign-432652279722.us-central1.run.app/**
 - Resources: 1 CPU, 128 MiB memory, zero minimum instances, two maximum instances.
 - Public access uses Cloud Run's disabled Invoker IAM check; the organization’s domain-restricted IAM policy is unchanged.
 - Nginx serves the static game on port 8080. `.gcloudignore` and `.dockerignore` restrict the deployment to game files and container configuration.
+- The Palace runtime assets are `assets/art/palace/palace-hires.png` and `palace-sprite.js`; Blender/Pixelorama source files and authoring tools stay out of the container.
+- The other ten building textures and `assets/art/buildings/buildings-sprites.js` are included through an explicit allowlist; master renders and preview sheets are excluded.
+- Ten character atlases and `assets/art/units/units-sprites.js` use the same allowlist approach; Blender scenes, master poses and animated previews are excluded.
 
 From the project root, deploy updates with:
 

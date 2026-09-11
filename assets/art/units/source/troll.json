@@ -1,0 +1,35 @@
+{
+  "name": "Hill Troll",
+  "type": "troll",
+  "poses": [
+    "idle",
+    "walk-0",
+    "walk-1",
+    "walk-2",
+    "walk-3",
+    "attack-0",
+    "attack-1",
+    "attack-2"
+  ],
+  "render_size": [
+    960,
+    960
+  ],
+  "logical_size": [
+    96,
+    96
+  ],
+  "anchor_normalized": [
+    0.49999934434890747,
+    0.8448055386543274
+  ],
+  "selection_normalized": [
+    0.49999937415122986,
+    0.5962241888046265
+  ],
+  "selection_radius": 29,
+  "facing": "right; mirrored by the game for left-facing units",
+  "animation_fps": 7,
+  "camera_elevation_degrees": 30,
+  "ortho_scale": 5.4
+}

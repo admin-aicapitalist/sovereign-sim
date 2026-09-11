@@ -1,0 +1,39 @@
+{
+  "name": "Sovereign Royal Palace",
+  "image": "palace-hires.png",
+  "size": [
+    1920,
+    1920
+  ],
+  "logical_size": [
+    240,
+    240
+  ],
+  "pixel_art_image": "palace.png",
+  "pixel_art_size": [
+    240,
+    240
+  ],
+  "pixel_art_scale_2x": "palace@2x.png",
+  "pixel_art_palette_colors": 88,
+  "ground_anchor": [
+    120,
+    179
+  ],
+  "ground_anchor_space": "logical pixels",
+  "projection": "2:1 isometric, orthographic, 30-degree elevation",
+  "source_scene": "sovereign-palace.blend",
+  "pixelorama_project": "sovereign-palace.pxo",
+  "color_theme": "Terracotta, weathered grey stone, and crimson heraldry",
+  "wear": [
+    "chipped battlements",
+    "fractured tower masonry",
+    "gate soot",
+    "water stains",
+    "lichen and ivy",
+    "worn clay tiles",
+    "frayed banners"
+  ],
+  "runtime_manifest": "palace-sprite.js",
+  "game_integration": "Full-resolution texture with smooth scaling, rendered using the logical ground anchor."
+}

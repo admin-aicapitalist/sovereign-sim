@@ -1,0 +1,20 @@
+{
+  "name": "Temple of Light",
+  "type": "temple",
+  "render_size": [
+    1920,
+    1920
+  ],
+  "logical_size": [
+    240,
+    240
+  ],
+  "ground_anchor_normalized": [
+    0.5000000596046448,
+    0.7240765988826752
+  ],
+  "camera_elevation_degrees": 30,
+  "ortho_scale": 14.3,
+  "plot_size": 2,
+  "effects": []
+}

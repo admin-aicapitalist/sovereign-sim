@@ -1,0 +1,44 @@
+{
+  "name": "Terracotta, weathered grey stone, and crimson heraldry",
+  "reference": "User-supplied medieval city screenshot, 2026-09-11; colours sampled from roof, fortress, banner, foliage, and pale stone regions.",
+  "sampled_reference": {
+    "terracotta": ["825028", "97643c", "a4764c", "c98f4e", "d9b97b"],
+    "stone": ["5d5c58", "75736b", "8c8c86", "a6a7a1", "c2c3be"],
+    "red": ["6e3121", "ae2b18", "9a3c29", "ac4429", "a95943"],
+    "foliage": ["57612c", "5b6f3c", "71764e", "71873c", "829554"],
+    "ivory": ["aaaba7", "b4b3ab", "b9bdb6", "cac9be", "dcdad1"]
+  },
+  "materials": {
+    "stone": ["a6a7a1", "b4b3ab", "9c9e98", "c2c3be", "aeb0aa", "b8bcb6"],
+    "mortar": "686e6b",
+    "trim": "cbcbc2",
+    "carved_edges": "dfddd2",
+    "foundation": "91968b",
+    "roof": ["a66b32", "b67a39", "bf8542", "af7334", "c18a46", "b17a3c", "c48e4e", "9b784e", "b18855"],
+    "eaves": "564535",
+    "ridge": "cfa36b",
+    "glass": "273e40",
+    "window_light": "d1a65e",
+    "wood": ["65513c", "7b6143", "8b704f", "705b42"],
+    "portal_shadow": "292f2d",
+    "iron": "444e4b",
+    "metal": "ae915d",
+    "heraldry_ivory": "ece6cf",
+    "flag_cloth": "e0dccb",
+    "banner_cloth": "b52e20",
+    "pavers": ["b9b3a2", "c8c0ac", "a5aaa0", "d0c6ae", "b0b2a1"],
+    "leaves": ["647b39", "829545", "566e35", "93a556"],
+    "weathering": {
+      "old_stone": "838d81",
+      "water_stain": "737d70",
+      "lichen": "a5a993",
+      "exposed_stone": "d1cfc1",
+      "impact": "5b6058",
+      "crack": "444d45",
+      "soot": "52574c",
+      "soot_edge": "898b7b",
+      "roof_chip": "d5b181",
+      "worn_cloth": "98503b"
+    }
+  }
+}

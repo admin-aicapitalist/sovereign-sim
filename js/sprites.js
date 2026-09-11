@@ -1,7 +1,7 @@
 (function () {
   G.sprites = {};
   const S = G.sprites;
-  function surface(w,h) { const c=document.createElement('canvas'); c.width=w*2;c.height=h*2;const x=c.getContext('2d');x.scale(2,2);return {canvas:c,ctx:x,w,h}; }
+  function surface(w,h,scale=2) { const c=document.createElement('canvas'); c.width=w*scale;c.height=h*scale;const x=c.getContext('2d');x.scale(scale,scale);return {canvas:c,ctx:x,w,h}; }
   function poly(c,pts,fill,stroke) { c.beginPath();pts.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.closePath();c.fillStyle=fill;c.fill();if(stroke){c.strokeStyle=stroke;c.lineWidth=.6;c.stroke();} }
   function grad(c,x,y,x2,y2,a,b) { const g=c.createLinearGradient(x,y,x2,y2);g.addColorStop(0,a);g.addColorStop(1,b);return g; }
   function line(c,pts,color,width=1) { c.beginPath();pts.forEach((p,i)=>i?c.lineTo(...p):c.moveTo(...p));c.strokeStyle=color;c.lineWidth=width;c.stroke(); }
@@ -94,7 +94,75 @@
       else {if(type==='skeleton'){line(c,[[-4,-22],[4,-18]],'#d5ccb0',2);line(c,[[-4,-18],[4,-15]],'#d5ccb0',2);ellipse(c,-2,-28,1,1,'#516051');ellipse(c,1,-28,1,1,'#516051');}if(type==='goblin')poly(c,[[-4,-30],[-12,-32],[-5,-25]],'#9da873');line(c,[[5,-22],[11,-13]],cloth,3);line(c,[[11,-13],[attack?24:15,attack?-22:-27]],type==='troll'?'#837147':'#bfc4a9',big?4:2);}
     }c.restore();return o;
   }
-  G.makeSprites=function(){Object.keys(G.BUILDINGS).forEach(k=>S[k]=building(k));for(const type of Object.keys(G.UNITS)){S['unit_'+type]=[];for(let f=0;f<4;f++)S['unit_'+type].push(unit(type,f,false));S['attack_'+type]=unit(type,1,true);}for(let i=0;i<6;i++){S['pine'+i]=tree('pine',i);S['oak'+i]=tree('oak',i);}S.flag=surface(64,82);shadow(S.flag.ctx,25,74,10,3);flag(S.flag.ctx,25,37,'#c17958');S.explore=surface(64,82);shadow(S.explore.ctx,25,74,10,3);flag(S.explore.ctx,25,37,'#d5ba79');};
+  G.makeSprites=function(){Object.keys(G.BUILDINGS).forEach(k=>S[k]=building(k));for(const type of Object.keys(G.UNITS)){delete S['idle_'+type];S['unit_'+type]=[];for(let f=0;f<4;f++)S['unit_'+type].push(unit(type,f,false));S['attack_'+type]=unit(type,1,true);}for(let i=0;i<6;i++){S['pine'+i]=tree('pine',i);S['oak'+i]=tree('oak',i);}S.flag=surface(64,82);shadow(S.flag.ctx,25,74,10,3);flag(S.flag.ctx,25,37,'#c17958');S.explore=surface(64,82);shadow(S.explore.ctx,25,74,10,3);flag(S.explore.ctx,25,37,'#d5ba79');};
+  G.loadSpriteAssets=function(){
+    if(typeof Image==='undefined')return Promise.resolve([]);
+    const buildings=Object.entries(G.spriteAssets||{}).map(([key,asset])=>new Promise(resolve=>{
+      const img=new Image();
+      img.onload=()=>{
+        // Keep the source texture's pixels while retaining its logical game size.
+        const sprite=surface(asset.w,asset.h,Math.max(2,img.naturalWidth/asset.w));
+        sprite.ctx.imageSmoothingEnabled=!asset.pixelArt;
+        sprite.ctx.imageSmoothingQuality='high';
+        sprite.ctx.drawImage(img,0,0,asset.w,asset.h);
+        Object.assign(sprite,{anchor:asset.anchor,bounds:asset.bounds,pixelArt:asset.pixelArt,
+          hitRows:asset.hitRows,effects:asset.effects,assetLoaded:true});
+        S[key]=sprite;resolve(true);
+      };
+      img.onerror=()=>{console.warn('Using procedural sprite fallback for '+key);resolve(false);};
+      img.src=asset.src;
+    }));
+    const units=Object.entries(G.unitAssets||{}).map(([type,asset])=>new Promise(resolve=>{
+      const img=new Image();
+      const fallback=()=>{console.warn('Using procedural character fallback for '+type);resolve(false);};
+      img.onload=()=>{
+        if(img.naturalWidth!==asset.sourceSize[0]||img.naturalHeight!==asset.sourceSize[1])return fallback();
+        // Poses share one native-resolution atlas. Each draw samples just its frame.
+        const canvas=document.createElement('canvas');canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;
+        canvas.getContext('2d').drawImage(img,0,0);
+        const frames=asset.frames.map(frame=>({canvas,w:asset.w,h:asset.h,anchor:asset.anchor,
+          pixelArt:false,assetLoaded:true,selection:asset.selection,selectionRadius:asset.selectionRadius,
+          healthOffset:asset.healthOffset,...frame}));
+        S['idle_'+type]=frames[asset.animations.idle[0]];
+        S['unit_'+type]=asset.animations.walk.map(i=>frames[i]);
+        S['attack_'+type]=asset.animations.attack.map(i=>frames[i]);
+        resolve(true);
+      };
+      img.onerror=fallback;img.src=asset.src;
+    }));
+    return Promise.all([...buildings,...units]);
+  };
+  G.buildingSpriteLayout=function(type){
+    const sprite=S[type],scale=type==='palace'?1.03:.89,anchor=sprite.anchor||[120,211];
+    return{sprite,scale,x:-anchor[0]*scale,y:-anchor[1]*scale,w:sprite.w*scale,h:sprite.h*scale};
+  };
+  G.unitSpriteLayout=function(u){
+    const walk=S['unit_'+u.type],attack=S['attack_'+u.type];
+    const working=u.type==='peasant'&&!u.path.length&&/^(Building|Repairing) /.test(u.state||'');
+    let sprite=S['idle_'+u.type]||walk[1];
+    if(u.attacking>0||working){
+      const frame=working?Math.floor(G.time*7+(u.id||0))%3:Math.min(2,Math.floor((1-u.attacking/.34)*3));
+      sprite=Array.isArray(attack)?attack[Math.max(0,frame)]:attack;
+    }else if(u.path.length)sprite=walk[Math.floor(u.anim)%walk.length];
+    const anchor=sprite.anchor||[32,64];
+    return{sprite,x:-anchor[0],y:-anchor[1],w:sprite.w,h:sprite.h,
+      selection:sprite.selection||[0,-17],selectionRadius:sprite.selectionRadius||20,
+      healthOffset:sprite.healthOffset??-43};
+  };
+  G.paintSprite=function(ctx,sprite,x,y,w=sprite.w,h=sprite.h){
+    if(sprite.frame)ctx.drawImage(sprite.canvas,...sprite.frame,x,y,w,h);
+    else ctx.drawImage(sprite.canvas,x,y,w,h);
+  };
+  G.spriteContainsPoint=function(sprite,x,y){
+    if(x<0||y<0||x>=sprite.w||y>=sprite.h)return false;
+    // Exported row outlines also work with file://, where imported canvas pixels
+    // cannot be read. Transparent roof corners should not intercept other buildings.
+    if(sprite.hitRows){const row=sprite.hitRows[Math.floor(y)];return !!row&&x>=row[0]&&x<row[1];}
+    if(sprite.assetLoaded)return true;
+    const c=sprite.canvas,r=c.width/sprite.w;
+    sprite.hitPixels=sprite.hitPixels||sprite.ctx.getImageData(0,0,c.width,c.height).data;
+    return sprite.hitPixels[(Math.floor(y*r)*c.width+Math.floor(x*r))*4+3]>=96;
+  };
   G.drawSprite=function(ctx,key,x,y,w,h){const s=S[key];if(s)ctx.drawImage(s.canvas,x,y,w||s.w,h||s.h);};
   G.art={poly,ellipse,line,grad};
 })();

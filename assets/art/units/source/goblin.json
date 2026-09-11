@@ -1,0 +1,35 @@
+{
+  "name": "Goblin Raider",
+  "type": "goblin",
+  "poses": [
+    "idle",
+    "walk-0",
+    "walk-1",
+    "walk-2",
+    "walk-3",
+    "attack-0",
+    "attack-1",
+    "attack-2"
+  ],
+  "render_size": [
+    960,
+    960
+  ],
+  "logical_size": [
+    96,
+    96
+  ],
+  "anchor_normalized": [
+    0.5000001788139343,
+    0.7485816180706024
+  ],
+  "selection_normalized": [
+    0.5000001788139343,
+    0.6234890520572662
+  ],
+  "selection_radius": 20,
+  "facing": "right; mirrored by the game for left-facing units",
+  "animation_fps": 7,
+  "camera_elevation_degrees": 30,
+  "ortho_scale": 5.4
+}

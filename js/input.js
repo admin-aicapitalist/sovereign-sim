@@ -1,7 +1,11 @@
 (function(){
   G.keys={};let drag=null,overWorld=false;
-  G.hitTest=function(sx,sy){const wp=G.screenToWorld(sx,sy);let result=null,best=Infinity;for(const f of G.flags){if(f.dead)continue;const p=G.worldToScreen(f.x,f.y);if(Math.abs(sx-p.x-6)<23*G.camera.zoom&&sy<p.y&&sy>p.y-60*G.camera.zoom)return f;}for(const u of G.units){if(u.dead||u.hostile&&!G.isVisible(u.x,u.y))continue;const p=G.worldToScreen(u.x,u.y),d=Math.hypot(sx-p.x,sy-(p.y-17*G.camera.zoom));if(d<20*G.camera.zoom&&d<best){result=u;best=d;}}if(result)return result;
-    for(const b of G.buildings){if(b.dead||b.hostile&&!G.isExplored(b.x,b.y))continue;const p=G.worldToScreen(b.x,b.y),w=(b.type==='palace'?85:62)*G.camera.zoom,h=(b.type==='palace'?168:120)*G.camera.zoom;const d=G.dist(wp,b);if(sx>p.x-w&&sx<p.x+w&&sy>p.y-h&&sy<p.y+20*G.camera.zoom&&(!result||b.x+b.y>result.x+result.y))result=b;}return result;
+  G.hitTest=function(sx,sy){let result=null,best=Infinity;for(const f of G.flags){if(f.dead)continue;const p=G.worldToScreen(f.x,f.y);if(Math.abs(sx-p.x-6)<23*G.camera.zoom&&sy<p.y&&sy>p.y-60*G.camera.zoom)return f;}for(const u of G.units){if(u.dead||u.hostile&&!G.isVisible(u.x,u.y))continue;const p=G.worldToScreen(u.x,u.y),layout=G.unitSpriteLayout(u),z=G.camera.zoom,d=Math.hypot(sx-(p.x+layout.selection[0]*u.facing*z),sy-(p.y+layout.selection[1]*z));if(d<layout.selectionRadius*z&&d<best){result=u;best=d;}}if(result)return result;
+    for(const b of G.buildings){if(b.dead||b.hostile&&!G.isExplored(b.x,b.y))continue;const p=G.worldToScreen(b.x,b.y),layout=G.buildingSpriteLayout(b.type),sprite=layout.sprite;let bounds=b.type==='palace'?[-85,-168,85,20]:[-62,-120,62,20];if(sprite.assetLoaded)bounds=sprite.bounds.map((v,i)=>v*layout.scale+(i%2?layout.y:layout.x));const z=G.camera.zoom;if(sx>p.x+bounds[0]*z&&sx<p.x+bounds[2]*z&&sy>p.y+bounds[1]*z&&sy<p.y+bounds[3]*z){
+        const x=((sx-p.x)/z-layout.x)/layout.scale,y=((sy-p.y)/z-layout.y)/layout.scale;
+        if(!G.spriteContainsPoint(sprite,x,y))continue;
+        if(!result||b.x+b.y>result.x+result.y)result=b;
+      }}return result;
   };
   G.setMode=function(type,key){G.mode=type?{type,key}:null;G.ui?.updateCommands();G.ui?.modeHint();document.getElementById('world').style.cursor=type?'crosshair':'default';};
   G.changeZoom=function(factor,x,y){const vp=G.viewport();x=x??vp.width/2;y=y??vp.height*.46;const before=G.screenToWorld(x,y);G.camera.zoom=G.clamp(G.camera.zoom*factor,.55,2.1);const after=G.screenToWorld(x,y),a=G.iso(before.x,before.y),b=G.iso(after.x,after.y);G.camera.x+=a.x-b.x;G.camera.y+=a.y-b.y;};
