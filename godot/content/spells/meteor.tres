@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/content/spells.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "meteor"
+name = "Meteor"
+description = "Call down a meteor after a short warning. Deals 280 damage to enemies within 3½ tiles, including lairs. Allies are unharmed."
+cost = 150
+mana = 60
+cooldown = 32
+radius = 3.5
+research = 450
+time = 45
+properties = {"prerequisite": "frost", "damage": 280, "delay": 0.65, "offensive": true, "visualDuration": 2.8, "symbol": "☄", "color": "#ca8c61"}

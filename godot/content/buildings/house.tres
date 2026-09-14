@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/content/buildings.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "house"
+name = "Peasant Cottage"
+description = "A warm home for your subjects. Produces taxable income. More than six completed cottages attract rat sewers; every four excess cottages can sustain another infestation."
+hp = 320
+cost = 100
+size = 1
+upgrade_cost = 0
+upgrade_time = 30
+upgrade_capacity = 2
+upgrade_armor = 2
+upgrade_damage = 4
+properties = {"short": "Cottage", "subtitle": "A place to call home", "sight": 5, "buildTime": 8, "tax": 3}

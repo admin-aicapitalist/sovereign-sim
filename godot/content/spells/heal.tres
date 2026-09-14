@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/content/spells.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "heal"
+name = "Healing Light"
+description = "Restore 130 health to friendly units and buildings within 4 tiles."
+cost = 65
+mana = 25
+cooldown = 14
+radius = 4
+research = 125
+time = 20
+properties = {"heal": 130, "visualDuration": 1.8, "symbol": "✥", "color": "#c7c78b"}

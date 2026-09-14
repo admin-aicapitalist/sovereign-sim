@@ -1,6 +1,9 @@
 extends Node2D
 const Simulation=preload("res://scripts/simulation.gd")
 const Magic=preload("res://scripts/magic.gd")
+const Cue=preload("res://scenes/combat_cue.tscn")
+var cues: Dictionary={}
+var cue_revision: int=-1
 var sim: Simulation
 var manifest: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/assets.json"))
 var textures: Dictionary={}
@@ -63,7 +66,27 @@ func refresh() -> void:
 		else: vision.update(data)
 		fog_material.set_shader_parameter("vision",vision)
 	terrain_material.set_shader_parameter("clock",sim.time)
-	queue_redraw(); refresh_ms=(Time.get_ticks_usec()-began)/1000.0
+	sync_cues(); queue_redraw(); refresh_ms=(Time.get_ticks_usec()-began)/1000.0
+func sync_cues() -> void:
+	if cue_revision!=sim.revision:
+		for node in cues.values(): node.queue_free()
+		cues.clear(); cue_revision=sim.revision
+	var alive: Dictionary={}
+	for e in sim.effects:
+		if e.type not in ["hit","death","upgrade","relic","slam"] or not sim.is_visible(sim.pos(e)): continue
+		var at:=iso(sim.pos(e))
+		if not visible_rect.grow(150).has_point(at): continue
+		var key: String=str(e.started)+"/"+str(e.x)+"/"+str(e.y)+"/"+e.type
+		alive[key]=true
+		if not cues.has(key):
+			if cues.size()>=80: continue
+			var cue=Cue.instantiate(); cue.kind=e.type; cue.position=at+Vector2(0,-15 if e.type=="hit" else 0)
+			cue.color=Color("c77546") if e.type=="slam" else Color("e5c57c")
+			cue.radius=e.value*45 if e.type=="slam" else 60 if e.type=="upgrade" else 27
+			cue.z_index=102; add_child(cue); cues[key]=cue
+		cues[key].sample(sim.time-e.started,e.life)
+	for key in cues.keys():
+		if not alive.has(key): cues[key].queue_free(); cues.erase(key)
 static func terrain_hash(x: int,y: int) -> int:
 	var n: int=(((x+731)*374761393)&0xffffffff)^(((y+919)*668265263)&0xffffffff)
 	n=((n^(n>>13))*1274126177)&0xffffffff
@@ -172,6 +195,9 @@ func _draw() -> void:
 			var b=item.building; var factor: float=1.03 if b.type=="palace" else 0.89
 			if selected==int(b.id) or hovered==int(b.id): ring(p,b.size*24,Color("f0d591"))
 			paint(b.type,p,factor,-1,1,Color(1,1,1,0.4+0.6*b.progress))
+			if b.get("tier",1)>1:
+				ring(p,b.size*20,Color("a99758"),2); draw_string(font,p+Vector2(-6,-100),"II",HORIZONTAL_ALIGNMENT_LEFT,-1,17,Color("f1d598"))
+			if b.get("upgrade_remaining",0)>0: health(p+Vector2(-19,-100),1-b.upgrade_remaining/sim.definition_of(b).upgrade_time,false)
 			if b.progress<1: health(p+Vector2(-19,-85),b.progress,false)
 			elif sim.time-b.last_hit<3 or selected==int(b.id): health(p+Vector2(-19,-90),b.hp/b.max_hp,b.hostile)
 			var a: Dictionary=manifest[b.type]
@@ -185,6 +211,7 @@ func _draw() -> void:
 		elif item.has("loot"):
 			var pile=item.loot
 			if selected==int(pile.id): ring(p,20,Color("e0c985"))
+			if not pile.get("items",[]).is_empty(): ring(p,22+sin(sim.time*3)*2,Color("d8b56d"),2)
 			var texture: Texture2D=effect_textures[pile.type]
 			draw_texture_rect(texture,Rect2(p+Vector2(-26,-34),Vector2(52,48)),false)
 		else:
@@ -193,7 +220,18 @@ func _draw() -> void:
 			var frame: int=0
 			if u.attacking>0 or (u.state.begins_with("Building") or u.state.begins_with("Repairing")) and u.path_index>=u.path.size(): frame=5+int(sim.time*8+u.id)%3
 			elif u.path_index<u.path.size(): frame=1+int(u.animation)%4
-			paint("unit_"+u.type,p,1,frame,u.facing)
+			var boss: bool=u.id==sim.mission.boss_id
+			var offset_at:=Vector2.ZERO
+			if not u.pending_attack.is_empty():
+				var preparing: float=1-u.pending_attack.remaining/u.pending_attack.duration
+				offset_at=Vector2(-u.facing*4*sin(preparing*PI),-2*sin(preparing*PI)); frame=5+mini(2,int(preparing*3))
+			var tint:=Color(1.45,1.2,0.95) if sim.time-u.last_hit<0.13 else Color("d9b18a") if boss else Color.WHITE
+			paint("unit_"+u.type,p+offset_at,1.3 if boss else 1,frame,u.facing,tint)
+			if boss:
+				ring(p,27,Color("cd7447"),2)
+				draw_string(font,p+Vector2(-57,-103),"EMBER WARLORD",HORIZONTAL_ALIGNMENT_LEFT,-1,14,Color("f1c083"))
+				health(p+Vector2(-19,-95),u.hp/u.max_hp,true)
+			if not u.equipment.is_empty(): draw_circle(p+Vector2(12,-30),2.5,Color("e5bc67"))
 			var offset: float=manifest["unit_"+u.type].healthOffset
 			if sim.time-u.last_hit<3 or u.id==selected: health(p+Vector2(-19,offset),u.hp/u.max_hp,u.hostile)
 			if u.hero and u.level>1: draw_string(font,p+Vector2(-9,offset-4),"★ %d"%u.level,HORIZONTAL_ALIGNMENT_LEFT,-1,11,Color("e0ca86"))
@@ -215,6 +253,15 @@ func _draw() -> void:
 		else:
 			for i in range(5,-1,-1): draw_circle(a-direction*i*4,3+i*0.6,Color(0.9,0.53,0.23,0.5-i*0.07))
 			draw_circle(a,3.2,Color("f1d6a1"))
+	if sim.mission.slam_remaining>0:
+		var at:=Vector2(sim.mission.slam_x,sim.mission.slam_y)
+		if sim.is_visible(at):
+			var p:=iso(at); var radius: float=sim.definitions.mission.slam_radius*45
+			var points:=PackedVector2Array()
+			for i in 64: points.append(p+Vector2(cos(i*TAU/64)*radius,sin(i*TAU/64)*radius*0.5))
+			draw_colored_polygon(points,Color(0.9,0.25,0.08,0.2)); ring(p,radius,Color("eeaa62"),3)
+			ring(p,radius*(1-sim.mission.slam_remaining/sim.definitions.mission.slam_warning),Color("f8d390"),2)
+			draw_string(font,p+Vector2(-38,12),"GROUND SLAM",HORIZONTAL_ALIGNMENT_LEFT,-1,15,Color("ffe6bb"))
 	draw_effects()
 	draw_preview(); draw_ms=(Time.get_ticks_usec()-began)/1000.0
 func draw_effects() -> void:
@@ -229,6 +276,7 @@ func draw_effects() -> void:
 		elif e.type in ["heal","level"]:
 			ring(p,12+t*40,Color(0.82,0.83,0.57,1-t))
 			for i in 8: draw_circle(p+Vector2(cos(i*0.785)*(8+t*15),-t*40+sin(i*0.785)*5),1.6,Color(0.9,0.85,0.63,1-t))
+		elif e.type in ["death","upgrade","relic","slam"]: pass
 		elif e.type=="gold": draw_string(font,p+Vector2(-10,-25-t*25),"+%d"%e.value,HORIZONTAL_ALIGNMENT_LEFT,-1,14,Color(0.96,0.87,0.62,1-t))
 		else:
 			for i in (24 if e.type=="collapse" else 7):

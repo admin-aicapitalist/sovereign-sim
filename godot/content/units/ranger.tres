@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/content/units.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "ranger"
+name = "Ranger"
+hp = 135
+damage = 17
+armor = 1
+range = 5.5
+speed = 1.85
+rate = 1.15
+sight = 10
+cost = 110
+properties = {"bravery": 0.95, "affinity": 0.85, "color": "#82a76c", "hero": true}

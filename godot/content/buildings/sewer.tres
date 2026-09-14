@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/content/buildings.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "sewer"
+name = "The Old Sewer"
+description = "A forgotten drain teeming with giant rats. Destroy it to make the kingdom safer."
+hp = 950
+cost = 0
+size = 2
+upgrade_cost = 0
+upgrade_time = 30
+upgrade_capacity = 2
+upgrade_armor = 2
+upgrade_damage = 4
+properties = {"subtitle": "Something stirs below", "hostile": true, "interval": 52, "spawn": "rat", "reward": 180}

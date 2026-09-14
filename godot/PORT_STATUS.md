@@ -13,3 +13,5 @@ Reference: frozen JavaScript migration inputs in `tools/reference/`, including T
 - [x] Native regression/parity tests, browser desktop/mobile controls, long campaign, export and performance report
 
 All listed systems are implemented and verified. See [results and measured limits](reports/RESULTS.md), [run/export instructions](README.md), and [GCP deployment instructions](../deploy/README.md).
+
+The next milestone adds the Ember Crown mission, equipment, tier-II guilds, editable Resource definitions and AnimationPlayer combat cues. See [milestone results](reports/MILESTONE.md) and the [authoring guide](content/README.md).

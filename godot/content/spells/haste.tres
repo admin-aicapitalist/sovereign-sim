@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/content/spells.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "haste"
+name = "Haste"
+description = "Friendly units within 3 tiles move 40% faster and attack 30% faster for 14 seconds."
+cost = 55
+mana = 20
+cooldown = 22
+radius = 3
+research = 225
+time = 30
+properties = {"prerequisite": "heal", "duration": 14, "speed": 1.4, "attackSpeed": 1.3, "visualDuration": 1.8, "symbol": "»", "color": "#a8bb95"}

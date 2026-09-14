@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/content/buildings.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "warriors"
+name = "Warriors’ Guild"
+description = "Recruits stalwart warriors. Brave, heavily armored heroes who favor attack bounties and a good brawl."
+hp = 850
+cost = 350
+size = 2
+upgrade_cost = 275
+upgrade_time = 30
+upgrade_capacity = 2
+upgrade_armor = 2
+upgrade_damage = 4
+properties = {"short": "Warriors’ Guild", "subtitle": "Where courage finds a home", "sight": 7, "buildTime": 15, "recruits": "warrior", "capacity": 4}

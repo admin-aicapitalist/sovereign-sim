@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/content/buildings.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "temple"
+name = "Temple of Light"
+description = "Research spells for the sovereign and every wizard. Heroes also recover faster near this sanctuary."
+hp = 900
+cost = 400
+size = 2
+upgrade_cost = 0
+upgrade_time = 30
+upgrade_capacity = 2
+upgrade_armor = 2
+upgrade_damage = 4
+properties = {"short": "Temple", "subtitle": "A sanctuary for the weary", "sight": 7, "buildTime": 17}

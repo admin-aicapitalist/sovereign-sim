@@ -1,0 +1,1 @@
+`legacy-v2-save.zip` contains the unmodified format-2 victory save from commit `b8d40de` (`godot/reports/full-victory-save.json`). It is an immutable compatibility fixture, compressed to avoid duplicating a large map in plain JSON. Unlike generated reports, running campaign tests never overwrites it.

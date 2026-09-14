@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/content/spells.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "ward"
+name = "Arcane Ward"
+description = "Grant friendly units within 3 tiles 8 extra armor for 16 seconds. Stacks with Stoneskin potions."
+cost = 70
+mana = 25
+cooldown = 24
+radius = 3
+research = 200
+time = 25
+properties = {"prerequisite": "heal", "duration": 16, "armor": 8, "visualDuration": 2, "symbol": "◇", "color": "#c9ad70"}

@@ -1,0 +1,222 @@
+{
+  "recorded_at": "2026-09-14T17:26:32.965Z",
+  "origin": "http://127.0.0.1:8131/",
+  "metadata": {
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36",
+    "hardwareConcurrency": 14,
+    "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+    "viewport": [
+      1440,
+      900
+    ],
+    "devicePixelRatio": 1,
+    "crossOriginIsolated": false
+  },
+  "first_load_ms": 1872.1443330000002,
+  "load_note": "Measured from this test machine with browser cache disabled.",
+  "checks": [
+    "Welcome, audio toggle, pause, mouse construction, workers, recruitment and capacity",
+    "Attack and exploration bounties, raise and refund through visible controls",
+    "All hero guilds, potion prerequisites, Temple research, royal healing and farsight",
+    "Reload persistence for the full kingdom, RNG, inventories, research, cooldowns and malformed-save rejection",
+    "Native campaign victory save renders the ending; Palace defeat and replay controls work",
+    "390px DPR2 layout, touch pan/tap, zoom, selection, horizontal cards and scrollable help/research",
+    "Replay, fresh maps and named seeds",
+    "Player URL starts without automation controls"
+  ],
+  "benchmarks": [
+    {
+      "average_fps": 59.9969368933447,
+      "dropped_sim_seconds": 0,
+      "engine": "4.7.2-stable (official)",
+      "frame_p50_ms": 16.6666666666667,
+      "frame_p95_ms": 16.6666666666667,
+      "frames": 901,
+      "measurement_seconds": 15,
+      "platform": "Web",
+      "profile_ms": {
+        "main_process": {
+          "p50": 0.1,
+          "p95": 1.4
+        },
+        "minimap_draw": {
+          "p50": 0.2,
+          "p95": 3
+        },
+        "ui_refresh": {
+          "p50": 0.6,
+          "p95": 1
+        },
+        "world_draw": {
+          "p50": 4.2,
+          "p95": 4.4
+        },
+        "world_refresh": {
+          "p50": 0,
+          "p95": 0.1
+        }
+      },
+      "simulation_seconds": 18.0000000000001,
+      "stats": {
+        "boss_slams": 0,
+        "bounties": 0,
+        "built": 0,
+        "decisions": 2446,
+        "equipment_found": 0,
+        "hits": 1048,
+        "infestations_cleared": 0,
+        "kills": 0,
+        "lairs": 0,
+        "loot_caches": 0,
+        "loot_gold": 0,
+        "loot_potions": 0,
+        "losses": 0,
+        "moves": 9375,
+        "path_deferrals": 132,
+        "paths": 377,
+        "potions_bought": 0,
+        "potions_used": 0,
+        "recruits": 0,
+        "royal_spells": 0,
+        "slain": 0,
+        "taxes": 9,
+        "upgrades": 0,
+        "wizard_spells": 0
+      },
+      "tick_p50_ms": 0.9,
+      "tick_p95_ms": 2.2,
+      "units": 100,
+      "visible_units_mean": 98,
+      "warmup_seconds": 3
+    },
+    {
+      "average_fps": 60.0000000000008,
+      "dropped_sim_seconds": 0,
+      "engine": "4.7.2-stable (official)",
+      "frame_p50_ms": 16.6666666666667,
+      "frame_p95_ms": 16.6666666666667,
+      "frames": 901,
+      "measurement_seconds": 15,
+      "platform": "Web",
+      "profile_ms": {
+        "main_process": {
+          "p50": 0.1,
+          "p95": 3.1
+        },
+        "minimap_draw": {
+          "p50": 0.4,
+          "p95": 3.1
+        },
+        "ui_refresh": {
+          "p50": 0.6,
+          "p95": 1.1
+        },
+        "world_draw": {
+          "p50": 5.4,
+          "p95": 5.6
+        },
+        "world_refresh": {
+          "p50": 0,
+          "p95": 0.1
+        }
+      },
+      "simulation_seconds": 18.0000000000001,
+      "stats": {
+        "boss_slams": 0,
+        "bounties": 0,
+        "built": 0,
+        "decisions": 7355,
+        "equipment_found": 0,
+        "hits": 3741,
+        "infestations_cleared": 0,
+        "kills": 0,
+        "lairs": 0,
+        "loot_caches": 0,
+        "loot_gold": 0,
+        "loot_potions": 0,
+        "losses": 0,
+        "moves": 13177,
+        "path_deferrals": 1266,
+        "paths": 712,
+        "potions_bought": 0,
+        "potions_used": 0,
+        "recruits": 0,
+        "royal_spells": 0,
+        "slain": 0,
+        "taxes": 9,
+        "upgrades": 0,
+        "wizard_spells": 0
+      },
+      "tick_p50_ms": 2.6,
+      "tick_p95_ms": 3.7,
+      "units": 300,
+      "visible_units_mean": 291,
+      "warmup_seconds": 3
+    },
+    {
+      "average_fps": 46.486109349233,
+      "dropped_sim_seconds": 0,
+      "engine": "4.7.2-stable (official)",
+      "frame_p50_ms": 21.4285714285714,
+      "frame_p95_ms": 21.6666666666667,
+      "frames": 698,
+      "measurement_seconds": 15,
+      "platform": "Web",
+      "profile_ms": {
+        "main_process": {
+          "p50": 0.1,
+          "p95": 10.4
+        },
+        "minimap_draw": {
+          "p50": 1.2,
+          "p95": 3.9
+        },
+        "ui_refresh": {
+          "p50": 0.8,
+          "p95": 1.3
+        },
+        "world_draw": {
+          "p50": 9.8,
+          "p95": 10.2
+        },
+        "world_refresh": {
+          "p50": 0,
+          "p95": 0.1
+        }
+      },
+      "simulation_seconds": 18.0000000000001,
+      "stats": {
+        "boss_slams": 0,
+        "bounties": 0,
+        "built": 0,
+        "decisions": 24495,
+        "equipment_found": 0,
+        "hits": 13621,
+        "infestations_cleared": 0,
+        "kills": 0,
+        "lairs": 0,
+        "loot_caches": 0,
+        "loot_gold": 0,
+        "loot_potions": 0,
+        "losses": 0,
+        "moves": 11113,
+        "path_deferrals": 7707,
+        "paths": 1082,
+        "potions_bought": 0,
+        "potions_used": 0,
+        "recruits": 0,
+        "royal_spells": 0,
+        "slain": 0,
+        "taxes": 9,
+        "upgrades": 0,
+        "wizard_spells": 0
+      },
+      "tick_p50_ms": 8.5,
+      "tick_p95_ms": 10,
+      "units": 1000,
+      "visible_units_mean": 954,
+      "warmup_seconds": 3
+    }
+  ],
+  "errors": []
+}

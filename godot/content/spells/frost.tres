@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/content/spells.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "frost"
+name = "Frost Nova"
+description = "Deal 55 damage to enemies within 3 tiles. Monsters move 55% slower and attack 35% slower for 6 seconds."
+cost = 80
+mana = 30
+cooldown = 18
+radius = 3
+research = 250
+time = 30
+properties = {"prerequisite": "lightning", "damage": 55, "duration": 6, "speed": 0.45, "attackSpeed": 0.65, "offensive": true, "visualDuration": 2, "symbol": "❄", "color": "#8eb6bc"}

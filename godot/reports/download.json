@@ -32,8 +32,8 @@
     },
     {
       "file": "index.pck",
-      "bytes": 9113152,
-      "gzip_bytes": 8895086
+      "bytes": 9179748,
+      "gzip_bytes": 8927752
     },
     {
       "file": "index.png",
@@ -46,6 +46,6 @@
       "gzip_bytes": 10054758
     }
   ],
-  "total_bytes": 48962518,
-  "total_gzip_bytes": 19060873
+  "total_bytes": 49029114,
+  "total_gzip_bytes": 19093539
 }

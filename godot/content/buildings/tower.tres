@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/content/buildings.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "tower"
+name = "Guard Tower"
+description = "Shoots approaching monsters. A wise investment near your borders, and an excellent answer to trolls."
+hp = 800
+cost = 200
+size = 1
+upgrade_cost = 0
+upgrade_time = 30
+upgrade_capacity = 2
+upgrade_armor = 2
+upgrade_damage = 4
+properties = {"short": "Guard Tower", "subtitle": "An ever-watchful eye", "sight": 9, "buildTime": 11, "damage": 21, "range": 7, "attackRate": 1.4}

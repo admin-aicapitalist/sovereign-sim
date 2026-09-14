@@ -15,6 +15,8 @@ var minimap
 var treasury: Label
 var status: Label
 var notice: Label
+var chapter: Label
+var encounter_button: Button
 var quest: Label
 var portrait: TextureRect
 var details: Label
@@ -66,8 +68,12 @@ func _ready() -> void:
 	controls.add_child(button("map","Map",func():map_open=not map_open; layout(true)))
 	controls.add_child(button("center","Palace",main.center)); controls.add_child(button("zoom_out","−",func():main.change_zoom(0.86))); controls.add_child(button("zoom_in","+",func():main.change_zoom(1.16)))
 	campaign=panel(root); var campaign_scroll:=ScrollContainer.new(); campaign_scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; campaign.add_child(campaign_scroll); var campaign_col:=VBoxContainer.new(); campaign_col.size_flags_horizontal=Control.SIZE_EXPAND_FILL; campaign_scroll.add_child(campaign_col)
-	campaign_col.add_child(label("THE ROYAL CAMPAIGN",14,"866640")); campaign_col.add_child(label("The Young Kingdom",24))
+	campaign_col.add_child(label("THE ROYAL CAMPAIGN",14,"866640")); chapter=label("The Young Kingdom",24); chapter.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; campaign_col.add_child(chapter)
 	quest=label("",17); quest.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; campaign_col.add_child(quest)
+	encounter_button=button("encounter","Locate encounter",func():
+		var m: Dictionary=main.sim.mission; var e=main.sim.entity(m.boss_id if m.boss_id and not m.boss_defeated else m.encounter_id)
+		if e!=null: main.center_on(main.sim.pos(e)); main.world.selected=e.id; objectives_open=false; refresh())
+	campaign_col.add_child(encounter_button)
 	objective_list=VBoxContainer.new(); campaign_col.add_child(objective_list)
 	inspector=panel(root); inspector_scroll=ScrollContainer.new(); inspector_scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; inspector.add_child(inspector_scroll)
 	var inspect_col:=VBoxContainer.new(); inspect_col.size_flags_horizontal=Control.SIZE_EXPAND_FILL; inspector_scroll.add_child(inspect_col)
@@ -164,7 +170,10 @@ func refresh() -> void:
 	widgets.pause.text="Resume" if s.paused else "Pause"; widgets.sound.text="Mute" if main.sound.enabled else "Sound"
 	for n in [1,2,3]: widgets["speed_"+str(n)].modulate=Color("e9c987") if main.speed==n else Color.WHITE
 	var sanitation=Sanitation.status(s)
-	quest.text="%d / 8 lairs destroyed\nKeep your Palace standing.\n\n%s · Seed %d\nCottages: %d / 6 safe%s"%[s.stats.lairs,s.fixture.name,s.fixture.seed,sanitation.cottages,"\nRat sewers: %d · next in %ds"%[sanitation.active,sanitation.next_in] if sanitation.next_in>=0 else "\nActive rat sewers: %d"%sanitation.active if sanitation.active>0 else ""]
+	chapter.text=s.Mission.title(s)
+	encounter_button.visible=s.mission.id=="ember_crown" and s.mission.revealed
+	encounter_button.text="Locate Warlord" if s.mission.boss_id and not s.mission.boss_defeated else "Locate Monastery"
+	quest.text="%d / 8 lairs destroyed\n%s\n\n%s · Seed %d\nCottages: %d / 6 safe%s"%[s.stats.lairs,s.Mission.objective(s),s.fixture.name,s.fixture.seed,sanitation.cottages,"\nRat sewers: %d · next in %ds"%[sanitation.active,sanitation.next_in] if sanitation.next_in>=0 else "\nActive rat sewers: %d"%sanitation.active if sanitation.active>0 else ""]
 	var ids: Array=s.buildings.filter(func(b):return b.hostile and not b.infestation).map(func(b):return b.id)
 	if ids!=objective_ids: clear(objective_list); objective_ids=ids
 	for b in s.buildings:
@@ -172,7 +181,7 @@ func refresh() -> void:
 		var entry=widgets.get("lair_"+str(b.id))
 		if not is_instance_valid(entry) or entry.get_parent()!=objective_list:
 			entry=button("lair_"+str(b.id),"",func():main.center_on(s.pos(b)); main.world.selected=b.id; objectives_open=false; refresh()); objective_list.add_child(entry)
-		entry.text=("✓ " if b.dead else "◇ ")+b.site_name
+		entry.text=("Done · " if b.dead else "· ")+b.site_name
 		entry.add_theme_font_size_override("font_size",15); entry.disabled=b.dead or not s.is_explored(s.pos(b)); entry.tooltip_text="Explore the frontier to discover this lair." if entry.disabled and not b.dead else "Locate this lair"
 	var e=s.entity(main.world.selected)
 	inspector.visible=e!=null and not e.dead
@@ -187,7 +196,7 @@ func refresh() -> void:
 	refresh_ms=(Time.get_ticks_usec()-began)/1000.0
 func inspect(e) -> void:
 	var s=main.sim
-	var signature: String=str(e.id)+(str(e.progress==1) if e.kind=="building" else "")
+	var signature: String=str(e.id)+(str(e.progress==1)+str(e.tier) if e.kind=="building" else "")
 	if signature!=action_signature: clear(actions); action_signature=signature
 	portrait.visible=e.kind in ["unit","building"]
 	if e.kind=="building":
@@ -198,6 +207,11 @@ func inspect(e) -> void:
 		if e.hostile: details.text+="\n\nPossible drops: "+loot_description(e); add_action("action","Post attack bounty · 100g",func():var f=s.place_flag("attack",s.pos(e),e.id); main.world.selected=f.get("id",e.id); refresh())
 		else:
 			details.text+="\n\nTax reserves: %dg"%e.tax
+			if d.has("recruits"):
+				details.text+="\nGuild tier: %d · Capacity: %d"%[e.tier,s.guild_capacity(e)]
+				if e.tier>1: details.text+="\nGuild support: +%d attack, +%d armor\nApplies to this guild’s heroes while it stands."%[d.upgrade_damage,d.upgrade_armor]
+				elif d.upgrade_cost>0:
+					add_action("upgrade","Training · %ds"%e.upgrade_remaining if e.upgrade_remaining>0 else "Upgrade guild · %dg"%d.upgrade_cost,func():s.upgrade(e.id); refresh(),e.progress<1 or e.upgrade_remaining>0 or s.gold<d.upgrade_cost)
 			if d.has("recruits"): add_action("action","Recruit %s · %dg"%[d.recruits,s.definitions.units[d.recruits].cost],func():s.recruit(e.id); refresh(),e.progress<1)
 			if e.type=="marketplace" and e.progress==1: details.text+="\n"+research_status("potion"); add_action("research","Potions & research",func():show_research("potion",e.id))
 			if e.type=="temple" and e.progress==1: details.text+="\n"+research_status("spell"); add_action("research","Spellbook & research",func():show_research("spell",e.id))
@@ -205,7 +219,11 @@ func inspect(e) -> void:
 	elif e.kind=="unit":
 		var atlas:=AtlasTexture.new(); atlas.atlas=main.world.textures["unit_"+e.type]; var a=main.world.manifest["unit_"+e.type].frames[0].frame; atlas.region=Rect2(a[0],a[1],a[2],a[3]); portrait.texture=atlas
 		details.text=e.name+"\n"+("Level %d %s\n"%[e.level,e.definition.name] if e.hero else "")+e.state+"\n\nHealth: %d / %d\nAttack: %d · Armor: %d"%[e.hp,e.max_hp,Supplies.damage(s,e),Supplies.armor(s,e)]
+		if e.id==s.mission.boss_id: details.text+="\n\nGround slam: leave the marked circle.\n"+("Enraged: faster slams." if s.mission.enraged else "Enrages at half health.")
 		if e.hero:
+			details.text+="\n\nEquipment"
+			if e.equipment.is_empty(): details.text+="\nNo relics equipped. Recover lair treasure."
+			for key in e.equipment.values(): details.text+="\n"+s.definitions.items[key].name+" · "+s.definitions.items[key].description
 			details.text+="\nPurse: %dg · XP: %d / %d\n"%[e.gold,e.xp,e.level*45]
 			for key in s.definitions.potions: details.text+="\n%s: %d / %d"%[s.definitions.potions[key].name,e.potions[key],s.definitions.potions[key].capacity]
 			for key in e.buffs:
@@ -222,6 +240,7 @@ func inspect(e) -> void:
 		details.text=("Treasure Chest" if e.chest else "Loot Pouch")+"\n"+e.source+"\n\nGold: %dg"%e.gold
 		for key in e.potions:
 			if e.potions[key]>0: details.text+="\n%s × %d"%[s.definitions.potions[key].name,e.potions[key]]
+		for key in e.items: details.text+="\nRelic: "+s.definitions.items[key].name
 		details.text+="\n\nHeroes collect treasure when nearby ground is safe. Gold belongs to the collecting hero."
 func loot_description(e) -> String:
 	var table=Supplies.loot_table(main.sim,e)
@@ -272,7 +291,12 @@ func show_research(kind: String,id: int) -> void:
 func show_welcome() -> void:
 	open_modal("welcome"); modal_text("A crown. A kingdom.\nA little chaos.",36)
 	modal_text("Raise a realm in the untamed borderlands. Build guilds, entice heroes, and let adventure unfold. You wear the crown. They choose the quest.")
-	modal_text("CHAPTER I — THE YOUNG KINGDOM\n"+main.sim.fixture.name+" · Seed "+str(main.sim.fixture.seed),17)
+	modal_text(main.sim.Mission.title(main.sim)+"\n"+main.sim.fixture.name+" · Seed "+str(main.sim.fixture.seed),17)
+	modal_text(main.sim.definitions.mission.description if main.mission_id=="ember_crown" else "The original eight-lair campaign.",17)
+	var choices:=HBoxContainer.new(); modal_column.add_child(choices)
+	for key in ["ember_crown","classic"]:
+		var choice=button("mission_"+key,"The Ember Crown" if key=="ember_crown" else "Classic Kingdom",func():main.mission_id=key; main.new_game(main.sim.fixture.seed); show_welcome())
+		choice.size_flags_horizontal=Control.SIZE_EXPAND_FILL; choice.add_theme_font_size_override("font_size",16); choice.modulate=Color("e8ca8a") if main.mission_id==key else Color.WHITE; choices.add_child(choice)
 	var seed_edit:=LineEdit.new(); seed_edit.placeholder_text="Optional map seed or name"; widgets.seed_input=seed_edit; modal_column.add_child(seed_edit)
 	modal_column.add_child(button("start","Begin your reign",func():
 		if seed_edit.text.strip_edges()!="": main.new_game(SimulationSeed(seed_edit.text)); main.pinned_seed=main.sim.fixture.seed
@@ -284,6 +308,8 @@ func show_help() -> void:
 	open_modal("help"); modal_text("The art of ruling",30)
 	modal_text("Build a guild, then recruit heroes. They choose their own targets; attack and exploration bounties give them reasons to follow your plans. Destroy all eight campaign lairs and keep the Palace standing.")
 	modal_text("Build Marketplaces to research potions and Temples to learn spells. Heroes buy supplies using their own gold and collect treasure when ground is safe. Wizards share learned spells and spend regenerating mana.")
+	modal_text("Guild upgrades add two beds, 25% building health, and guild support (+4 attack, +2 armor). Select a completed guild to fund training. Heroes automatically equip better relic weapons and armor from safe treasure; equipment drops on death for another hero to recover.")
+	modal_text("The Ember Crown: destroy two lairs to reveal the Ashen Monastery. Recover its Runeblade, defeat the Ember Warlord, and destroy all eight lairs. Heroes try to leave his marked ground slam; healing and protective magic help them survive. He enrages at half health.")
 	modal_text("Six completed cottages are safe. Each group of four excess cottages sustains another rat sewer after 60 seconds. Demolish cottages without a refund to reduce pressure. Urban rats give no loot or experience.")
 	modal_text("Click/tap to select or place. Drag with a finger or right mouse button to pan. Wheel or +/− to zoom. WASD/arrows pan, Space pauses, 1/2/3 changes speed, F centers the Palace, Esc/right-click cancels. Shift-click builds several. Use the minimap to travel.")
 	modal_text(main.sim.fixture.name+" · Map seed "+str(main.sim.fixture.seed))
@@ -292,7 +318,7 @@ func show_help() -> void:
 func show_end() -> void:
 	open_modal("end"); var s=main.sim
 	modal_text("Long live the sovereign." if s.result=="victory" else "A kingdom remembered.",32)
-	modal_text("The last lair lies in ruins. Your heroes have brought peace to the kingdom." if s.result=="victory" else "The Palace has fallen. Raise more guilds, protect your roads, and let your next reign be a wiser one.")
+	modal_text("The Ember Crown is yours. The Warlord and his lairs have fallen." if s.result=="victory" and s.mission.id=="ember_crown" else "The last lair lies in ruins. Your heroes have brought peace to the kingdom." if s.result=="victory" else "The Palace has fallen. Raise more guilds, protect your roads, and let your next reign be a wiser one.")
 	modal_text("Reign: %d:%02d\nLairs: %d / 8\nRecruits: %d\nRecovered: %dg and %d potions\n%s · Seed %d"%[int(s.time/60),int(s.time)%60,s.stats.lairs,s.stats.recruits,s.stats.loot_gold,s.stats.loot_potions,s.fixture.name,s.fixture.seed])
 	modal_column.add_child(button("replay","Replay this map",func():var seed:int=s.fixture.seed; close_modal(false); main.new_game(seed); main.started=true; main.sim.paused=false; refresh()))
 	modal_column.add_child(button("fresh","A new kingdom",func():close_modal(false); main.pinned_seed=-1; main.new_game(); main.started=true; main.sim.paused=false; refresh()))

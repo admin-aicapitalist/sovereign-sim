@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/content/units.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "wizard"
+name = "Wizard"
+hp = 105
+damage = 42
+armor = 0
+range = 5.8
+speed = 1.45
+rate = 2
+sight = 7
+cost = 160
+properties = {"mana": 100, "castRange": 7, "bravery": 0.85, "affinity": 1.15, "color": "#a99bc5", "hero": true}

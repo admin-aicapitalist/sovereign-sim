@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/content/buildings.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "thieves"
+name = "Thieves’ Guild"
+description = "Recruits swift thieves with twin daggers. They seek lucrative bounties and deal 14 bonus damage to enemies fighting another ally."
+hp = 650
+cost = 325
+size = 2
+upgrade_cost = 275
+upgrade_time = 30
+upgrade_capacity = 2
+upgrade_armor = 2
+upgrade_damage = 4
+properties = {"short": "Thieves’ Guild", "subtitle": "Fortune favors the cunning", "sight": 7, "buildTime": 16, "recruits": "thief", "capacity": 4}
