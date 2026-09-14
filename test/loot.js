@@ -1,7 +1,7 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
 const sandbox={console};sandbox.window=sandbox;vm.createContext(sandbox);
-for(const name of ['util','data','mapgen','world','entities','alchemy','loot','ai','sanitation','game'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../js',name+'.js'),'utf8'),sandbox,{filename:name+'.js'});
+for(const name of ['util','data','mapgen','world','entities','alchemy','magic','loot','ai','sanitation','game'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../js',name+'.js'),'utf8'),sandbox,{filename:name+'.js'});
 const G=sandbox.G;G.headless=true;
 function setup(seed=41972){G.reset(seed);G.units=[];G.buildings=G.buildings.filter(b=>!b.hostile);for(const t of G.tiles)if(t.x>=30&&t.x<=50&&t.y>=30&&t.y<=50){t.blocked=false;t.kind='grass';t.explored=t.visible=true;}}
 function drop(type,x=40.5,y=40.5,killer=null){const e=G.addUnit(type,x,y);G.kill(e,killer);return G.loot.at(-1);}

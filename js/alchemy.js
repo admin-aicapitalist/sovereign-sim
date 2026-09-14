@@ -38,7 +38,7 @@
     G.stats.potionsBought+=bought;
     return bought;
   };
-  G.unitArmor=function(u){return (u.data.armor||0)+(u.buffs?.stoneskin>0?G.POTIONS.stoneskin.armor:0);};
+  G.unitArmor=function(u){return (u.data.armor||0)+(u.buffs?.stoneskin>0?G.POTIONS.stoneskin.armor:0)+(u.magicBuffs?.ward>0?G.SPELLS.ward.armor:0);};
   G.unitDamage=function(u,target){
     let damage=u.data.damage+(u.hero?(u.level-1)*4:0);
     if(u.type==='thief'&&target?.kind==='unit'&&target.hostile&&target.target&&!target.target.dead&&!target.target.hostile&&target.target!==u)damage+=14;

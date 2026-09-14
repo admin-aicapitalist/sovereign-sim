@@ -15,6 +15,11 @@
       if(name==='flag'){[330,440,660].forEach((f,i)=>tone(f,.35,'triangle',.13,i*.07));}
       if(['level','complete','recruit'].includes(name)){[392,494,587,784].forEach((f,i)=>tone(f,.5,'sine',.17,i*.1));}
       if(name==='spell'){[523,784,1047,1568].forEach((f,i)=>tone(f,.8,'sine',.13,i*.07));this.noise(.5,.09,1800);}
+      if(name==='spell-lightning'){this.noise(.24,.28*volume,2600);tone(85,.35,'triangle',.25,0,35);tone(1700,.12,'sine',.1);}
+      if(name==='spell-frost'){[1175,1568,2093].forEach((f,i)=>tone(f,.55,'sine',.08,i*.07));this.noise(.4,.1*volume,3200);}
+      if(['spell-heal','spell-ward','spell-farsight','spell-haste'].includes(name)){const notes=name==='spell-heal'?[392,587,784]:name==='spell-ward'?[294,440,587]:name==='spell-haste'?[659,880,1318]:[440,660,990];notes.forEach((f,i)=>tone(f,.85,'sine',.11,i*.1));}
+      if(name==='spell-meteor'){this.noise(.6,.15*volume,650);tone(320,.6,'triangle',.13,0,60);}
+      if(name==='meteor-impact'){this.noise(.6,.3*volume,850);tone(72,.55,'sine',.3,0,30);}
       if(name==='victory'){[294,392,494,587,784].forEach((f,i)=>tone(f,.9,'triangle',.17,i*.15));}
       if(name==='danger'){[146,155,146].forEach((f,i)=>tone(f,.65,'triangle',.3,i*.5));}
     },

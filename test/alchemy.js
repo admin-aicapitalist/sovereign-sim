@@ -1,7 +1,7 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
 const sandbox={console};sandbox.window=sandbox;vm.createContext(sandbox);
-for(const name of ['util','data','mapgen','world','entities','alchemy','loot','ai','sanitation','game'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../js',name+'.js'),'utf8'),sandbox,{filename:name+'.js'});
+for(const name of ['util','data','mapgen','world','entities','alchemy','magic','loot','ai','sanitation','game'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../js',name+'.js'),'utf8'),sandbox,{filename:name+'.js'});
 const G=sandbox.G;G.headless=true;
 function setup(){G.reset(41972);G.units=[];return G.addBuilding('marketplace',G.LEVEL.start.x,G.LEVEL.start.y+5);}
 let market=setup(),gold=G.gold;

@@ -1,5 +1,13 @@
 # ⚜ Sovereign — A Fantasy Kingdom Sim
 
+The current game is the **Godot port** in [`godot/`](godot/README.md), deployed at
+**[Play Sovereign](https://sovereign-432652279722.us-central1.run.app/)**.
+Open `godot/project.godot` in Godot and press F5, or follow the
+[browser export instructions](godot/README.md#browser-build).
+
+The documentation below describes the original JavaScript reference game, whose
+gameplay and illustrated assets were carried into the port.
+
 A browser-playable, single-level **indirect-control kingdom sim** in the spirit of the
 classic 2000-era fantasy kingdom management games: you are the monarch, not the general.
 You raise buildings, recruit heroes and post gold bounties — but the heroes decide for
@@ -58,8 +66,17 @@ are documented in [`tools/art/README.md`](tools/art/README.md).
 3. **Bounty Flags**: heroes ignore orders but love gold. Click the flag tool, then a
    monster or lair. Select the flag to raise the reward — braver prices buy braver heroes.
    Exploration Flags pay the first hero (usually a ranger) to scout a spot.
-4. **Spells** (sovereign magic): Healing Light (needs Temple), Lightning Bolt (needs
-   Wizards' Guild), Far Sight (always). They cost gold and have cooldowns.
+4. **Learn magic:** select a completed Temple → **Spellbook & research**. Study
+   Healing Light and Lightning Bolt, then unlock Frost Nova, Arcane Ward, Haste
+   and Meteor. One study runs at a time; losing every Temple pauses research,
+   but learned spells persist. Far Sight is known from the start.
+   Cast through the **Spells** tab using treasury gold and a visible target
+   (Far Sight can target fog). Empty or invalid casts cost nothing.
+   Every wizard, including future recruits, shares the spellbook and casts
+   autonomously with 100 mana: +2/s in combat, +4/s at rest. Wizards heal allies,
+   slow threats, protect fighters and strike enemies within 7 tiles. Their
+   cooldowns are separate from yours, with at least 3 seconds between spells.
+   Ordinary fireballs stay available without research or mana.
 5. **The staff runs itself**: peasants build and repair, tax collectors walk the streets
    hauling gold back to the Palace (guard them!), palace guards hold the gate,
    guard towers shoot on sight.
@@ -100,6 +117,8 @@ Plain JS, one global namespace `G`, classic script load order (see `index.html`)
 | `js/world.js` | forests and scenery, construction sites, walkability, fog of war |
 | `js/entities.js` | units/buildings, movement, combat, projectiles, XP, flags |
 | `js/alchemy.js` | potion research, personal shopping, inventory and combat buffs |
+| `js/magic.js` | shared Temple research, sovereign casting, wizard mana/decisions, timed effects |
+| `js/magic-art.js` | painted spell effects, cast circles, status auras and fireball trails |
 | `js/loot.js` | seeded treasure drops, physical pickup, safe recovery and inventory overflow |
 | `js/sanitation.js` | overcrowding pressure, safe sewer placement and recurring rat outbreaks |
 | `js/ai.js` | the brains: hero utility AI (bounty scoring, shopping, resting, fleeing), worker/guard/monster AI |
@@ -110,6 +129,26 @@ Plain JS, one global namespace `G`, classic script load order (see `index.html`)
 | `js/sound.js` | WebAudio synth sfx |
 | `js/main.js` | boot + main loop + debug params |
 
+### Temple spellbook
+
+All damage is reduced by armor. Friendly spells never harm allies; repeated
+buffs refresh their duration. Arcane Ward stacks with Stoneskin potions.
+
+| Spell | Research (gold / seconds) | Prerequisite | Crown gold / wizard mana | Effect |
+|---|---|---|---|---|
+| Healing Light | 125 / 20 | — | 65 / 25 | Heal 130 in a 4-tile radius |
+| Lightning Bolt | 200 / 25 | — | 90 / 30 | 190 primary damage, 65 nearby |
+| Far Sight | Innate | — | 35 / 15 | Reveal a 10-tile radius for 45s |
+| Frost Nova | 250 / 30 | Lightning Bolt | 80 / 30 | 55 damage; 55% slower movement, 35% slower attacks for 6s |
+| Arcane Ward | 200 / 25 | Healing Light | 70 / 25 | +8 armor for 16s |
+| Haste | 225 / 30 | Healing Light | 55 / 20 | +40% movement, +30% attack speed for 14s |
+| Meteor | 450 / 45 | Frost Nova | 150 / 60 | 280 area damage after a 0.65s warning |
+
+Spell art uses muted gold, mineral blue and ember colors with engraved circles,
+faceted ice, branching lightning, rising motes and a falling meteor. Buff auras
+follow affected units. Effects freeze with the simulation and remain sharp on
+Retina displays; rendering never changes the simulation RNG.
+
 ### Testing / QA
 
 * `node test/seeds.js` — random seed selection and deterministic replay, plus 100
@@ -118,6 +157,10 @@ Plain JS, one global namespace `G`, classic script load order (see `index.html`)
 * `node test/world.js` — deterministic large-map generation, reachable lairs and
   settlements, bridge crossings, distant worker travel, frontier activation and
   long-detour pathfinding.
+* `node test/magic.js` — spell research, costs, cooldowns, mana, autonomous wizard
+  decisions, status expiry, Meteor timing, loot/XP attribution and pause/reset.
+* `node test/magic-browser.mjs` — desktop/mobile Temple research, actual spell
+  targeting, wizard mana UI, all spell animations and persistent status auras.
 * `node test/alchemy.js` — research prerequisites, payments, pause/resume, hero shopping,
   potion use and expiry, taxes, thief recruitment and damage, and monster combat.
 * `node test/loot.js` — drop ranges, separate RNG, no duplicate payouts, hero pickup,

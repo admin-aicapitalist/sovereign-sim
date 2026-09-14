@@ -469,3 +469,14 @@ body.welcoming #game-ui { opacity: 0; pointer-events: none; }
 .inspect-stats.loot-stats{display:flex}
 
 .sanitation-status{border-top:1px solid var(--line);padding-top:9px;margin-top:10px;color:#52643a;font:12px/1.4 var(--serif)}.sanitation-status strong,.sanitation-status span{display:block}.sanitation-status.danger{color:#8b3327}.quest-panel.collapsed .sanitation-status{font-size:11px;margin-top:7px;padding-top:6px}
+
+/* Temple folios and the wizard’s personal reserves. */
+.wizard-magic { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 10px; color: #65543e; font: 13px/1.4 var(--serif); }
+.mana-track .hp-fill { background: linear-gradient(90deg,#496675,#8eaeb7); }
+.wizard-magic p { margin: 7px 0 2px; }
+.wizard-magic small { font-size: 12px; }
+.recipe-heading .spell-seal { display: grid; place-items: center; flex: 0 0 46px; height: 46px; border: 1px solid #ae8b53; border-radius: 50%; color: var(--spell-color); background: radial-gradient(circle,#414a43,#202b2c); box-shadow: inset 0 0 0 3px #c9ae7040,0 2px 5px #4c351d30; font: 29px/1 var(--serif); }
+.modal .spellbook-note { padding: 10px 13px; border-left: 2px solid #aa8448; background: #b6925612; font-size: 14px; }
+.spellbook-list .recipe-heading > div { min-width: 0; }
+.spellbook-list h3 { font-size: 17px; }
+@media (max-width: 580px) { .spell-recipe { padding: 12px; } .spell-recipe .recipe-heading { gap: 10px; } .spellbook-list h3 { font-size: 16px; } }

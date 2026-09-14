@@ -4,7 +4,7 @@ const root=path.join(__dirname,'..');
 let draws=0;
 const context=new Proxy({createLinearGradient:()=>({addColorStop(){}}),createRadialGradient:()=>({addColorStop(){}}),drawImage(){draws++;}},{get(o,k){return k in o?o[k]:()=>{};},set(o,k,v){o[k]=v;return true;}});
 const sandbox={console,Math,Map,Set,Number,Array,Object,String,Infinity,document:{createElement:()=>({width:0,height:0,getContext:()=>context})}};sandbox.window=sandbox;vm.createContext(sandbox);
-for(const file of ['util','data','sprites','mapgen','world','entities','alchemy','loot','ai','sanitation','game'])vm.runInContext(fs.readFileSync(path.join(root,'js',file+'.js'),'utf8'),sandbox,{filename:file+'.js'});
+for(const file of ['util','data','sprites','mapgen','world','entities','alchemy','magic','loot','ai','sanitation','game'])vm.runInContext(fs.readFileSync(path.join(root,'js',file+'.js'),'utf8'),sandbox,{filename:file+'.js'});
 const G=sandbox.G;G.headless=true;const mapSeed=process.argv[2]??41972;
 function run(seconds,action){for(let t=0;t<seconds&&!G.result;t+=.1){if(action&&Math.floor(t*10)%10===0)action();G.update(.1);}finite();}
 function finite(){assert(Number.isFinite(G.gold)&&G.gold>=0,'treasury remains finite and non-negative');for(const e of [...G.units,...G.buildings])for(const key of ['x','y','hp'])assert(Number.isFinite(e[key]),`${e.type}.${key} is finite`);}
@@ -24,6 +24,7 @@ run(1800,()=>{
   if(!G.flags.some(f=>!f.dead&&f.type==='attack')&&alive.length&&G.gold>=150){const target=alive.sort((a,b)=>G.dist(a,G.palace)-G.dist(b,G.palace))[0];G.placeFlag('attack',target.x,target.y,target,150);}
   if(!wizardGuild&&G.gold>720)wizardGuild=place('wizards');
   if(!temple&&wizardGuild&&G.gold>550)temple=place('temple');
+  if(temple?.progress===1&&!temple.dead&&!G.magic.project&&G.gold>450){const spell=['heal','lightning','ward','frost','haste','meteor'].find(k=>!G.spellAvailable(k));if(spell)G.researchSpell(spell,temple);}
   if(!tower&&G.time>400&&G.gold>350)tower=place('tower');
   for(const guild of [warriorGuild,rangerGuild,wizardGuild])if(guild&&guild.progress===1&&!guild.dead){const heroes=G.units.filter(u=>!u.dead&&u.hero&&u.home===guild);if(heroes.length<guild.data.capacity&&G.gold>G.UNITS[guild.data.recruits].cost+150)G.recruit(guild.data.recruits,guild);}
   if(G.spellAvailable('heal')&&G.cooldowns.heal===0&&G.gold>150){const wounded=G.units.find(u=>u.hero&&!u.dead&&u.hp<u.maxHp*.45);if(wounded)G.cast('heal',wounded.x,wounded.y);}
