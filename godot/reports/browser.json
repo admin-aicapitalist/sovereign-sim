@@ -1,0 +1,107 @@
+{
+  "recorded_at": "2026-09-14T15:06:12.750Z",
+  "metadata": {
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36",
+    "hardwareConcurrency": 14,
+    "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+    "viewport": [
+      1440,
+      900
+    ],
+    "devicePixelRatio": 1,
+    "crossOriginIsolated": false
+  },
+  "first_load_local_ms": 871.037667,
+  "load_note": "Local uncompressed HTTP on this machine; not an internet download estimate.",
+  "checks": "PASS: placement, construction, recruitment/capacity, bounty, pause, reload persistence, autonomous victory",
+  "benchmarks": [
+    {
+      "average_fps": 60.0000000000008,
+      "dropped_sim_seconds": 0,
+      "engine": "4.7.2-stable (official)",
+      "frame_p50_ms": 16.6666666666667,
+      "frame_p95_ms": 16.6666666666667,
+      "frames": 901,
+      "measurement_seconds": 15,
+      "platform": "Web",
+      "simulation_seconds": 18.0000000000001,
+      "stats": {
+        "built": 0,
+        "decisions": 2356,
+        "hits": 747,
+        "kills": 0,
+        "loot": 0,
+        "moves": 12835,
+        "path_deferrals": 160,
+        "paths": 378,
+        "recruits": 0,
+        "taxes": 9
+      },
+      "tick_p50_ms": 0.4,
+      "tick_p95_ms": 0.6,
+      "units": 100,
+      "visible_units_mean": 99.4073251942286,
+      "warmup_seconds": 3,
+      "wall_seconds_including_warmup": 18.127562082999997
+    },
+    {
+      "average_fps": 60.0000000000007,
+      "dropped_sim_seconds": 0,
+      "engine": "4.7.2-stable (official)",
+      "frame_p50_ms": 16.6666666666667,
+      "frame_p95_ms": 16.6666666666667,
+      "frames": 900,
+      "measurement_seconds": 15,
+      "platform": "Web",
+      "simulation_seconds": 18.0000000000001,
+      "stats": {
+        "built": 0,
+        "decisions": 7076,
+        "hits": 3371,
+        "kills": 0,
+        "loot": 0,
+        "moves": 15292,
+        "path_deferrals": 1609,
+        "paths": 622,
+        "recruits": 0,
+        "taxes": 9
+      },
+      "tick_p50_ms": 0.8,
+      "tick_p95_ms": 1,
+      "units": 300,
+      "visible_units_mean": 295.503333333333,
+      "warmup_seconds": 3,
+      "wall_seconds_including_warmup": 18.1799945
+    },
+    {
+      "average_fps": 53.6323588305968,
+      "dropped_sim_seconds": 0,
+      "engine": "4.7.2-stable (official)",
+      "frame_p50_ms": 18.5185185185185,
+      "frame_p95_ms": 21.7142857142857,
+      "frames": 806,
+      "measurement_seconds": 15,
+      "platform": "Web",
+      "simulation_seconds": 18.0000000000001,
+      "stats": {
+        "built": 0,
+        "decisions": 23577,
+        "hits": 13323,
+        "kills": 0,
+        "loot": 0,
+        "moves": 10788,
+        "path_deferrals": 11183,
+        "paths": 972,
+        "recruits": 0,
+        "taxes": 9
+      },
+      "tick_p50_ms": 2.5,
+      "tick_p95_ms": 3.1,
+      "units": 1000,
+      "visible_units_mean": 959.846153846154,
+      "warmup_seconds": 3,
+      "wall_seconds_including_warmup": 18.040610917000006
+    }
+  ],
+  "errors": []
+}

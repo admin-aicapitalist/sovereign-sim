@@ -1,0 +1,51 @@
+{
+  "files": [
+    {
+      "file": "index.apple-touch-icon.png",
+      "bytes": 11944,
+      "gzip_bytes": 11967
+    },
+    {
+      "file": "index.audio.position.worklet.js",
+      "bytes": 2973,
+      "gzip_bytes": 1161
+    },
+    {
+      "file": "index.audio.worklet.js",
+      "bytes": 7298,
+      "gzip_bytes": 2194
+    },
+    {
+      "file": "index.html",
+      "bytes": 5457,
+      "gzip_bytes": 2206
+    },
+    {
+      "file": "index.icon.png",
+      "bytes": 5700,
+      "gzip_bytes": 5723
+    },
+    {
+      "file": "index.js",
+      "bytes": 279815,
+      "gzip_bytes": 68471
+    },
+    {
+      "file": "index.pck",
+      "bytes": 10997312,
+      "gzip_bytes": 10474686
+    },
+    {
+      "file": "index.png",
+      "bytes": 21443,
+      "gzip_bytes": 19328
+    },
+    {
+      "file": "index.wasm",
+      "bytes": 39514754,
+      "gzip_bytes": 10054758
+    }
+  ],
+  "total_bytes": 50846696,
+  "total_gzip_bytes": 20640494
+}
