@@ -1,432 +1,229 @@
 extends Node2D
-const Simulation = preload("res://scripts/simulation.gd")
-const WorldView = preload("res://scripts/world_view.gd")
-var sim := Simulation.new()
-var world := WorldView.new()
-var camera := Vector2.ZERO
-var zoom: float = 1.15
-var speed: int = 1
-var accumulator: float = 0
-var ui_elapsed: float = 0
-var root: Control
-var top: PanelContainer
-var bottom: PanelContainer
-var inspector: PanelContainer
-var campaign: PanelContainer
-var treasury: Label
-var status: Label
-var details: Label
-var objective: Label
-var action: Button
-var withdraw: Button
-var pause_button: Button
-var info: Label
-var last_size := Vector2.ZERO
-var bridge_callback: JavaScriptObject
+const Simulation=preload("res://scripts/simulation.gd")
+const WorldView=preload("res://scripts/world_view.gd")
+const KingdomUI=preload("res://scripts/kingdom_ui.gd")
+const Sound=preload("res://scripts/sound.gd")
+const Magic=preload("res://scripts/magic.gd")
+const Supplies=preload("res://scripts/supplies.gd")
+var sim:=Simulation.new()
+var world:=WorldView.new()
+var ui:=KingdomUI.new()
+var sound:=Sound.new()
+var camera:=Vector2.ZERO
+var zoom: float=1.15
+var speed: int=1
+var accumulator: float=0
+var ui_elapsed: float=0
+var dropped_time: float=0
+var started: bool=false
+var pinned_seed: int=-1
+var drag: Dictionary={}
+var pointer_touch: bool=false
 var window: JavaScriptObject
-var benchmark: Dictionary = {}
-var benchmark_result: Dictionary = {}
-var benchmark_frames: Array[float] = []
-var benchmark_ticks: Array[float] = []
-var benchmark_visible: Array[float] = []
-var steps_this_frame: int = 0
-var sim_ms: float = 0
-var dropped_time: float = 0
-var test_enabled: bool = false
+var bridge_callback: JavaScriptObject
+var test_enabled: bool=false
+var css_size:=Vector2i.ZERO
+var benchmark: Dictionary={}
+var profile: Dictionary={}
+var benchmark_frames: Array[float]=[]
+var benchmark_ticks: Array[float]=[]
+var benchmark_visible: Array[float]=[]
 
 func _ready() -> void:
-	world.sim = sim
-	add_child(world)
-	center()
-	make_ui()
 	if OS.has_feature("web"):
-		window = JavaScriptBridge.get_interface("window")
-		test_enabled = str(window.location.search).contains("test=1")
-		if test_enabled:
-			bridge_callback = JavaScriptBridge.create_callback(_web_command)
-			window.sovereignCommand = bridge_callback
+		window=JavaScriptBridge.get_interface("window")
+		test_enabled=bool(JavaScriptBridge.eval("new URLSearchParams(location.search).get('test')==='1'"))
+		var seed=JavaScriptBridge.eval("new URLSearchParams(location.search).get('seed')")
+		if seed!=null and str(seed).strip_edges()!="": pinned_seed=Simulation.SeedRng.normalize(seed)
+		started=bool(JavaScriptBridge.eval("new URLSearchParams(location.search).has('auto')"))
+		sync_viewport()
+	sim.reset(pinned_seed)
+	add_child(sound); world.sim=sim; add_child(world); ui.main=self; add_child(ui); center()
+	if test_enabled:
+		bridge_callback=JavaScriptBridge.create_callback(_web_command); window.sovereignCommand=bridge_callback
+	if not started: ui.show_welcome()
 	update_ui()
-
-func center() -> void:
-	camera = WorldView.iso(sim.bpos(sim.palace()))
-
-func panel(color: String = "e5d3af") -> PanelContainer:
-	var p := PanelContainer.new()
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(color)
-	style.border_color = Color("ae8851")
-	style.set_border_width_all(2)
-	style.set_content_margin_all(16)
-	style.set_corner_radius_all(3)
-	p.add_theme_stylebox_override("panel", style)
-	root.add_child(p)
-	return p
-
-func label(text: String, font_size: int = 18, color: String = "453525") -> Label:
-	var l := Label.new()
-	l.text = text
-	l.add_theme_font_size_override("font_size", font_size)
-	l.add_theme_color_override("font_color", Color(color))
-	return l
-
-func button(text: String, callback: Callable) -> Button:
-	var b := Button.new()
-	b.text = text
-	b.custom_minimum_size.y = 38
-	b.focus_mode = Control.FOCUS_NONE
-	b.pressed.connect(callback)
-	return b
-
-func make_ui() -> void:
-	var layer := CanvasLayer.new()
-	add_child(layer)
-	root = Control.new()
-	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	layer.add_child(root)
-	var theme := Theme.new()
-	theme.default_font = preload("res://assets/alegreya.ttf")
-	theme.default_font_size = 18
-	var normal := StyleBoxFlat.new()
-	normal.bg_color = Color("69372b")
-	normal.border_color = Color("b49458")
-	normal.set_border_width_all(1)
-	normal.content_margin_left = 12
-	normal.content_margin_right = 12
-	normal.content_margin_top = 7
-	normal.content_margin_bottom = 7
-	theme.set_stylebox("normal","Button",normal)
-	var hover := normal.duplicate()
-	hover.bg_color = Color("895039")
-	theme.set_stylebox("hover","Button",hover)
-	theme.set_stylebox("pressed","Button",hover)
-	theme.set_color("font_color","Button",Color("f1e0b7"))
-	root.theme = theme
-	top = panel("28271f")
-	var top_row := HBoxContainer.new()
-	top_row.add_theme_constant_override("separation",18)
-	top.add_child(top_row)
-	var title := label("SOVEREIGN",26,"ecd4a0")
-	title.add_theme_font_override("font",preload("res://assets/cinzel.ttf"))
-	top_row.add_child(title)
-	treasury = label("",22,"ecd4a0")
-	treasury.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	top_row.add_child(treasury)
-	pause_button = button("Pause",func(): sim.paused = not sim.paused; update_ui())
-	top_row.add_child(pause_button)
-	top_row.add_child(button("1× / 3×",func(): speed = 3 if speed == 1 else 1))
-	top_row.add_child(button("Save",save_game))
-	top_row.add_child(button("Load",load_game))
-	top_row.add_child(button("New",new_game))
-	campaign = panel()
-	var col := VBoxContainer.new()
-	campaign.add_child(col)
-	col.add_child(label("THE ROYAL CAMPAIGN",15,"866640"))
-	col.add_child(label("The Young Kingdom",24))
-	objective = label("",17)
-	objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	col.add_child(objective)
-	col.add_child(button("Find the lair",func():
-		if not sim.lairs().is_empty():
-			world.selected = sim.lairs()[0].id
-			camera = WorldView.iso(sim.bpos(sim.lairs()[0]))
-			update_ui()))
-	col.add_child(button("Return to Palace",center))
-	inspector = panel()
-	var inspect_col := VBoxContainer.new()
-	inspector.add_child(inspect_col)
-	inspect_col.add_child(label("YOUR KINGDOM",15,"866640"))
-	details = label("Select a building or hero.",19)
-	details.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	inspect_col.add_child(details)
-	action = button("Recruit",selected_action)
-	inspect_col.add_child(action)
-	withdraw = button("Withdraw bounty",func(): sim.cancel_bounty(world.selected); update_ui())
-	inspect_col.add_child(withdraw)
-	bottom = panel("28271f")
-	var commands := VBoxContainer.new()
-	commands.add_theme_constant_override("separation",10)
-	bottom.add_child(commands)
-	commands.add_child(label("CONSTRUCT YOUR KINGDOM",16,"c9ad73"))
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation",10)
-	commands.add_child(row)
-	for type in ["warriors","rangers","marketplace","house","tower"]:
-		var d: Dictionary = sim.definitions.buildings[type]
-		var b := button("%s · %dg" % [d.get("short",d.name),d.cost],func(): world.build_type = type; sim.message = "Click clear ground to place " + d.name; update_ui())
-		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		row.add_child(b)
-	status = label("",18,"e2cca5")
-	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	commands.add_child(status)
-	info = label("WASD / right-drag: pan    Wheel: zoom    Space: pause    F: Palace    Esc: cancel",14,"b19e7c")
-	commands.add_child(info)
-	world.selected = sim.palace().id
-
-func layout_ui() -> void:
-	var s := get_viewport_rect().size
-	if s == last_size:
-		return
-	last_size = s
-	top.position = Vector2.ZERO
-	top.size = Vector2(s.x,76)
-	campaign.position = Vector2(18,98)
-	campaign.size = Vector2(258,0)
-	inspector.position = Vector2(s.x-276,98)
-	inspector.size = Vector2(258,0)
-	bottom.position = Vector2(18,s.y-192)
-	bottom.size = Vector2(s.x-36,174)
-
-func selected_action() -> void:
-	var b := sim.building(world.selected)
-	if b.is_empty():
-		return
-	if b.hostile:
-		sim.bounty(b.id)
-	else:
-		sim.recruit(b.id)
-	update_ui()
-
-func update_ui() -> void:
-	var heroes: int = 0
-	for u in sim.units:
-		if not u.dead and u.hero:
-			heroes += 1
-	treasury.text = "%dg    %d heroes    Day %d" % [sim.gold,heroes,1+int(sim.time/120)]
-	pause_button.text = "Resume" if sim.paused else "Pause"
-	objective.text = "Destroy the frontier lair.\nKeep your Palace standing.\n\n%s · Seed %d\n%s" % [sim.fixture.name,sim.fixture.seed,"Realm secured" if sim.result == "victory" else "1 lair remains"]
-	status.text = sim.message if sim.result == "" else ("Victory — the realm is yours. Start a new kingdom to play again." if sim.result == "victory" else "The Palace has fallen. Start a new kingdom to try again.")
-	if world.build_type != "":
-		status.text = "Place %s · Esc cancels · Shift keeps building" % sim.definitions.buildings[world.build_type].name
-	action.visible = false
-	withdraw.visible = false
-	var b := sim.building(world.selected)
-	if not b.is_empty() and not b.dead:
-		var d: Dictionary = sim.definitions.buildings[b.type]
-		details.text = "%s\n\nHealth: %d / %d\n%s" % [d.name,b.hp,b.max_hp,"Construction: %d%%" % (b.progress*100) if b.progress<1 else "Operational"]
-		if b.hostile:
-			details.text += "\nBounty: %dg" % sim.flags.get(int(b.id),0)
-			action.text = "Post / raise bounty · 100g"
-			action.visible = true
-			action.disabled = sim.gold < 100 or sim.result != ""
-			withdraw.visible = sim.flags.has(int(b.id))
-		elif d.has("recruits"):
-			action.text = "Recruit %s · %dg" % [d.recruits,sim.definitions.units[d.recruits].cost]
-			action.visible = true
-			action.disabled = b.progress < 1 or sim.result != ""
-		else:
-			details.text += "\nTax reserves: %dg" % b.tax
-	elif sim.actors.has(world.selected):
-		var u: Simulation.Actor = sim.actors[world.selected]
-		details.text = "%s\n\n%s\nHealth: %d / %d\nPurse: %dg" % [u.definition.name,u.state,u.hp,u.max_hp,u.gold]
-	else:
-		details.text = "Select a building or hero."
-	if test_enabled and benchmark.is_empty():
-		window.sovereignState = JSON.stringify(debug_state())
-
+func sync_viewport() -> void:
+	if window==null: return
+	var wanted:=Vector2i(int(window.innerWidth),int(window.innerHeight))
+	if wanted!=css_size:
+		css_size=wanted; get_window().content_scale_mode=Window.CONTENT_SCALE_MODE_CANVAS_ITEMS; get_window().content_scale_size=wanted
+func center() -> void: camera=WorldView.iso(sim.pos(sim.palace()))
+func center_on(point: Vector2) -> void: camera=WorldView.iso(point)
+func change_zoom(factor: float,point: Vector2=Vector2(-1,-1)) -> void:
+	var size:=get_viewport_rect().size
+	if point.x<0: point=size*Vector2(0.5,0.47)
+	var before:=world.to_local(point); zoom=clampf(zoom*factor,0.35,2.1); camera=before-(point-size*Vector2(0.5,0.47))/zoom
+func set_mode(kind: String,key: String) -> void:
+	world.mode_kind=kind; world.mode_key=key if kind!="" else ""; world.build_type=key if kind=="build" else ""
+	Input.set_default_cursor_shape(Input.CURSOR_CROSS if kind!="" else Input.CURSOR_ARROW)
+func new_game(seed_value: int=-1) -> void:
+	if ui.modal!=null: ui.close_modal(false)
+	sim.reset(seed_value if seed_value>=0 else pinned_seed); accumulator=0; benchmark.clear(); speed=1; zoom=1.15; world.selected=0; world.hovered=0; set_mode("",""); center()
+	ui.last_result=""; ui.action_signature=""; ui.objective_ids=[]; ui.last_selection=-1; ui.objectives_open=false; update_ui()
 func _process(dt: float) -> void:
-	layout_ui()
-	if Input.is_physical_key_pressed(KEY_A) or Input.is_physical_key_pressed(KEY_LEFT):
-		camera.x -= 550*dt/zoom
-	if Input.is_physical_key_pressed(KEY_D) or Input.is_physical_key_pressed(KEY_RIGHT):
-		camera.x += 550*dt/zoom
-	if Input.is_physical_key_pressed(KEY_W) or Input.is_physical_key_pressed(KEY_UP):
-		camera.y -= 550*dt/zoom
-	if Input.is_physical_key_pressed(KEY_S) or Input.is_physical_key_pressed(KEY_DOWN):
-		camera.y += 550*dt/zoom
-	var map_camera := WorldView.uniso(camera)
-	map_camera = map_camera.clamp(Vector2.ZERO,Vector2.ONE*sim.size)
-	camera = WorldView.iso(map_camera)
-	sim_ms = 0
-	steps_this_frame = 0
-	if not sim.paused and sim.result == "":
-		accumulator += dt * speed
-		# Bound catch-up work; record lost time rather than hiding overload in reports.
-		if accumulator > 0.5:
-			dropped_time += accumulator-0.5
-			accumulator = 0.5
-		while accumulator >= 0.05:
-			var start: int = Time.get_ticks_usec()
-			sim.tick(0.05)
-			var elapsed: float = (Time.get_ticks_usec()-start)/1000.0
-			sim_ms += elapsed
-			steps_this_frame += 1
-			if not benchmark.is_empty() and benchmark.elapsed >= 3:
-				benchmark_ticks.append(elapsed)
-			accumulator -= 0.05
-	else:
-		accumulator = 0
-	var s := get_viewport_rect().size
-	world.position = s*Vector2(0.5,0.47)-camera*zoom
-	world.scale = Vector2.ONE*zoom
-	world.visible_rect = Rect2(camera-s*Vector2(0.5,0.47)/zoom,s/zoom)
-	world.cursor = WorldView.uniso(world.to_local(get_viewport().get_mouse_position()))
-	world.queue_redraw()
+	var began: int=Time.get_ticks_usec()
+	sync_viewport(); ui.layout()
+	if started and ui.modal==null:
+		var direction:=Vector2.ZERO
+		if Input.is_physical_key_pressed(KEY_A) or Input.is_physical_key_pressed(KEY_LEFT): direction.x-=1
+		if Input.is_physical_key_pressed(KEY_D) or Input.is_physical_key_pressed(KEY_RIGHT): direction.x+=1
+		if Input.is_physical_key_pressed(KEY_W) or Input.is_physical_key_pressed(KEY_UP): direction.y-=1
+		if Input.is_physical_key_pressed(KEY_S) or Input.is_physical_key_pressed(KEY_DOWN): direction.y+=1
+		var mouse:=get_viewport().get_mouse_position(); var size:=get_viewport_rect().size
+		if not pointer_touch and drag.is_empty() and mouse.y>ui.top.size.y and mouse.y<ui.deck.position.y:
+			if mouse.x>0 and mouse.x<8: direction.x-=1
+			if mouse.x>size.x-8: direction.x+=1
+		camera+=direction*440*dt/zoom
+	camera=WorldView.iso(WorldView.uniso(camera).clamp(Vector2.ZERO,Vector2.ONE*sim.size))
+	if started and not sim.paused and sim.result=="" and ui.modal==null:
+		accumulator+=dt*speed
+		if accumulator>0.5: dropped_time+=accumulator-0.5; accumulator=0.5
+		while accumulator>=0.05:
+			var before: int=Time.get_ticks_usec(); sim.tick(0.05)
+			if not benchmark.is_empty() and benchmark.elapsed>=3: benchmark_ticks.append((Time.get_ticks_usec()-before)/1000.0)
+			accumulator-=0.05
+	else: accumulator=0
+	var size:=get_viewport_rect().size
+	world.position=size*Vector2(0.5,0.47)-camera*zoom; world.scale=Vector2.ONE*zoom
+	world.visible_rect=Rect2(camera-size*Vector2(0.5,0.47)/zoom,size/zoom)
+	world.cursor=WorldView.uniso(world.to_local(get_viewport().get_mouse_position())); world.refresh()
+	for event in sim.events: sound.play(event)
+	sim.events.clear()
 	if not benchmark.is_empty():
-		benchmark.elapsed += dt
-		if benchmark.elapsed >= 3:
-			benchmark_frames.append(dt*1000)
-			benchmark_visible.append(float(world.rendered_units))
-		if benchmark.elapsed >= benchmark.duration+3:
-			finish_benchmark()
-	ui_elapsed += dt
-	if ui_elapsed >= 0.25:
-		ui_elapsed = 0
-		update_ui()
-
+		benchmark.elapsed+=dt
+		if benchmark.elapsed>=3: benchmark_frames.append(dt*1000); benchmark_visible.append(world.rendered_units)
+		if benchmark.elapsed>=benchmark.duration+3: finish_benchmark()
+	ui_elapsed+=dt
+	if ui_elapsed>=0.25: ui_elapsed=0; update_ui()
+	if not benchmark.is_empty() and benchmark.elapsed>=3:
+		var current={"main_process":(Time.get_ticks_usec()-began)/1000.0,"world_draw":world.draw_ms,"world_refresh":world.refresh_ms,"ui_refresh":ui.refresh_ms,"minimap_draw":ui.minimap.draw_ms}
+		for key in current:
+			if not profile.has(key): profile[key]=[]
+			profile[key].append(current[key])
+func update_ui() -> void:
+	if not ui.is_inside_tree(): return
+	ui.refresh()
+	if test_enabled and benchmark.is_empty(): window.sovereignState=JSON.stringify(debug_state())
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventMouseMotion and event.button_mask & MOUSE_BUTTON_MASK_RIGHT:
-		camera -= event.relative/zoom
-	if event is InputEventMouseButton and event.pressed:
-		if event.button_index in [MOUSE_BUTTON_WHEEL_UP,MOUSE_BUTTON_WHEEL_DOWN]:
-			var before := world.to_local(event.position)
-			zoom = clampf(zoom*(1.12 if event.button_index == MOUSE_BUTTON_WHEEL_UP else 0.89),0.3,2.1)
-			var s := get_viewport_rect().size
-			camera = before-(event.position-s*Vector2(0.5,0.47))/zoom
-		elif event.button_index == MOUSE_BUTTON_LEFT:
-			var point := world.to_local(event.position)
-			if world.build_type != "":
-				var b := sim.build(world.build_type,Vector2i(WorldView.uniso(point).floor()))
-				if not b.is_empty():
-					world.selected = b.id
-					if not event.shift_pressed:
-						world.build_type = ""
-			else:
-				world.selected = world.hit_test(point)
-			update_ui()
+	if not started or ui.modal!=null: return
+	if event is InputEventMouseButton:
+		if event.pressed and event.button_index in [MOUSE_BUTTON_WHEEL_UP,MOUSE_BUTTON_WHEEL_DOWN]: change_zoom(1.1 if event.button_index==MOUSE_BUTTON_WHEEL_UP else 0.91,event.position)
+		elif event.pressed and event.button_index in [MOUSE_BUTTON_LEFT,MOUSE_BUTTON_RIGHT]:
+			pointer_touch=event.device==InputEvent.DEVICE_ID_EMULATION
+			drag={"button":event.button_index,"origin":event.position,"last":event.position,"moved":false,"touch":pointer_touch}
+	if event is InputEventMouseMotion and drag.is_empty(): world.hovered=world.hit_test(world.to_local(event.position))
+	if event is InputEventMagnifyGesture: change_zoom(event.factor,event.position)
 	if event is InputEventKey and event.pressed and not event.echo:
 		match event.physical_keycode:
-			KEY_SPACE: sim.paused = not sim.paused
+			KEY_SPACE: sim.paused=not sim.paused
 			KEY_F: center()
-			KEY_ESCAPE: world.build_type = ""
-			KEY_1: speed = 1
-			KEY_3: speed = 3
+			KEY_1: speed=1; sim.paused=false
+			KEY_2: speed=2; sim.paused=false
+			KEY_3: speed=3; sim.paused=false
 		update_ui()
-
-func new_game() -> void:
-	sim.reset()
-	benchmark.clear()
-	accumulator = 0
-	speed = 1
-	world.selected = sim.palace().id
-	world.build_type = ""
-	zoom = 1.15
-	center()
-	update_ui()
-
+func _input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and event.physical_keycode==KEY_ESCAPE:
+		if ui.modal!=null and ui.modal_kind not in ["welcome","end"]: ui.close_modal()
+		elif world.mode_kind!="": set_mode("","")
+		else: world.selected=0
+		update_ui(); get_viewport().set_input_as_handled()
+	if drag.is_empty(): return
+	if event is InputEventMouseMotion:
+		if event.position.distance_to(drag.origin)>5: drag.moved=true
+		if drag.button==MOUSE_BUTTON_RIGHT or drag.touch and drag.moved: camera-=(event.position-drag.last)/zoom
+		drag.last=event.position
+	if event is InputEventMouseButton and not event.pressed and event.button_index==drag.button:
+		var moved: bool=drag.moved; var button: int=drag.button; drag.clear()
+		if not moved:
+			if button==MOUSE_BUTTON_RIGHT: set_mode("","")
+			else: click_world(event.position,event.shift_pressed)
+		get_viewport().set_input_as_handled(); update_ui()
+func click_world(point: Vector2,shift: bool=false) -> void:
+	var local:=world.to_local(point); var ground:=WorldView.uniso(local); var id:int=world.hit_test(local); var hit=sim.entity(id)
+	var ok: bool=false
+	match world.mode_kind:
+		"build":
+			var b=sim.build(world.mode_key,Vector2i(ground.floor())); ok=not b.is_empty()
+			if ok: world.selected=b.id
+		"bounty":
+			var target: int=id if hit!=null and hit.kind in ["unit","building"] and hit.hostile else 0
+			var flag=sim.place_flag(world.mode_key,ground,target); ok=not flag.is_empty()
+			if ok: world.selected=flag.id
+		"spell": ok=Magic.cast(sim,world.mode_key,Magic.target_point(sim,world.mode_key,ground,hit))
+		_: world.selected=id; sound.play("select"); ui.objectives_open=false
+	if ok and not shift: set_mode("","")
 func save_game() -> void:
-	var text: String = JSON.stringify(sim.snapshot(),"",true,true)
-	if OS.has_feature("web"):
-		var saved = JavaScriptBridge.eval("(function(){try{localStorage.setItem('sovereign-godot-save-v1',"+JSON.stringify(text)+");return true;}catch(e){return false;}})()")
-		sim.message = "Kingdom saved in this browser." if saved else "This browser could not store the save. Check available storage and site permissions."
+	var text: String=JSON.stringify(sim.snapshot(),"",true,true)
+	var ok: bool=false
+	if OS.has_feature("web"): ok=bool(JavaScriptBridge.eval("(function(){try{localStorage.setItem('sovereign-godot-save-v2',"+JSON.stringify(text)+");return true;}catch(e){return false;}})()"))
 	else:
-		var file := FileAccess.open("user://kingdom.json",FileAccess.WRITE)
-		if file == null:
-			sim.message = "Could not write the save file."
-			return
-		file.store_string(text)
-		sim.message = "Kingdom saved."
-	update_ui()
-
+		var file=FileAccess.open("user://kingdom-v2.json",FileAccess.WRITE)
+		if file!=null: file.store_string(text); ok=true
+	sim.notify("Kingdom saved in this browser." if ok and OS.has_feature("web") else "Kingdom saved." if ok else "Could not store the save. Check available storage and site permissions."); update_ui()
 func load_game() -> void:
-	var text: String = ""
+	var text: String=""
 	if OS.has_feature("web"):
-		var stored = JavaScriptBridge.eval("(function(){try{return localStorage.getItem('sovereign-godot-save-v1');}catch(e){return null;}})()")
-		if stored != null:
-			text = str(stored)
-	elif FileAccess.file_exists("user://kingdom.json"):
-		text = FileAccess.get_file_as_string("user://kingdom.json")
-	var parser := JSON.new()
-	var data = parser.data if parser.parse(text) == OK else null
-	if not data is Dictionary or not sim.restore(data):
-		sim.message = "No compatible saved kingdom was found."
+		var stored=JavaScriptBridge.eval("(function(){try{return localStorage.getItem('sovereign-godot-save-v2');}catch(e){return null;}})()")
+		if stored!=null: text=str(stored)
+	elif FileAccess.file_exists("user://kingdom-v2.json"): text=FileAccess.get_file_as_string("user://kingdom-v2.json")
+	var parser:=JSON.new(); var data=parser.data if parser.parse(text)==OK else null
+	if not data is Dictionary or not sim.restore(data): sim.notify("No compatible saved kingdom was found.")
 	else:
-		accumulator = 0
-		world.build_type = ""
-		world.selected = sim.palace().id
+		if ui.modal!=null: ui.close_modal(false)
+		started=true; accumulator=0; world.selected=0; set_mode("",""); center(); ui.last_result=""; ui.action_signature=""
 	update_ui()
-
-func percentile(values: Array[float], fraction: float) -> float:
-	if values.is_empty():
-		return 0
-	var sorted := values.duplicate()
-	sorted.sort()
-	return sorted[mini(sorted.size()-1,int(sorted.size()*fraction))]
-
+func percentile(values: Array,fraction: float) -> float:
+	if values.is_empty(): return 0
+	var sorted=values.duplicate(); sorted.sort(); return sorted[mini(sorted.size()-1,int(sorted.size()*fraction))]
 func finish_benchmark() -> void:
-	var sum: float = 0
-	var seen: float = 0
-	for frame in benchmark_frames:
-		sum += frame
-	for count in benchmark_visible:
-		seen += count
-	benchmark_result = {"units": sim.units.size(),"frames": benchmark_frames.size(),
-		"average_fps": benchmark_frames.size()*1000.0/maxf(1,sum),
-		"frame_p50_ms": percentile(benchmark_frames,0.5),"frame_p95_ms": percentile(benchmark_frames,0.95),
-		"tick_p50_ms": percentile(benchmark_ticks,0.5),"tick_p95_ms": percentile(benchmark_ticks,0.95),
-		"visible_units_mean": seen/maxi(1,benchmark_visible.size()),"dropped_sim_seconds": dropped_time,
-		"simulation_seconds": sim.time,"stats": sim.stats.duplicate(),"engine": Engine.get_version_info().string,
-		"warmup_seconds": 3,"measurement_seconds": benchmark.duration,"platform": OS.get_name()}
-	benchmark.clear()
-	sim.paused = true
-	if test_enabled:
-		window.sovereignBenchmark = JSON.stringify(benchmark_result)
-	print("BENCHMARK " + JSON.stringify(benchmark_result))
-	update_ui()
-
+	var sum: float=0; var seen: float=0
+	for frame in benchmark_frames: sum+=frame
+	for count in benchmark_visible: seen+=count
+	var result={"units":sim.units.size(),"frames":benchmark_frames.size(),"average_fps":benchmark_frames.size()*1000.0/maxf(1,sum),"frame_p50_ms":percentile(benchmark_frames,0.5),"frame_p95_ms":percentile(benchmark_frames,0.95),"tick_p50_ms":percentile(benchmark_ticks,0.5),"tick_p95_ms":percentile(benchmark_ticks,0.95),"visible_units_mean":seen/maxi(1,benchmark_visible.size()),"dropped_sim_seconds":dropped_time,"simulation_seconds":sim.time,"stats":sim.stats.duplicate(),"engine":Engine.get_version_info().string,"warmup_seconds":3,"measurement_seconds":benchmark.duration,"platform":OS.get_name()}
+	result.profile_ms={}
+	for key in profile: result.profile_ms[key]={"p50":percentile(profile[key],0.5),"p95":percentile(profile[key],0.95)}
+	benchmark.clear(); sim.paused=true
+	if test_enabled: window.sovereignBenchmark=JSON.stringify(result)
+	print("BENCHMARK "+JSON.stringify(result)); update_ui()
 func debug_state() -> Dictionary:
-	var state := sim.snapshot()
-	state.message = sim.message
-	state.selection = world.selected
-	state.mode = world.build_type
-	state.rendered_units = world.rendered_units
-	state.build_site = []
-	var site := sim.find_site("warriors")
-	var point := world.to_global(WorldView.iso(Vector2(site)+Vector2.ONE*0.1))
-	state.build_site = [point.x,point.y]
-	state.build_tile = [site.x,site.y]
-	state.widgets = {}
-	for name in ["action","pause_button"]:
-		var control: Control = get(name)
-		var r := control.get_global_rect()
-		state.widgets[name] = [r.get_center().x,r.get_center().y]
-	state.buildings_on_screen = []
-	for b in sim.buildings:
-		var p := world.to_global(WorldView.iso(sim.bpos(b))+Vector2(0,-35))
-		state.buildings_on_screen.append({"id": b.id,"point": [p.x,p.y]})
+	var units: Array=[]
+	for u in sim.units: units.append(u.save())
+	var state={"seed":sim.fixture.seed,"region":sim.fixture.name,"time":sim.time,"gold":sim.gold,"result":sim.result,"paused":sim.paused,"speed":speed,"started":started,"selection":world.selected,"mode_kind":world.mode_kind,"mode":world.mode_key,"modal":ui.modal_kind,"units":units,"buildings":sim.buildings,"flags":sim.flags.values().filter(func(f):return not f.dead),"loot":sim.loot,"alchemy":sim.alchemy,"magic":sim.magic,"cooldowns":sim.cooldowns,"stats":sim.stats,"rng":sim.rng.state,"message":sim.message,"camera":[camera.x,camera.y],"zoom":zoom,"viewport":[get_viewport_rect().size.x,get_viewport_rect().size.y],"widgets":ui.debug_widgets(),"explored":sim.fixture.tiles.filter(func(t):return t.explored).size(),"visible":sim.fixture.tiles.filter(func(t):return t.visible).size(),"build_sites":{},"entities_on_screen":[],"rendered_units":world.rendered_units,"sound":sound.enabled,"inspector_text":ui.details.text,"modal_rect":[ui.modal_panel.position.x,ui.modal_panel.position.y,ui.modal_panel.size.x,ui.modal_panel.size.y] if ui.modal!=null else [],"minimap_rect":[ui.minimap.global_position.x,ui.minimap.global_position.y,ui.minimap.size.x,ui.minimap.size.y]}
+	for type in ["warriors","rangers","wizards","marketplace","temple","house","tower","thieves"]:
+		var tile=sim.find_site(type); var p=world.to_global(WorldView.iso(Vector2(tile)+Vector2.ONE*0.1)); state.build_sites[type]={"tile":[tile.x,tile.y],"point":[p.x,p.y]}
+	for e in sim.units+sim.buildings+sim.flags.values()+sim.loot:
+		var p=world.to_global(WorldView.iso(sim.pos(e))+Vector2(0,-20 if e.kind=="unit" else -35 if e.kind=="building" else 0)); state.entities_on_screen.append({"id":e.id,"point":[p.x,p.y]})
 	return state
-
 func _web_command(args: Array) -> void:
-	var request = JSON.parse_string(str(args[0]))
-	if not request is Dictionary:
-		return
+	var parser:=JSON.new()
+	if args.is_empty() or parser.parse(str(args[0]))!=OK or not parser.data is Dictionary: return
+	var request: Dictionary=parser.data
 	match request.get("action",""):
-		"reset": new_game()
-		"pause": sim.paused = request.get("value",true)
+		"reset": new_game(int(request.get("seed",41972))); started=true; sim.paused=true
+		"pause": sim.paused=request.get("value",true)
 		"step":
-			var was_paused: bool = sim.paused
-			sim.paused = false
-			for i in mini(int(request.get("seconds",1)*20),12000):
-				sim.tick(0.05)
-			sim.paused = was_paused
-		"select": world.selected = int(request.id)
+			var paused: bool=sim.paused; sim.paused=false
+			for i in clampi(int(request.get("seconds",1)*20),0,48000): sim.tick(0.05)
+			sim.paused=paused
+		"select": world.selected=int(request.id)
+		"camera": camera=WorldView.iso(Vector2(request.x,request.y))
 		"center": center()
-		"camera": camera = WorldView.iso(Vector2(request.x,request.y))
-		"mode": world.build_type = request.type
+		"mode": set_mode(request.get("kind","build"),request.get("type","warriors"))
 		"save": save_game()
 		"load": load_game()
+		"damage": sim.hurt(sim.entity(int(request.id)),request.amount,null)
+		"reveal": sim.reveal(Vector2(request.x,request.y),request.get("radius",10))
+		"laboratory":
+			new_game(41972); started=true; sim.paused=true; sim.gold=20000
+			for type in ["warriors","rangers","wizards","thieves","marketplace","temple","tower"]:
+				var site=sim.find_site(type)
+				if site.x>=0: sim.add_building(type,site)
+			for type in ["warrior","ranger","wizard","thief"]:
+				var guild=sim.operating("").filter(func(b):return sim.definition_of(b).get("recruits","")==type)[0]; sim.recruit(guild.id)
+			sim.update_vision()
 		"benchmark":
-			sim.setup_stress(clampi(int(request.count),1,2000))
-			world.selected = 0
-			world.build_type = ""
-			camera = WorldView.iso(Vector2.ONE*sim.size/2.0)
-			zoom = 0.35
-			speed = 1
-			accumulator = 0
-			dropped_time = 0
-			benchmark_frames.clear()
-			benchmark_ticks.clear()
-			benchmark_visible.clear()
-			window.sovereignBenchmark = ""
-			benchmark = {"elapsed": 0.0,"duration": clampf(request.get("seconds",15),5,60)}
+			if ui.modal!=null: ui.close_modal(false)
+			sim.setup_stress(clampi(int(request.count),1,2000)); started=true; world.selected=0; set_mode("",""); camera=WorldView.iso(Vector2.ONE*sim.size/2); zoom=0.35; speed=1; accumulator=0; dropped_time=0
+			profile.clear(); benchmark_frames.clear(); benchmark_ticks.clear(); benchmark_visible.clear(); window.sovereignBenchmark=""; benchmark={"elapsed":0.0,"duration":clampf(request.get("seconds",15),5,60)}
 	update_ui()

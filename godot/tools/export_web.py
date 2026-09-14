@@ -1,4 +1,4 @@
-"""Export the browser trial using installed templates or an explicit template folder.
+"""Export the browser game using installed templates or an explicit template folder.
 
 Run from any directory. Do not run alongside another export of this project.
 Only Python's standard library is required; Godot and matching export templates
@@ -37,7 +37,11 @@ output.mkdir(parents=True, exist_ok=True)
 (project / 'build/.gdignore').touch()
 try:
     preset.write_text(configured)
-    subprocess.run([engine, '--headless', '--path', str(project), '--export-release', 'Web'], check=True)
+    result = subprocess.run([engine, '--headless', '--path', str(project), '--export-release', 'Web'],
+                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    print(result.stdout, end='')
+    if result.returncode or re.search(r'SCRIPT ERROR|Parse Error|ERROR:', result.stdout):
+        raise SystemExit('Godot export failed; see engine output above.')
 finally:
     preset.write_text(original)
 for required in ['index.html', 'index.js', 'index.wasm', 'index.pck']:
@@ -47,8 +51,10 @@ files = []
 for file in sorted(output.iterdir()):
     if file.is_file() and file.suffix in ['.html', '.js', '.wasm', '.pck', '.png']:
         data = file.read_bytes()
-        files.append({'file': file.name, 'bytes': len(data),
-                      'gzip_bytes': len(gzip.compress(data, compresslevel=9, mtime=0))})
+        compressed = gzip.compress(data, compresslevel=9, mtime=0)
+        if file.suffix in ['.html', '.js', '.wasm', '.pck']:
+            file.with_name(file.name + '.gz').write_bytes(compressed)
+        files.append({'file': file.name, 'bytes': len(data), 'gzip_bytes': len(compressed)})
 report = {'files': files, 'total_bytes': sum(f['bytes'] for f in files),
           'total_gzip_bytes': sum(f['gzip_bytes'] for f in files)}
 (project / 'reports/download.json').write_text(json.dumps(report, indent=2) + '\n')

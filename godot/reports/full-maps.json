@@ -1,0 +1,6 @@
+{
+  "checks": "RNG, geography, tile kinds, lair layout, tree counts, dry foundations, reachable lairs and walkable spawns",
+  "failures": 0,
+  "reference_maps": 6,
+  "structural_maps": 100
+}

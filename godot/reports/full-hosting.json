@@ -1,0 +1,34 @@
+{
+  "recorded_at": "2026-09-14T16:27:22.497Z",
+  "checks": "PASS: container, health, 404, MIME, gzip and byte-for-byte decoded export",
+  "files": [
+    {
+      "file": "index.html",
+      "content_type": "text/html",
+      "encoding": "gzip",
+      "compressed_bytes": 2185,
+      "decoded_bytes": 5439
+    },
+    {
+      "file": "index.js",
+      "content_type": "application/javascript",
+      "encoding": "gzip",
+      "compressed_bytes": 68471,
+      "decoded_bytes": 279815
+    },
+    {
+      "file": "index.wasm",
+      "content_type": "application/wasm",
+      "encoding": "gzip",
+      "compressed_bytes": 10054758,
+      "decoded_bytes": 39514754
+    },
+    {
+      "file": "index.pck",
+      "content_type": "application/octet-stream",
+      "encoding": "gzip",
+      "compressed_bytes": 8895086,
+      "decoded_bytes": 9113152
+    }
+  ]
+}

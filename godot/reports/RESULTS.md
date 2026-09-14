@@ -1,40 +1,45 @@
-# Godot browser migration trial
+# Full Godot port — verification
 
-The existing isometric art and a complete small campaign work in Godot's browser export. This is enough to keep Godot under consideration for development tooling and future native builds. It is not evidence that a complete rewrite is faster or cheaper than continuing the JavaScript game.
+The complete existing game runs in native GDScript and exports for browsers while retaining the illustrated isometric presentation. The full port is on `migration/godot-full`; the earlier trial is retained on `migration/godot-slice`. No production deployment is included.
 
-The browser cost is concrete: approximately **50.85 MB uncompressed / 20.64 MB gzip** for this stock-template export. About 10 MB of the compressed total is the engine WASM and 10.5 MB is the content pack. The gzip number is calculated from the files, not a measured CDN transfer; the local test server serves uncompressed files. See [exact file sizes](download.json).
+## Gameplay and maps
 
-## Browser measurements
+**230 gameplay assertions passed, with no failures.** [Campaign and system tests](full-simulation.json), [extended tests](full-extended.json).
 
-Recorded September 14, 2026, with Godot 4.7.2 release export, headless Chrome 152, Apple M4 Pro Metal graphics, 1440×900 viewport and device pixel ratio 1. The export used one thread and ran with `crossOriginIsolated=false`.
+- An autonomous eight-lair campaign won at **586.7 simulation seconds**, with eight bounty payouts, eight recruits, potion shopping/use and physical loot collection. This scenario uses scripted spending and bounty placement, while heroes choose paths and fight through the normal simulation.
+- Tests cover construction, guild capacity, taxes, retreat, XP, physical loot, potion prerequisites/capacity/buffs, Temple research, all seven spell effects, wizard mana and decisions, delayed impacts, fog targeting, sanitation and demolition.
+- Save/load preserves the map, entity IDs, paths, RNG streams, inventories, studies, buffs, cooldowns and in-flight spell impacts. Restored simulations continue deterministically. Corrupt arrays, actors and research are rejected before the active kingdom changes.
+- A controlled **30-minute** scenario exercises raids, replacement staff, the ten-minute troll and repeated saves. Palace health is raised to keep that scenario running; it is a longevity test, not a balance or victory claim. Dead actor cleanup is also tested above its retention threshold.
+- Six reference seeds match the original JavaScript RNG rolls, region/lair layout, every terrain tile and tree counts. Another **100 generated kingdoms** have dry foundations, reachable campaign lairs and walkable starting spawns. [Map results](full-maps.json).
+
+## Browser and presentation
+
+The actual release export passed mouse construction/recruitment, attack/exploration bounty controls, research, paid spell casting, pause/speed, complete page-reload persistence, malformed-save recovery, victory/defeat/replay, fresh maps and typed seed names. The victory screen is tested by loading the completed native campaign save; the browser harness does not claim a separately played full campaign. Ordinary player URLs do not expose the automation bridge.
+
+A 390×844 CSS-pixel viewport at DPR 2 passed touch pan/tap, zoom, minimap navigation, selection, horizontal card swipes and scrollable help/research. Desktop controls were tested at 1440×900. There were **no JavaScript or engine errors**. Tests disable browser caching so they load the current export. [Raw browser report](full-browser.json).
+
+Visual checks: [kingdom](full-kingdom.png), [spellbook](full-spellbook.png), [healing](full-healing.png), [mobile kingdom](full-mobile.png), [mobile research](full-mobile-research.png), [victory](full-victory.png).
+
+## Rendering measurements
+
+Recorded 2026-09-14, Godot 4.7.2 release export, headless Chrome 152, Apple M4 Pro Metal graphics, 1440×900, DPR 1, one thread and `crossOriginIsolated=false`.
 
 | Actors | Average FPS | Frame p95 | Simulation tick p95 |
 | ---: | ---: | ---: | ---: |
-| 100 | 60.0 | 16.67 ms | 0.60 ms |
-| 300 | 60.0 | 16.67 ms | 1.00 ms |
-| 1,000 | 53.6 | 21.71 ms | 3.10 ms |
+| 100 | 60.0 | 16.67 ms | 2.20 ms |
+| 300 | 60.0 | 16.67 ms | 3.70 ms |
+| 1,000 | 50.4 | 21.97 ms | 9.10 ms |
 
-Each case has 3 seconds of warm-up followed by 15 seconds of measurement. Simulation runs at 20 Hz while drawing follows the browser. Frame intervals come from Godot's process clock; the harness also records elapsed wall time. A 60 FPS ceiling limits the smaller cases. The run recorded no dropped simulation time and no JavaScript or engine errors. [Raw browser results](browser.json), [1,000-actor screenshot](crowd-1000.png).
+Each case has 3 seconds of warm-up and 15 seconds of measurement, with a 20 Hz simulation. No simulation time was dropped. The camera is zoomed out; approximately 98, 291 and 954 actors are drawn. The profiler also records main-loop, world drawing, UI and minimap costs in the raw report. [1,000-actor screenshot](full-crowd-1000.png).
 
-The crowd contains two-thirds warriors and one-third goblins placed on open ground. Their normal AI, A* navigation and damage calculations run. Very high health keeps the population constant. The camera is zoomed out and draws approximately 99, 296 and 960 actors respectively; some are covered by the interface. Path requests are capped at 24 per simulation tick, and the report includes deferred requests. At high density most actors settle into melee combat, so this is a sustained combat/rendering test rather than a worst-case test of 1,000 continuously moving pathfinders. There is no physics-based crowd separation.
+The crowd mixes warriors and goblins with high health, runs their normal AI/pathfinding/combat, and reveals the map. At high density many units settle into melee. This measures sustained full-map rendering and combat, not 1,000 continuously pathfinding actors. Path requests remain capped at 24 per tick and deferred requests are reported. There is no physical crowd separation. The minimap uses a cached texture instead of thousands of per-frame tile polygons.
 
-These results are from one high-end machine and a short synthetic workload. They do not establish mobile, Safari, Firefox, low-end laptop, long-session or full-game performance. No equivalent workload was measured in the original JavaScript implementation, and the Godot slice omits several of its systems.
+These measurements describe this machine and workload. Mobile input/layout was tested through Chrome emulation; real phones, Safari, Firefox and low-end hardware still need release testing. No equivalent full-game workload was benchmarked in the JavaScript version.
 
-## Behavior verified
+## Delivery
 
-- The imported map has a route from the settlement to its single lair; paths stay on traversable tiles.
-- Placement rejects occupied ground and charges only accepted construction. Workers finish a guild automatically; capacity and recruitment costs apply.
-- Heroes follow paid bounties, fight, collect loot and win the campaign. Tax income, bounty refunds/payouts and Palace defeat are exercised.
-- Save/load preserves actors, paths, timers, money, bounties and 64-bit RNG state. A restored simulation continues identically in the native regression. Invalid saves are rejected before active state is replaced.
-- The browser suite uses real mouse placement and recruitment/bounty buttons, pauses/resumes, reloads the page, restores a saved kingdom and reaches victory. The normal player URL starts without the automation bridge.
-- Screenshots confirm the original illustrated isometric presentation: [kingdom](kingdom.png), [victory](victory.png).
+The stock-template export is **48.96 MB uncompressed / 19.06 MB estimated gzip**. About 10.05 MB of the compressed payload is the engine and 8.90 MB is the game pack. Sizes are computed from the files, not an internet download measurement. [Exact sizes](download.json).
 
-The native simulation suite also passes. Its p95 tick times are roughly 0.30 / 0.62 / 2.18 ms for 100 / 300 / 1,000 actors on this Mac. These are simulation-only numbers, not native rendering or browser FPS. [Raw native results](native.json).
+The local container build passed health/404 checks, correct WASM MIME type, gzip delivery and byte-for-byte verification of decompressed HTML/JS/WASM/PCK against the export. [Hosting results](full-hosting.json). The Python development server serves uncompressed files.
 
-## What this means for a browser-first game
-
-Keeping the fixed isometric look is practical: the trial reuses the existing PNG artwork instead of requiring a new 3D art pipeline. Godot supplies scene/UI tooling, native pathfinding and a runnable web build, but gameplay and interface code still require a port.
-
-Before expanding this experiment into the main game, test real target browsers/devices, set an acceptable first-load budget, and port another representative system such as fog plus magic/audio. A reduced engine template and narrower asset pack are possible size optimizations; their savings are not measured here. The [official web-export guide](https://docs.godotengine.org/en/stable/tutorials/export/exporting_for_web.html) describes reduced templates and browser constraints.
-
-The trial leaves mobile/touch UX, dynamic map generation, research/shops/alchemy, magic, audio, sanitation, fog, minimap and campaign parity for later. [Scope and reproduction instructions](../README.md).
+The source balance and seeded geography are preserved. Native navigation/scheduling, terrain shading and the Godot interface differ in some details from the JavaScript implementation. JavaScript prototype and trial saves have different formats. [Run, export and reproduce the checks](../README.md).

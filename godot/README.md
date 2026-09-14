@@ -1,83 +1,99 @@
-# Sovereign: Godot browser trial
+# Sovereign — Godot
 
-A playable migration experiment on branch `migration/godot-slice`: keep the existing illustrated isometric world, move a small complete game loop into Godot, and measure the actual browser export.
+The complete existing game, ported to native GDScript on `migration/godot-full`. It keeps the illustrated isometric presentation and targets browsers first. The earlier one-lair experiment remains on `migration/godot-slice`.
 
-Open `project.godot` in **Godot 4.7.2 Standard** and press F6/F5. The main scene is `main.tscn`. The checked-in fixture and artwork are sufficient to run it; Node and Pillow are only needed to regenerate those assets. All migration files live in this directory.
+Open `project.godot` in **Godot 4.7.2 Standard** and press F5. The checked-in data, art, effects and audio are sufficient to play; the original JavaScript game is not loaded at runtime.
 
-The exported trial is served locally at **http://127.0.0.1:8131/** when the server below is running. [Measured results and remaining risks](reports/RESULTS.md), [starting kingdom screenshot](reports/kingdom.png).
+[Play locally](http://127.0.0.1:8131/) while the server below is running. [Verification and measurements](reports/RESULTS.md), [port coverage](PORT_STATUS.md).
 
 ## Play
 
-1. Place a Warriors’ Guild on clear land near the Palace. Workers build it automatically; use 3× speed to shorten the wait.
-2. Select the completed guild and recruit up to four warriors.
-3. Click **Find the lair**, then post an attack bounty. Heroes travel and fight autonomously.
-4. Destroy the lair while protecting the Palace. Save/Load preserves the kingdom in this browser and origin.
+Build guilds and recruit warriors, rangers, wizards and thieves. Heroes choose their own tasks; attack and exploration bounties influence their decisions. Destroy all eight campaign lairs while protecting the Palace.
 
-Left-click selects or places; right-drag or WASD/arrows pans; wheel zooms; Space pauses; F returns to the Palace; Esc cancels construction; Shift keeps the build tool active. Keys 1 and 3 select speed. The trial currently targets desktop browsers with keyboard and mouse.
+Marketplaces research potions, sell supplies to heroes and accumulate taxable revenue. Temples research a shared spellbook: the crown casts with gold, while wizards spend regenerating mana. Treasure belongs to the heroes who collect it. More than six completed cottages eventually create recurring rat sewers; demolishing cottages reduces that pressure.
 
-## Browser export
+Click or tap to select and place. Right-drag, touch-drag, WASD or arrows pan; wheel or +/− zoom; the minimap moves the camera. Space pauses, 1/2/3 selects speed, F centers the Palace, and Esc/right-click cancels placement. Shift-click keeps a placement tool active. Command cards scroll horizontally; longer panels scroll vertically. Help explains the rules in-game.
 
-Install the matching Godot 4.7.2 export templates through **Editor → Manage Export Templates**. From the repository root:
+Start with a random map, enter a numeric or named seed, or use `?seed=41972`. Help and the ending screen offer replay. Save/Load stores the full kingdom in this browser and origin (`sovereign-godot-save-v2`); native play uses `user://kingdom-v2.json`. JavaScript prototype and trial saves use different formats.
+
+## Browser build
+
+Install matching Godot 4.7.2 export templates through **Editor → Manage Export Templates**, then run from the repository root:
 
 ```sh
 python3 godot/tools/export_web.py --godot /path/to/Godot
 python3 -m http.server 8131 --bind 127.0.0.1 --directory godot/build/web
 ```
 
-Alternatively, supply a directory containing `web_nothreads_debug.zip` and `web_nothreads_release.zip` from the matching official template archive:
+Alternatively pass `--templates /path/to/templates`, pointing to a folder containing `web_nothreads_debug.zip` and `web_nothreads_release.zip`. In this workspace the engine is `/tmp/sovereign-godot-engine/Godot.app/Contents/MacOS/Godot` and templates are in `/tmp/sovereign-godot-templates`; these temporary downloads are not repository dependencies.
+
+The helper restores portable template settings after export, produces the browser files and compressed copies, and records sizes in `reports/download.json`. Do not run concurrent exports. Generated builds and Godot's import cache are ignored by Git.
+
+The preset uses GDScript, Compatibility/WebGL 2, one thread and no extensions. Serve the complete output directory over HTTP locally or HTTPS when hosted, with `application/wasm` for WASM and compression for WASM/JS/PCK. The local Python server serves uncompressed files. See [Godot's web export guide](https://docs.godotengine.org/en/stable/tutorials/export/exporting_for_web.html).
+
+A separate container definition serves this export on port 8080:
 
 ```sh
-python3 godot/tools/export_web.py --godot /path/to/Godot --templates /path/to/templates
+# Export first; use godot/ as the Docker build context.
+docker build -t sovereign-godot -f godot/Dockerfile godot
+docker run --rm -p 8132:8080 sovereign-godot
 ```
 
-For this workspace, the downloaded engine is `/tmp/sovereign-godot-engine/Godot.app/Contents/MacOS/Godot` and the template directory is `/tmp/sovereign-godot-templates`. These temporary downloads are not repository dependencies. The helper temporarily configures custom template paths and restores the portable preset even on failure; do not run concurrent exports.
+This branch does not deploy to the existing production site. The root JavaScript application and its deployment files remain the reference implementation; deploy the `godot/` container to serve the port.
 
-The preset uses **GDScript, Compatibility/WebGL 2, no threads, no extensions**. Godot 4 C# does not currently export to the web; the single-threaded option avoids the cross-origin isolation requirement. See the [official web export documentation](https://docs.godotengine.org/en/stable/tutorials/export/exporting_for_web.html).
+## Implementation
 
-Serve the generated HTML, JS, WASM, PCK and PNG files together over HTTP locally or HTTPS when hosted. Production hosting should compress JS/WASM/PCK and serve WASM as `application/wasm`. The Python server is an uncompressed local test server. `build/` and the import cache are ignored by Git. This experiment has not been deployed to the existing site.
-
-## What was migrated
-
-| Existing source | Trial implementation |
+| Existing systems | Godot implementation |
 | --- | --- |
-| `js/mapgen.js`, `world.js` | An exported 88×88 seed-41972 fixture; all starting friendly buildings and the nearest hostile lair |
-| Blender PNGs and sprite manifests | Copied/downsampled textures, animated unit atlas frames, trees and buildings sorted by isometric depth |
-| `js/data.js` | Imported building/unit balance tables; a deliberately smaller subset of behavior |
-| `game.js`, `ai.js` | Workers, construction, recruitment/capacity, collector taxes, personal gold, loot, bounty escrow, combat, retreat/healing, one-lair victory and Palace defeat |
-| Canvas renderer | Godot `Node2D` drawing, view culling, static baked ground, fixed camera angle and zoom/pan |
-| DOM interface and persistence | Godot Controls and browser localStorage via JavaScriptBridge; native file save for editor play |
+| Seeded geography, roads, bridges, forests, lair sites | `seed_rng.gd`, `world_generator.gd`; generated at runtime, with exact reference-map parity |
+| Buildings, construction, recruitment, taxes, combat, waves, XP, projectiles, campaign | `simulation.gd`, `actor.gd`, `brain.gd` |
+| Potion research, personal shopping, inventory, buffs, physical treasure | `supplies.gd` |
+| Temple research, seven royal spells, wizard decisions/mana, delayed meteors | `magic.gd` |
+| Overcrowding, safe sewer placement, recurring rats, demolition | `sanitation.gd` |
+| Original sprites, depth ordering, animated terrain, fog, bridge details, spell atlases | `world_view.gd`, terrain/fog shaders |
+| Build/recruit/bounty/spell cards, inspection, research, objectives, minimap, start/help/end | `kingdom_ui.gd`, `minimap.gd` |
+| Camera, touch/mouse/keyboard, pause/speed, complete save/load | `main.gd` |
+| Original musical cues and ambience | `sound.gd`; offline-rendered WAV samples, enabled by a player gesture |
 
-`scripts/simulation.gd` owns the game state and native `AStarGrid2D` navigation. It advances at 20 fixed ticks per second, staggers decisions, uses spatial buckets for opponent lookup, and caps path requests at 24 per tick. Failed paths wait before retrying. `world_view.gd` only draws; `main.gd` owns input, interface, the clock and persistence.
+The simulation runs at 20 fixed ticks per second. It uses native `AStarGrid2D`, staggered decisions, spatial opponent buckets and at most 24 new paths per tick. Rendering consumes state/events and never advances combat or delayed spell damage. IDs preserve entity relationships in saves. Save validation completes before replacing the active kingdom. The minimap caches terrain in a small texture, avoiding thousands of polygon commands per frame.
 
-This is a **vertical slice**, not full parity. Research, alchemy/shops, wizard spells, procedural audio, fog/exploration, sanitation/overcrowding, corpse systems, minimap, dynamic map generation, connectivity-preserving placement and the full campaign are not ported. Ranged damage is immediate; projectile travel and collision are not implemented. Ground is baked and camera rotation is absent. Actors share a navigation grid without physical crowd separation. Marketplace behavior is limited to construction and taxes. The imported map is identical, but Godot's RNG/AI scheduling differs from the JavaScript simulation. Browser-game saves are not compatible with this trial.
+Map geography and source balance are preserved. Native pathfinding, fixed-step scheduling, terrain shading and the Control-based interface produce some differences from the JavaScript presentation and moment-to-moment movement. Actors share walkable space without physical crowd separation, as in the prototype. This port covers the existing game; it does not add a new campaign or rotating 3D camera.
 
-## Rebuild imported data and art
+## Refresh source data and art
 
-Regeneration reads the browser code in the current working tree, including local changes. Keep the commands in this order; the art step rewrites atlas coordinates in the exported manifest.
+These optional tools use the frozen migration inputs in `tools/reference/`, including the prototype edits that were pending when the port began. Pass `--current-source` to the Node import/baking commands when intentionally importing later changes from `js/`. The game never loads this reference JavaScript, and these tools are not needed to run the checked-in project.
 
 ```sh
-node godot/tools/import_browser.mjs 41972
+node godot/tools/export_data.mjs
+node godot/tools/import_browser.mjs
 python3 godot/tools/prepare_art.py
-python3 godot/tools/bake_ground.py
+python3 godot/tools/bake_audio.py
+node godot/tools/bake_effects.mjs
 ```
 
-The Python art tools require Pillow (`python3 -m pip install Pillow` in your environment). Copies are limited to 3× logical resolution. The fixed ground texture is 5632×2848; larger/dynamic maps should use chunks or tiles instead. Regenerated fixtures can differ when the source game's balance or generator changes.
+Run the metadata importer immediately before `prepare_art.py`: it restores original atlas coordinates before resampling to 3× logical resolution. That Python tool requires Pillow. Audio baking uses only Python's standard library. Effect baking uses Chrome's remote debugging endpoint on port 9231 and renders the original painted spell artwork into transparent animation atlases. None of these steps modifies the source artwork.
 
 ## Verify
 
+From the repository root:
+
 ```sh
-/path/to/Godot --headless --path godot --script tests/simulation_test.gd
+/path/to/Godot --headless --path godot --script tests/map_test.gd
+/path/to/Godot --headless --path godot --script tests/full_simulation_test.gd
+/path/to/Godot --headless --path godot --script tests/extended_simulation_test.gd
 ```
 
-The suite checks invalid placement/payment, path walkability, pause, autonomous construction, guild capacity, bounty refund/payout, taxes, save continuity including RNG and paths, malformed-save rejection, victory/defeat and 100/300/1000-actor simulation loads. Results are written to `reports/native.json`.
+These check original RNG/map parity, 100 generated kingdoms, construction and economy, a full autonomous campaign, all spell effects and research, potion shopping and loot, save continuity/corruption, sanitation, and a controlled 30-minute run. Reports are written under `reports/`.
 
-For the browser suite, start the exported site, then launch a separate Chrome with remote debugging on port 9231. For example on macOS:
+For browser tests, export and serve the game, then start a separate Chrome with GPU acceleration and remote debugging. For example on macOS:
 
 ```sh
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --no-first-run --no-default-browser-check --user-data-dir=/tmp/sovereign-godot-chrome --remote-debugging-port=9231 about:blank
 node godot/tests/browser.mjs
 ```
 
-Node 22+ is needed for built-in WebSocket. `GODOT_TEST_URL`, `GODOT_CDP_URL` and `GODOT_BENCH_SECONDS` override the defaults. Keep GPU acceleration enabled for comparable rendering measurements. The test opens/closes its own tab, drives real mouse placement/recruitment/bounty controls, uses an explicit test bridge to advance simulation time, reloads saved state, checks the normal player URL, and measures live rendering. It writes JSON and screenshots under `reports/`. The automation bridge exists only with `?test=1`; omit that parameter when playing.
+Node 22+ supplies the built-in WebSocket client. `GODOT_TEST_URL`, `GODOT_CDP_URL` and `GODOT_BENCH_SECONDS` override the defaults. `GODOT_SKIP_BENCH=1` runs interaction checks only. The suite opens its own tab, uses real mouse/touch events for controls, and uses a test bridge for scenario setup and accelerated simulation. It checks desktop and 390px/DPR2 mobile layouts, research, casting, save/reload, seed controls and the ordinary player URL, then measures 100/300/1,000 actors. The harness disables browser caching so every run exercises the current export. `?test=1` explicitly enables the automation bridge; ordinary player URLs do not expose it.
 
-Godot is distributed under the [MIT license](https://godotengine.org/license/). Original project art is reused here; the bundled fonts retain their [Alegreya](assets/Alegreya-OFL.txt) and [Cinzel](assets/Cinzel-OFL.txt) licenses.
+For a focused fresh-page profile, run `node godot/tests/performance.mjs 1000`. After starting the container on port 8132, `node godot/tests/hosting.mjs` checks health, 404 handling, MIME types, gzip delivery and decoded file integrity.
+
+Godot uses the [MIT license](https://godotengine.org/license/). Original project art is reused, and the bundled fonts retain their [Alegreya](assets/Alegreya-OFL.txt) and [Cinzel](assets/Cinzel-OFL.txt) licenses.

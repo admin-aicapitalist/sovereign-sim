@@ -1,0 +1,32 @@
+{
+  "campaign": {
+    "result": "victory",
+    "stats": {
+      "bounties": 8,
+      "built": 3,
+      "decisions": 19205,
+      "hits": 862,
+      "infestations_cleared": 0,
+      "kills": 54,
+      "lairs": 8,
+      "loot_caches": 42,
+      "loot_gold": 1933.0,
+      "loot_potions": 4,
+      "losses": 0,
+      "moves": 241867,
+      "path_deferrals": 0,
+      "paths": 9397,
+      "potions_bought": 25,
+      "potions_used": 10,
+      "recruits": 8,
+      "royal_spells": 0,
+      "slain": 54,
+      "taxes": 585.0,
+      "wizard_spells": 0
+    },
+    "time": 586.700000000014
+  },
+  "checks": 108,
+  "engine": "4.7.2-stable (official)",
+  "failures": []
+}
