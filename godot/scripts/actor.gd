@@ -1,5 +1,7 @@
 extends RefCounted
-const FIELDS = ["id","kind","type","hp","max_hp","hostile","hero","home","gold","target","goal","loot_target","state","think","cooldown","repath","path_index","facing","animation","attacking","dead","level","xp","name","bravery","carried","potions","buffs","magic_buffs","mana","max_mana","spell_cooldowns","cast_timer","last_spell","last_hit","raider","infestation"]
+const FIELDS = ["id","kind","type","hp","max_hp","hostile","hero","home","gold","target","goal","loot_target","state","think","cooldown","repath","path_index","facing","animation","attacking","dead","level","xp","name","bravery","carried","potions","buffs","magic_buffs","mana","max_mana","spell_cooldowns","cast_timer","last_spell","last_hit","raider","infestation","equipment","pending_attack"]
+var equipment: Dictionary = {}
+var pending_attack: Dictionary = {}
 var id: int = 0
 var kind: String = "unit"
 var type: String = ""

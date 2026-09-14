@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/content/items.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "ember_crown"
+name = "Ember Crown"
+description = "The warlord’s broken crown. +8 armor."
+slot = "armor"
+damage = 0
+armor = 8
+rank = 2
+properties = {}

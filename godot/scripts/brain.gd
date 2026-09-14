@@ -3,7 +3,8 @@ const Supplies=preload("res://scripts/supplies.gd")
 static func wander(s,u,origin: Vector2,radius: float) -> void:
 	if u.path_index>=u.path.size(): s.go(u,s.near_point(origin,radius),"Seeking adventure" if u.hero else "Patrolling")
 static func think(s,u) -> void:
-	if u.hostile: monster(s,u)
+	if u.id==s.mission.boss_id: s.Mission.boss_think(s,u)
+	elif u.hostile: monster(s,u)
 	elif u.hero: hero(s,u)
 	elif u.type=="peasant": peasant(s,u)
 	elif u.type=="collector": collector(s,u)
@@ -12,6 +13,7 @@ static func think(s,u) -> void:
 		if enemy!=null: u.target=enemy.id; u.state="Defending the kingdom"
 		else: u.target=0; wander(s,u,s.pos(s.palace()),5)
 static func hero(s,u) -> void:
+	if s.Mission.dodge(s,u): return
 	if u.hp<u.max_hp*0.3 or u.state in ["Resting","Fleeing"] and u.hp<u.max_hp*0.86:
 		var home=s.nearest(u.pos,s.operating("temple"))
 		if home==null: home=s.entity(u.home)

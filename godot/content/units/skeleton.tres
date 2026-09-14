@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/content/units.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "skeleton"
+name = "Restless Skeleton"
+hp = 170
+damage = 18
+armor = 6
+range = 1.2
+speed = 1.25
+rate = 1.6
+sight = 6
+cost = 0
+properties = {"color": "#d4ccb0", "hostile": true, "xp": 24}

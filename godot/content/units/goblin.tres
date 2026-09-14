@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/content/units.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "goblin"
+name = "Goblin Raider"
+hp = 135
+damage = 15
+armor = 3
+range = 1.1
+speed = 1.55
+rate = 1.5
+sight = 6
+cost = 0
+properties = {"color": "#8ca56b", "hostile": true, "xp": 20}

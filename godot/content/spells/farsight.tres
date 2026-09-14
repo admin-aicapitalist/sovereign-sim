@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/content/spells.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "farsight"
+name = "Far Sight"
+description = "Reveal an area of 10 tiles for 45 seconds. Known from the start; wizards use it to scout nearby fog."
+cost = 35
+mana = 15
+cooldown = 18
+radius = 10
+research = 0
+time = 20
+properties = {"innate": true, "duration": 45, "visualDuration": 2.4, "symbol": "◉", "color": "#a8aaa2"}

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/content/items.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "iron_blade"
+name = "Tempered Iron"
+description = "A balanced weapon. +6 attack."
+slot = "weapon"
+damage = 6
+armor = 0
+rank = 1
+properties = {}

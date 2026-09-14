@@ -5,6 +5,7 @@ const KingdomUI=preload("res://scripts/kingdom_ui.gd")
 const Sound=preload("res://scripts/sound.gd")
 const Magic=preload("res://scripts/magic.gd")
 const Supplies=preload("res://scripts/supplies.gd")
+var mission_id: String="ember_crown"
 var sim:=Simulation.new()
 var world:=WorldView.new()
 var ui:=KingdomUI.new()
@@ -37,7 +38,7 @@ func _ready() -> void:
 		if seed!=null and str(seed).strip_edges()!="": pinned_seed=Simulation.SeedRng.normalize(seed)
 		started=bool(JavaScriptBridge.eval("new URLSearchParams(location.search).has('auto')"))
 		sync_viewport()
-	sim.reset(pinned_seed)
+	sim.reset(pinned_seed); Simulation.Mission.start(sim,mission_id)
 	add_child(sound); world.sim=sim; add_child(world); ui.main=self; add_child(ui); center()
 	if test_enabled:
 		bridge_callback=JavaScriptBridge.create_callback(_web_command); window.sovereignCommand=bridge_callback
@@ -59,7 +60,7 @@ func set_mode(kind: String,key: String) -> void:
 	Input.set_default_cursor_shape(Input.CURSOR_CROSS if kind!="" else Input.CURSOR_ARROW)
 func new_game(seed_value: int=-1) -> void:
 	if ui.modal!=null: ui.close_modal(false)
-	sim.reset(seed_value if seed_value>=0 else pinned_seed); accumulator=0; benchmark.clear(); speed=1; zoom=1.15; world.selected=0; world.hovered=0; set_mode("",""); center()
+	sim.reset(seed_value if seed_value>=0 else pinned_seed); Simulation.Mission.start(sim,mission_id); accumulator=0; benchmark.clear(); speed=1; zoom=1.15; world.selected=0; world.hovered=0; set_mode("",""); center()
 	ui.last_result=""; ui.action_signature=""; ui.objective_ids=[]; ui.last_selection=-1; ui.objectives_open=false; update_ui()
 func _process(dt: float) -> void:
 	var began: int=Time.get_ticks_usec()
@@ -171,7 +172,7 @@ func load_game() -> void:
 	if not data is Dictionary or not sim.restore(data): sim.notify("No compatible saved kingdom was found.")
 	else:
 		if ui.modal!=null: ui.close_modal(false)
-		started=true; accumulator=0; world.selected=0; set_mode("",""); center(); ui.last_result=""; ui.action_signature=""
+		mission_id=sim.mission.id; started=true; accumulator=0; world.selected=0; set_mode("",""); center(); ui.last_result=""; ui.action_signature=""
 	update_ui()
 func percentile(values: Array,fraction: float) -> float:
 	if values.is_empty(): return 0
@@ -189,7 +190,7 @@ func finish_benchmark() -> void:
 func debug_state() -> Dictionary:
 	var units: Array=[]
 	for u in sim.units: units.append(u.save())
-	var state={"seed":sim.fixture.seed,"region":sim.fixture.name,"time":sim.time,"gold":sim.gold,"result":sim.result,"paused":sim.paused,"speed":speed,"started":started,"selection":world.selected,"mode_kind":world.mode_kind,"mode":world.mode_key,"modal":ui.modal_kind,"units":units,"buildings":sim.buildings,"flags":sim.flags.values().filter(func(f):return not f.dead),"loot":sim.loot,"alchemy":sim.alchemy,"magic":sim.magic,"cooldowns":sim.cooldowns,"stats":sim.stats,"rng":sim.rng.state,"message":sim.message,"camera":[camera.x,camera.y],"zoom":zoom,"viewport":[get_viewport_rect().size.x,get_viewport_rect().size.y],"widgets":ui.debug_widgets(),"explored":sim.fixture.tiles.filter(func(t):return t.explored).size(),"visible":sim.fixture.tiles.filter(func(t):return t.visible).size(),"build_sites":{},"entities_on_screen":[],"rendered_units":world.rendered_units,"sound":sound.enabled,"inspector_text":ui.details.text,"modal_rect":[ui.modal_panel.position.x,ui.modal_panel.position.y,ui.modal_panel.size.x,ui.modal_panel.size.y] if ui.modal!=null else [],"minimap_rect":[ui.minimap.global_position.x,ui.minimap.global_position.y,ui.minimap.size.x,ui.minimap.size.y]}
+	var state={"mission":sim.mission,"mission_objective":Simulation.Mission.objective(sim),"cue_count":world.cues.size(),"seed":sim.fixture.seed,"region":sim.fixture.name,"time":sim.time,"gold":sim.gold,"result":sim.result,"paused":sim.paused,"speed":speed,"started":started,"selection":world.selected,"mode_kind":world.mode_kind,"mode":world.mode_key,"modal":ui.modal_kind,"units":units,"buildings":sim.buildings,"flags":sim.flags.values().filter(func(f):return not f.dead),"loot":sim.loot,"alchemy":sim.alchemy,"magic":sim.magic,"cooldowns":sim.cooldowns,"stats":sim.stats,"rng":sim.rng.state,"message":sim.message,"camera":[camera.x,camera.y],"zoom":zoom,"viewport":[get_viewport_rect().size.x,get_viewport_rect().size.y],"widgets":ui.debug_widgets(),"explored":sim.fixture.tiles.filter(func(t):return t.explored).size(),"visible":sim.fixture.tiles.filter(func(t):return t.visible).size(),"build_sites":{},"entities_on_screen":[],"rendered_units":world.rendered_units,"sound":sound.enabled,"inspector_text":ui.details.text,"modal_rect":[ui.modal_panel.position.x,ui.modal_panel.position.y,ui.modal_panel.size.x,ui.modal_panel.size.y] if ui.modal!=null else [],"minimap_rect":[ui.minimap.global_position.x,ui.minimap.global_position.y,ui.minimap.size.x,ui.minimap.size.y]}
 	for type in ["warriors","rangers","wizards","marketplace","temple","house","tower","thieves"]:
 		var tile=sim.find_site(type); var p=world.to_global(WorldView.iso(Vector2(tile)+Vector2.ONE*0.1)); state.build_sites[type]={"tile":[tile.x,tile.y],"point":[p.x,p.y]}
 	for e in sim.units+sim.buildings+sim.flags.values()+sim.loot:
@@ -200,12 +201,17 @@ func _web_command(args: Array) -> void:
 	if args.is_empty() or parser.parse(str(args[0]))!=OK or not parser.data is Dictionary: return
 	var request: Dictionary=parser.data
 	match request.get("action",""):
-		"reset": new_game(int(request.get("seed",41972))); started=true; sim.paused=true
+		"reset": mission_id=request.get("mission","classic"); new_game(int(request.get("seed",41972))); started=true; sim.paused=true
 		"pause": sim.paused=request.get("value",true)
 		"step":
 			var paused: bool=sim.paused; sim.paused=false
 			for i in clampi(int(request.get("seconds",1)*20),0,48000): sim.tick(0.05)
 			sim.paused=paused
+		"position":
+			var actor=sim.actors.get(int(request.id))
+			if actor!=null:
+				actor.pos=Vector2(request.x,request.y); actor.target=0; actor.think=0; sim.stop(actor); sim.update_vision(); sim.rebuild_buckets()
+		"upgrade": sim.upgrade(int(request.id))
 		"select": world.selected=int(request.id)
 		"camera": camera=WorldView.iso(Vector2(request.x,request.y))
 		"center": center()
@@ -215,7 +221,7 @@ func _web_command(args: Array) -> void:
 		"damage": sim.hurt(sim.entity(int(request.id)),request.amount,null)
 		"reveal": sim.reveal(Vector2(request.x,request.y),request.get("radius",10))
 		"laboratory":
-			new_game(41972); started=true; sim.paused=true; sim.gold=20000
+			mission_id=request.get("mission","classic"); new_game(41972); started=true; sim.paused=true; sim.gold=20000
 			for type in ["warriors","rangers","wizards","thieves","marketplace","temple","tower"]:
 				var site=sim.find_site(type)
 				if site.x>=0: sim.add_building(type,site)

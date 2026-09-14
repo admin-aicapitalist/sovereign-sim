@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/content/spells.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "lightning"
+name = "Lightning Bolt"
+description = "Strike the nearest enemy for 190 damage; other enemies within 3 tiles take 65. Armor applies."
+cost = 90
+mana = 30
+cooldown = 9
+radius = 3
+research = 200
+time = 25
+properties = {"damage": 190, "splash": 65, "offensive": true, "visualDuration": 1.2, "symbol": "ϟ", "color": "#99b8c5"}

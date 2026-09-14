@@ -7,7 +7,11 @@ const Supplies = preload("res://scripts/supplies.gd")
 const Magic = preload("res://scripts/magic.gd")
 const Brain = preload("res://scripts/brain.gd")
 const Sanitation = preload("res://scripts/sanitation.gd")
-var definitions: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/balance.json"))
+const Mission = preload("res://scripts/mission.gd")
+const Equipment = preload("res://scripts/equipment.gd")
+const Content = preload("res://content/catalog.tres")
+var definitions: Dictionary = Content.definitions()
+var mission: Dictionary = Mission.empty()
 var fixture: Dictionary = {}
 var size: int = 88
 var units: Array[Actor] = []
@@ -61,11 +65,12 @@ func reset(seed_value: int = -1) -> void:
 	fixture=Generator.new().generate(seed_value,definitions.campaign)
 	units.clear(); buildings.clear(); flags.clear(); loot.clear(); actors.clear(); by_id.clear(); buckets.clear()
 	vision.clear(); ruins.clear(); projectiles.clear(); effects.clear(); events.clear(); notifications.clear()
+	mission=Mission.empty()
 	next_id=1; gold=1500; time=0; economy=0; staff_timer=0; vision_timer=0; paused=false; result=""; stress=false; troll_spawned=false
 	rng=SeedRng.new(seed_value); loot_rng=SeedRng.new(seed_value ^ 0xc2b2ae35); sanitation_rng=SeedRng.new(seed_value ^ 0x27d4eb2f)
 	alchemy={"unlocked":{},"project":{}}; magic={"unlocked":{},"project":{},"impacts":[]}; sanitation={"timer":0.0,"last_target":0}; cooldowns.clear()
 	for key in definitions.spells: cooldowns[key]=0.0
-	stats={"hits":0,"kills":0,"slain":0,"losses":0,"paths":0,"decisions":0,"moves":0,"taxes":0.0,"built":0,"recruits":0,"lairs":0,"bounties":0,"potions_bought":0,"potions_used":0,"loot_gold":0,"loot_potions":0,"loot_caches":0,"infestations_cleared":0,"royal_spells":0,"wizard_spells":0,"path_deferrals":0}
+	stats={"hits":0,"kills":0,"slain":0,"losses":0,"paths":0,"decisions":0,"moves":0,"taxes":0.0,"built":0,"recruits":0,"lairs":0,"bounties":0,"potions_bought":0,"potions_used":0,"loot_gold":0,"loot_potions":0,"loot_caches":0,"infestations_cleared":0,"royal_spells":0,"wizard_spells":0,"path_deferrals":0,"equipment_found":0,"upgrades":0,"boss_slams":0}
 	rebuild_grid()
 	var level: Dictionary=fixture.level
 	add_building("palace",Vector2i(level.start.x,level.start.y))
@@ -142,7 +147,7 @@ func add_building(type: String, tile: Vector2i, built: bool=true) -> Dictionary:
 	var d: Dictionary=definitions.buildings[type]
 	var b={"id":next_id,"kind":"building","type":type,"tx":tile.x,"ty":tile.y,"size":d.size,"x":tile.x+d.size/2.0,"y":tile.y+d.size/2.0,
 		"hp":d.hp if built else d.hp*0.2,"max_hp":d.hp,"progress":1.0 if built else 0.0,"hostile":d.get("hostile",false),"dead":false,"tax":0.0,
-		"spawn":d.interval+rng.next()*12 if d.has("interval") else 0.0,"cooldown":0.0,"last_hit":-100.0,"reinforced":false,"dormant":false,"infestation":false,"demolished":false,"site_name":d.name}
+		"spawn":d.interval+rng.next()*12 if d.has("interval") else 0.0,"cooldown":0.0,"last_hit":-100.0,"reinforced":false,"dormant":false,"infestation":false,"demolished":false,"site_name":d.name,"tier":1,"upgrade_remaining":0.0}
 	next_id+=1; buildings.append(b); by_id[b.id]=b; set_foundation(b,true)
 	fixture.trees=fixture.trees.filter(func(t):return not Rect2(Vector2(tile),Vector2.ONE*d.size).has_point(Vector2(t.x,t.y)))
 	revision+=1; return b
@@ -189,10 +194,27 @@ func recruit(guild_id: int) -> Actor:
 	if not d.has("recruits"): return null
 	var count: int=units.filter(func(u):return not u.dead and u.hero and u.home==guild_id).size()
 	var cost: float=definitions.units[d.recruits].cost
-	if count>=d.capacity or gold<cost: notify("Guild full or insufficient gold."); return null
+	if count>=guild_capacity(b) or gold<cost: notify("Guild full or insufficient gold."); return null
 	gold-=cost
 	var u=add_unit(d.recruits,near_point(pos(b),2.5),guild_id)
 	u.gold=24; stats.recruits+=1; notify(u.name+" has joined your kingdom.","recruit"); fx("level",u.pos); return u
+func guild_capacity(b: Dictionary) -> int:
+	var d: Dictionary=definition_of(b)
+	return int(d.get("capacity",0))+int(d.get("upgrade_capacity",0) if b.get("tier",1)>1 else 0)
+func upgrade(id: int) -> bool:
+	var b=building(id)
+	if b.is_empty() or b.dead or b.hostile or b.progress<1 or b.tier!=1 or b.upgrade_remaining>0 or result!="": return false
+	var d: Dictionary=definition_of(b)
+	if d.upgrade_cost<=0 or gold<d.upgrade_cost: return false
+	gold-=d.upgrade_cost; b.upgrade_remaining=d.upgrade_time
+	notify("Guild training begun. Recruitment remains available.","build"); return true
+func update_upgrades(dt: float) -> void:
+	for b in buildings:
+		if b.dead or b.upgrade_remaining<=0: continue
+		b.upgrade_remaining=maxf(0,b.upgrade_remaining-dt)
+		if b.upgrade_remaining==0:
+			b.tier=2; var gain: float=b.max_hp*0.25; b.max_hp+=gain; b.hp+=gain; stats.upgrades+=1
+			fx("upgrade",pos(b),0,1.6); notify(definition_of(b).name+" upgraded: more beds and stronger guild support.","complete")
 func demolish(id: int) -> bool:
 	var b=building(id)
 	if b.is_empty() or b.dead or b.type!="house" or result!="": return false
@@ -294,7 +316,9 @@ func hurt(e: Variant, damage: float, attacker: Variant) -> void:
 		elif e.hostile: gold+=definition_of(e).reward; stats.lairs+=1; notify(e.site_name+" destroyed. Treasure awaits your heroes.","victory")
 		elif e.demolished: notify("Cottage dismantled. No gold or stored taxes refunded.")
 		else: notify(definition_of(e).name+" has fallen!","danger")
+	Mission.killed(self,e)
 	if e.hostile and not e.infestation and not stress: Supplies.drop_loot(self,e)
+	if e is Actor and e.hero: Equipment.drop_hero(self,e)
 	if attacker is Actor and attacker.hero and not attacker.dead and e.hostile and not e.infestation:
 		attacker.xp+=definition_of(e).get("xp",60)
 		while attacker.xp>=attacker.level*45:
@@ -315,6 +339,14 @@ func attack(u: Actor, e: Variant) -> void:
 	stop(u); Supplies.combat_potions(self,u,e); u.facing=1 if (pos(e).x-u.pos.x)-(pos(e).y-u.pos.y)>0 else -1
 	if u.cooldown>0: return
 	u.cooldown=u.definition.rate/Magic.attack_multiplier(self,u); u.attacking=0.34
+	if mission.id=="ember_crown":
+		u.pending_attack={"target":e.id,"remaining":0.24 if u.definition.range<=2 else 0.36,"duration":0.24 if u.definition.range<=2 else 0.36}
+		u.attacking=float(u.pending_attack.duration)+0.2; return
+	resolve_attack(u,e)
+func resolve_attack(u: Actor,e: Variant) -> void:
+	if e==null or e.dead or u.dead: return
+	var reach: float=u.definition.range+(e.size*0.45 if e.kind=="building" else 0)
+	if u.pos.distance_to(pos(e))>reach+0.5: return
 	var amount: float=Supplies.damage(self,u,e)
 	if u.definition.range>2: shoot(u,e,amount,"fireball" if u.type=="wizard" else "arrow")
 	else:
@@ -344,12 +376,18 @@ func tick(dt: float) -> void:
 	if paused or result!="": return
 	time+=dt; paths_this_tick=0; rebuild_buckets()
 	for key in cooldowns: cooldowns[key]=maxf(0,cooldowns[key]-dt)
-	Supplies.update_research(self,dt); Magic.update(self,dt)
+	Supplies.update_research(self,dt); Magic.update(self,dt); update_upgrades(dt); Mission.update(self,dt)
 	for u in units:
 		if u.dead: continue
 		Supplies.update_unit(self,u,dt); Magic.update_unit(self,u,dt)
 		if u.definition.has("regeneration") and time-u.last_hit>6: u.hp=minf(u.max_hp,u.hp+u.definition.regeneration*dt)
 		u.think-=dt; u.cooldown-=dt; u.repath-=dt; u.attacking=maxf(0,u.attacking-dt)
+		if u.id==mission.boss_id and mission.slam_remaining>0: stop(u); continue
+		if not u.pending_attack.is_empty():
+			u.pending_attack.remaining=maxf(0,u.pending_attack.remaining-dt)
+			if u.pending_attack.remaining==0:
+				resolve_attack(u,entity(int(u.pending_attack.target))); u.pending_attack={}
+			else: stop(u); continue
 		if u.think<=0:
 			stats.decisions+=1; Brain.think(self,u)
 			if u.type=="wizard": Magic.think(self,u)
@@ -411,7 +449,7 @@ func tick(dt: float) -> void:
 	effects=effects.filter(func(e):return time-e.started<e.life)
 	if not stress:
 		if palace().dead: result="defeat"
-		elif lairs().is_empty(): result="victory"
+		elif lairs().is_empty() and (mission.id=="classic" or mission.boss_defeated): result="victory"
 	if result!="": events.append("victory" if result=="victory" else "danger")
 func setup_stress(count: int) -> void:
 	reset(41972); stress=true
@@ -426,18 +464,33 @@ func setup_stress(count: int) -> void:
 	for b in buildings: b.hp=1000000000; b.max_hp=b.hp
 	update_vision(); rebuild_buckets(); message="Crowd test: %d actors"%count
 
-const SAVE_FIELDS=["fixture","next_id","time","gold","economy","staff_timer","vision_timer","troll_spawned","paused","result","stress","stats","alchemy","magic","cooldowns","sanitation","vision","ruins","projectiles","effects"]
+const SAVE_FIELDS=["fixture","next_id","time","gold","economy","staff_timer","vision_timer","troll_spawned","paused","result","stress","stats","alchemy","magic","cooldowns","sanitation","vision","ruins","projectiles","effects","mission"]
 func snapshot() -> Dictionary:
-	var out: Dictionary={"version":2,"rng":rng.state,"loot_rng":loot_rng.state,"sanitation_rng":sanitation_rng.state,"buildings":buildings.duplicate(true),"units":[],"flags":flags.values().duplicate(true),"loot":loot.duplicate(true)}
+	var out: Dictionary={"version":3,"rng":rng.state,"loot_rng":loot_rng.state,"sanitation_rng":sanitation_rng.state,"buildings":buildings.duplicate(true),"units":[],"flags":flags.values().duplicate(true),"loot":loot.duplicate(true)}
 	for key in SAVE_FIELDS:
 		var value=get(key); out[key]=value.duplicate(true) if value is Dictionary or value is Array else value
 	for u in units: out.units.append(u.save())
 	return out
-func restore(data: Dictionary) -> bool:
+func restore(input: Dictionary) -> bool:
+	var data: Dictionary=input.duplicate(true)
+	if data.get("version",0)==2:
+		if not data.get("stats") is Dictionary or not data.get("units") is Array or not data.get("buildings") is Array or not data.get("loot") is Array: return false
+		data.version=3; data.mission=Mission.empty()
+		for item in data.get("units",[]):
+			if not item is Dictionary: return false
+			item.equipment={}; item.pending_attack={}
+		for b in data.get("buildings",[]):
+			if not b is Dictionary: return false
+			b.tier=1; b.upgrade_remaining=0.0
+		for p in data.get("loot",[]):
+			if not p is Dictionary: return false
+			p.items=[]
+		for key in ["equipment_found","upgrades","boss_slams"]: data.stats[key]=0
 	var schema: Dictionary=snapshot()
 	schema.alchemy={"unlocked":{},"project":{}}
 	schema.magic={"unlocked":{},"project":{},"impacts":[]}
-	if data.get("version",0)!=2 or not shape(data,schema): return false
+	schema.mission=Mission.empty()
+	if data.get("version",0)!=3 or not shape(data,schema): return false
 	if data.fixture.get("size")!=size or data.fixture.get("tiles",[]).size()!=size*size or data.buildings.is_empty(): return false
 	if not validate_collections(data): return false
 	var actor_schema: Dictionary=Actor.new().save(); var ids: Dictionary={}
@@ -448,17 +501,31 @@ func restore(data: Dictionary) -> bool:
 		if not shape(b,palace()) or not definitions.buildings.has(b.type) or not valid_id(b.id,data.next_id,ids): return false
 		if b.kind!="building" or not valid_point([b.x,b.y]) or b.progress<0 or b.progress>1 or b.size!=definitions.buildings[b.type].size or b.tx<0 or b.ty<0 or b.tx+b.size>size or b.ty+b.size>size or b.max_hp<=0: return false
 	if data.buildings[0].type!="palace": return false
+	if data.mission.id not in ["classic","ember_crown"] or data.mission.slam_remaining<0 or data.mission.special_cooldown<0 or data.mission.arrival_remaining<0: return false
+	if data.mission.id=="ember_crown":
+		if not data.buildings.any(func(b):return b.id==data.mission.encounter_id and b.type=="graveyard"): return false
+		if data.mission.boss_id and not data.mission.boss_defeated and not data.units.any(func(u):return u is Dictionary and u.get("id")==data.mission.boss_id and u.get("type")=="troll"): return false
+		if not valid_point([data.mission.slam_x,data.mission.slam_y]): return false
+	for b in data.buildings:
+		if (b.tier!=1 and b.tier!=2) or b.upgrade_remaining<0 or (b.tier==2 and b.upgrade_remaining>0): return false
 	for item in data.units:
 		if not shape(item,actor_schema) or not definitions.units.has(item.type) or not valid_id(item.id,data.next_id,ids): return false
 		if item.kind!="unit" or not keyed_values(item.potions,definitions.potions,TYPE_FLOAT) or not keyed_values(item.buffs,{"strength":0,"stoneskin":0},TYPE_FLOAT) or not keyed_values(item.magic_buffs,{"ward":0,"haste":0,"frost":0},TYPE_FLOAT) or not keyed_values(item.spell_cooldowns,definitions.spells,TYPE_FLOAT): return false
 		if not item.last_spell.is_empty() and (not shape(item.last_spell,{"key":"","at":0.0}) or not definitions.spells.has(item.last_spell.key)): return false
 		if not valid_point(item.pos) or not valid_point(item.destination) or item.max_hp<=0 or item.path_index<0 or item.path_index>item.path.size(): return false
+		for slot in item.equipment:
+			var key=item.equipment[slot]
+			if not key is String or not definitions.items.has(key) or definitions.items[key].slot!=slot: return false
+		if not item.pending_attack.is_empty() and (not shape(item.pending_attack,{"target":0,"remaining":0.0,"duration":0.0}) or item.pending_attack.remaining<0 or item.pending_attack.duration<=0): return false
 		for p in item.path:
 			if not valid_point(p): return false
 	for f in data.flags:
 		if not shape(f,{"id":0,"kind":"flag","type":"attack","x":0.0,"y":0.0,"target":0,"reward":0.0,"dead":false}) or not valid_id(f.id,data.next_id,ids) or f.reward<0 or f.kind!="flag" or f.type not in ["attack","explore"] or not valid_point([f.x,f.y]): return false
 	for p in data.loot:
 		if not shape(p,Supplies.loot_schema()) or not valid_id(p.id,data.next_id,ids) or p.kind!="loot" or p.type not in ["loot_chest","loot_pouch"] or not valid_point([p.x,p.y]) or not keyed_values(p.potions,definitions.potions,TYPE_FLOAT): return false
+	for p in data.loot:
+		for key in p.items:
+			if not key is String or not definitions.items.has(key): return false
 	if data.gold<0 or data.time<0 or data.result not in ["","victory","defeat"]: return false
 	for key in SAVE_FIELDS: set(key,data[key].duplicate(true) if data[key] is Dictionary or data[key] is Array else data[key])
 	rng.state=int(data.rng); loot_rng.state=int(data.loot_rng); sanitation_rng.state=int(data.sanitation_rng)
@@ -471,7 +538,9 @@ func restore(data: Dictionary) -> bool:
 		for key in Actor.FIELDS: u.set(key,item[key])
 		u.pos=Vector2(item.pos[0],item.pos[1]); u.destination=Vector2(item.destination[0],item.destination[1])
 		for p in item.path: u.path.append(Vector2(p[0],p[1]))
-		u.definition=definitions.units[u.type]; units.append(u); actors[u.id]=u; by_id[u.id]=u
+		u.definition=definitions.units[u.type]
+		if u.id==mission.boss_id: Mission.apply_boss(self,u)
+		units.append(u); actors[u.id]=u; by_id[u.id]=u
 	rebuild_grid(); rebuild_buckets(); revision+=1; fog_revision+=1; notifications.clear(); events.clear(); notify("Kingdom restored."); return true
 # Validate every variable-length collection before mutating the live kingdom.
 func keyed_values(value: Dictionary, allowed: Dictionary, type: int) -> bool:

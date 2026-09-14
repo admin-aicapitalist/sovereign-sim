@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/content/buildings.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "palace"
+name = "Royal Palace"
+description = "Your seat of power. Peasants and tax collectors serve the crown, while royal guards defend its gates."
+hp = 2600
+cost = 0
+size = 3
+upgrade_cost = 0
+upgrade_time = 30
+upgrade_capacity = 2
+upgrade_armor = 2
+upgrade_damage = 4
+properties = {"subtitle": "The heart of your kingdom", "sight": 12, "tax": 9}

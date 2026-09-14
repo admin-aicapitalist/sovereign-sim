@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/content/buildings.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "wizards"
+name = "Wizards’ Guild"
+description = "Recruits wizards who cast spells learned at the Temple using their own regenerating mana. Their ordinary fireballs need no research."
+hp = 580
+cost = 500
+size = 2
+upgrade_cost = 275
+upgrade_time = 30
+upgrade_capacity = 2
+upgrade_armor = 2
+upgrade_damage = 4
+properties = {"short": "Wizards’ Guild", "subtitle": "Knowledge is a kind of power", "sight": 7, "buildTime": 19, "recruits": "wizard", "capacity": 4}

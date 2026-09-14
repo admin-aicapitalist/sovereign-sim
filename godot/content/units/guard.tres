@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/content/units.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "guard"
+name = "Palace Guard"
+hp = 210
+damage = 17
+armor = 4
+range = 1.35
+speed = 1.5
+rate = 1.25
+sight = 6
+cost = 0
+properties = {"color": "#92aeb2"}

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/content/units.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "thief"
+name = "Thief"
+hp = 125
+damage = 15
+armor = 1
+range = 1.1
+speed = 2.15
+rate = 0.7
+sight = 8
+cost = 110
+properties = {"bravery": 0.8, "affinity": 1.5, "color": "#74747a", "hero": true}

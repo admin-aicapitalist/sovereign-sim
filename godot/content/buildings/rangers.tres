@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/content/buildings.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "rangers"
+name = "Rangers’ Lodge"
+description = "Recruits keen-eyed rangers. Independent explorers who fight from afar and eagerly follow exploration flags."
+hp = 650
+cost = 300
+size = 2
+upgrade_cost = 275
+upgrade_time = 30
+upgrade_capacity = 2
+upgrade_armor = 2
+upgrade_damage = 4
+properties = {"short": "Rangers’ Lodge", "subtitle": "For those who wander", "sight": 9, "buildTime": 13, "recruits": "ranger", "capacity": 4}

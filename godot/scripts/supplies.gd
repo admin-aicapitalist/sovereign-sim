@@ -31,9 +31,9 @@ static func buy(s, u, b) -> int:
 		u.potions[key]+=count; u.gold-=count*d.price; b.tax+=count*d.price; bought+=count
 	s.stats.potions_bought+=bought; return bought
 static func armor(s, u) -> float:
-	return u.definition.get("armor",0)+(s.definitions.potions.stoneskin.armor if u.buffs.stoneskin>0 else 0)+(s.definitions.spells.ward.armor if u.magic_buffs.ward>0 else 0)
+	return u.definition.get("armor",0)+s.Equipment.bonus(s,u,"armor")+(s.definitions.potions.stoneskin.armor if u.buffs.stoneskin>0 else 0)+(s.definitions.spells.ward.armor if u.magic_buffs.ward>0 else 0)
 static func damage(s, u, target=null) -> float:
-	var value: float=u.definition.damage+((u.level-1)*4 if u.hero else 0)
+	var value: float=u.definition.damage+s.Equipment.bonus(s,u,"damage")+((u.level-1)*4 if u.hero else 0)
 	if u.type=="thief" and target!=null and target.kind=="unit" and target.hostile:
 		var distracted=s.entity(target.target)
 		if distracted!=null and not distracted.dead and not distracted.hostile and distracted!=u: value+=14
@@ -52,7 +52,7 @@ static func combat_potions(s, u, target) -> void:
 		if u.potions[key]>0 and u.buffs[key]<=0:
 			u.potions[key]-=1; s.stats.potions_used+=1; u.buffs[key]=s.definitions.potions[key].duration; s.fx("level",u.pos)
 static func loot_schema() -> Dictionary:
-	return {"id":0,"kind":"loot","type":"loot_pouch","x":0.0,"y":0.0,"chest":false,"source":"","gold":0.0,"potions":{"healing":0,"strength":0,"stoneskin":0},"dead":false}
+	return {"id":0,"kind":"loot","type":"loot_pouch","x":0.0,"y":0.0,"chest":false,"source":"","gold":0.0,"potions":{"healing":0,"strength":0,"stoneskin":0},"dead":false,"items":[]}
 static func loot_table(s,e) -> Dictionary:
 	return {} if e.infestation else s.definitions.loot["lairs" if e.kind=="building" else "monsters"].get(e.type,{})
 static func drop_loot(s,e) -> Variant:
@@ -86,9 +86,15 @@ static func drop_loot(s,e) -> Variant:
 				p.source="Spoils of battle"; return p
 	var pile=loot_schema()
 	pile.merge({"id":s.next_id,"x":point.x,"y":point.y,"chest":chest,"type":"loot_chest" if chest else "loot_pouch","source":e.site_name if e.kind=="building" else e.name,"gold":amount,"potions":potions},true)
+	if s.mission.id=="ember_crown":
+		if e.id==s.mission.boss_id: pile.items=["ember_crown"]
+		elif e.id==s.mission.encounter_id: pile.items=["runeblade","warden_mail"]
+		elif e.kind=="building": pile.items=["iron_blade" if s.stats.lairs%2 else "warden_mail"]
 	s.next_id+=1; s.loot.append(pile); s.by_id[pile.id]=pile; return pile
 static func usable(s,u,p) -> float:
 	var value: float=p.gold
+	for key in p.items:
+		if s.Equipment.wants(s,u,key): value+=100*s.definitions.items[key].rank
 	for key in p.potions: value+=minf(p.potions[key],s.definitions.potions[key].capacity-u.potions[key])*s.definitions.potions[key].price
 	return value
 static func collect(s,u,p) -> bool:
@@ -100,9 +106,10 @@ static func collect(s,u,p) -> bool:
 	for key in p.potions:
 		var take: int=mini(int(p.potions[key]),int(s.definitions.potions[key].capacity-u.potions[key]))
 		u.potions[key]+=take; p.potions[key]-=take; count+=take
-	if gold==0 and count==0: return false
+	var equipped: int=s.Equipment.collect(s,u,p)
+	if gold==0 and count==0 and equipped==0: return false
 	s.stats.loot_gold+=gold; s.stats.loot_potions+=count
-	if p.potions.values().all(func(n):return n<=0): p.dead=true; s.stats.loot_caches+=1
+	if p.items.is_empty() and p.potions.values().all(func(n):return n<=0): p.dead=true; s.stats.loot_caches+=1
 	if gold>0: s.fx("gold",u.pos,gold)
 	if count>0: s.fx("heal",u.pos)
 	if p.chest: s.notify(u.name+" recovered %dg and %d potions."%[gold,count])
