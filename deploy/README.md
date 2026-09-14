@@ -2,34 +2,53 @@
 
 Play: **https://sovereign-432652279722.us-central1.run.app/**
 
-- Personal gcloud configuration: `synergy` (the shell's `personal` alias).
-- GCP project: `aiprocessor-468717`.
-- Cloud Run service: `sovereign`, region `us-central1`.
-- Runtime service account: `sovereign-web@aiprocessor-468717.iam.gserviceaccount.com`, with no project roles granted by this deployment.
-- Resources: 1 CPU, 128 MiB memory, zero minimum instances, two maximum instances.
-- Public access uses Cloud Run's disabled Invoker IAM check; the organization’s domain-restricted IAM policy is unchanged.
-- Nginx serves the static game on port 8080. `.gcloudignore` and `.dockerignore` restrict the deployment to game files and container configuration.
-- The Palace runtime assets are `assets/art/palace/palace-hires.png` and `palace-sprite.js`; Blender/Pixelorama source files and authoring tools stay out of the container.
-- The other eleven building textures and `assets/art/buildings/buildings-sprites.js` are included through an explicit allowlist; master renders and preview sheets are excluded.
-- Eleven character atlases and `assets/art/units/units-sprites.js` use the same allowlist approach; Blender scenes, master poses and animated previews are excluded.
-- Locally bundled Cinzel and Alegreya fonts, with their OFL notices, are included in `assets/fonts/`. The stylesheet URL is content-versioned alongside scripts to refresh cached menus.
-- The environment allowlist includes 35 runtime images and `assets/art/environment/environment-sprites.js`; scenery source scenes and terrain preview sheets are excluded.
+The Godot browser export runs on the existing `sovereign` Cloud Run service in `us-central1`, project `aiprocessor-468717`, using the personal `synergy` gcloud configuration.
 
-From the project root, deploy updates with:
+The service uses 1 CPU, 128 MiB memory, zero minimum instances, two maximum instances, and the existing `sovereign-web@aiprocessor-468717.iam.gserviceaccount.com` runtime account. Public access uses the disabled Invoker IAM check. The container serves static files on port 8080; gameplay runs in the player's browser.
+
+## Deploy
+
+From the repository root, export with Godot and matching web templates:
+
+```sh
+python3 godot/tools/export_web.py --godot /path/to/Godot
+```
+
+See [Godot setup](../godot/README.md#browser-build) for the local engine and template paths. Then deploy the **Godot directory**:
 
 ```sh
 gcloud --configuration=synergy --project=aiprocessor-468717 run deploy sovereign \
-  --source=. --region=us-central1 \
+  --source=godot --region=us-central1 \
   --no-invoker-iam-check --ingress=all \
   --service-account=sovereign-web@aiprocessor-468717.iam.gserviceaccount.com \
   --port=8080 --memory=128Mi --cpu=1 \
   --min=0 --max=2 --concurrency=80 --timeout=30 --quiet
 ```
 
-The game still runs locally by opening `index.html`; Docker and GCP are only used for hosting.
+Godot's `.gcloudignore` and `.dockerignore` include only the browser export and container configuration. Nginx serves precompressed WASM, game data and JavaScript with the correct MIME types and a 60-second cache lifetime. The root Dockerfile belongs to the earlier JavaScript prototype; `--source=godot` selects the full port. Cloud Run builds this directory's Dockerfile through its [source deployment flow](https://docs.cloud.google.com/run/docs/deploying-source-code).
 
-To run the existing browser checks against the hosted site, start a test Chrome instance with remote debugging on port 9227, then:
+## Verify
+
+With a test Chrome instance listening on port 9231:
 
 ```sh
-SOVEREIGN_TEST_URL=https://sovereign-432652279722.us-central1.run.app/ node test/browser.mjs
+GODOT_HOSTING_URL=https://sovereign-432652279722.us-central1.run.app/ \
+  GODOT_REPORTS_DIR=/tmp/sovereign-godot-deployed \
+  node godot/tests/hosting.mjs
+GODOT_TEST_URL=https://sovereign-432652279722.us-central1.run.app/ \
+  GODOT_REPORTS_DIR=/tmp/sovereign-godot-deployed GODOT_SKIP_BENCH=1 \
+  node godot/tests/browser.mjs
 ```
+
+Hosting checks compare downloaded files with the local export, including gzip delivery, WASM MIME, `/health` and missing-file responses. The health endpoint avoids Cloud Run's [reserved URL paths](https://docs.cloud.google.com/run/docs/known-issues#reserved-url-paths). Browser checks exercise gameplay, saves, endings, mobile controls and normal startup. Godot saves have a different format from the earlier JavaScript game's saves.
+
+## Roll back
+
+The previous JavaScript release is revision `sovereign-00007-tpc`. To restore it:
+
+```sh
+gcloud --configuration=synergy --project=aiprocessor-468717 run services update-traffic sovereign \
+  --region=us-central1 --to-revisions=sovereign-00007-tpc=100 --quiet
+```
+
+After any rollback, use `--to-latest` with the same command to return traffic to the latest deployed revision when ready.

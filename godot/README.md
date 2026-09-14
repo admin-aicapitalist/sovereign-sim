@@ -1,6 +1,6 @@
 # Sovereign — Godot
 
-The complete existing game, ported to native GDScript on `migration/godot-full`. It keeps the illustrated isometric presentation and targets browsers first. The earlier one-lair experiment remains on `migration/godot-slice`.
+The complete existing game, ported to native GDScript. It keeps the illustrated isometric presentation and targets browsers first. The earlier one-lair experiment remains on `migration/godot-slice`.
 
 Open `project.godot` in **Godot 4.7.2 Standard** and press F5. The checked-in data, art, effects and audio are sufficient to play; the original JavaScript game is not loaded at runtime.
 
@@ -39,7 +39,7 @@ docker build -t sovereign-godot -f godot/Dockerfile godot
 docker run --rm -p 8132:8080 sovereign-godot
 ```
 
-This branch does not deploy to the existing production site. The root JavaScript application and its deployment files remain the reference implementation; deploy the `godot/` container to serve the port.
+For GCP, deploy this `godot/` directory to the existing Cloud Run service. The source upload allowlist includes only the exported browser files and container configuration. See [deployment instructions](../deploy/README.md) for the command, live URL and rollback procedure. The root JavaScript application remains the reference implementation.
 
 ## Implementation
 
@@ -94,6 +94,6 @@ node godot/tests/browser.mjs
 
 Node 22+ supplies the built-in WebSocket client. `GODOT_TEST_URL`, `GODOT_CDP_URL` and `GODOT_BENCH_SECONDS` override the defaults. `GODOT_SKIP_BENCH=1` runs interaction checks only. The suite opens its own tab, uses real mouse/touch events for controls, and uses a test bridge for scenario setup and accelerated simulation. It checks desktop and 390px/DPR2 mobile layouts, research, casting, save/reload, seed controls and the ordinary player URL, then measures 100/300/1,000 actors. The harness disables browser caching so every run exercises the current export. `?test=1` explicitly enables the automation bridge; ordinary player URLs do not expose it.
 
-For a focused fresh-page profile, run `node godot/tests/performance.mjs 1000`. After starting the container on port 8132, `node godot/tests/hosting.mjs` checks health, 404 handling, MIME types, gzip delivery and decoded file integrity.
+For a focused fresh-page profile, run `node godot/tests/performance.mjs 1000`. After starting the container on port 8132, `node godot/tests/hosting.mjs` checks health, 404 handling, MIME types, gzip delivery and decoded file integrity. Set `GODOT_REPORTS_DIR` for browser/hosting runs to store results separately without replacing the local benchmark reports.
 
 Godot uses the [MIT license](https://godotengine.org/license/). Original project art is reused, and the bundled fonts retain their [Alegreya](assets/Alegreya-OFL.txt) and [Cinzel](assets/Cinzel-OFL.txt) licenses.

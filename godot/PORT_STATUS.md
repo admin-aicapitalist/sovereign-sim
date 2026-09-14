@@ -1,6 +1,6 @@
 # Full port acceptance checklist
 
-Reference: current JavaScript working tree, including Temple magic. Target: browser first, fixed illustrated isometric presentation. The verified trial remains on `migration/godot-slice`; the full port is on `migration/godot-full`.
+Reference: frozen JavaScript migration inputs in `tools/reference/`, including Temple magic. Target: browser first, fixed illustrated isometric presentation. The verified trial remains on `migration/godot-slice`.
 
 - [x] Native seeded geography, roads/bridges, forests, all eight lairs and fresh/replay seeds
 - [x] All buildings, all heroes, autonomous staff/combat, XP, projectiles, raids/reinforcements/troll
@@ -12,4 +12,4 @@ Reference: current JavaScript working tree, including Temple magic. Target: brow
 - [x] Isometric art, animated terrain/scenery/effects and gesture-unlocked audio
 - [x] Native regression/parity tests, browser desktop/mobile controls, long campaign, export and performance report
 
-All listed systems are implemented and verified. See [results and measured limits](reports/RESULTS.md) and [run/export instructions](README.md). No production deployment is part of this change.
+All listed systems are implemented and verified. See [results and measured limits](reports/RESULTS.md), [run/export instructions](README.md), and [GCP deployment instructions](../deploy/README.md).

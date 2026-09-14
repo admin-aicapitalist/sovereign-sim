@@ -1,6 +1,6 @@
 # Full Godot port — verification
 
-The complete existing game runs in native GDScript and exports for browsers while retaining the illustrated isometric presentation. The full port is on `migration/godot-full`; the earlier trial is retained on `migration/godot-slice`. No production deployment is included.
+The complete existing game runs in native GDScript and exports for browsers while retaining the illustrated isometric presentation. The earlier trial is retained on `migration/godot-slice`.
 
 ## Gameplay and maps
 
@@ -37,6 +37,10 @@ The crowd mixes warriors and goblins with high health, runs their normal AI/path
 These measurements describe this machine and workload. Mobile input/layout was tested through Chrome emulation; real phones, Safari, Firefox and low-end hardware still need release testing. No equivalent full-game workload was benchmarked in the JavaScript version.
 
 ## Delivery
+
+On 2026-09-14 the full port was deployed to the existing [public Sovereign game](https://sovereign-432652279722.us-central1.run.app/). Cloud Run revision `sovereign-00009-v56` serves 100% of traffic. [Deployment record](deployed-service.json).
+
+The deployed game passed desktop and emulated-mobile browser flows with no JavaScript or engine errors. Initial startup measured 4.84 seconds on this test machine with browser cache disabled; this is a single measurement, not a general network-performance guarantee. [Deployed browser checks](deployed-browser.json). Those checks ran against revision `sovereign-00008-nrr`; the final revision changes only the health endpoint to `/health`, avoiding GCP's reserved paths. Final hosting checks passed health, 404, gzip, WASM MIME and byte-for-byte equality of all four primary exported files. [Final deployed hosting checks](deployed-hosting.json).
 
 The stock-template export is **48.96 MB uncompressed / 19.06 MB estimated gzip**. About 10.05 MB of the compressed payload is the engine and 8.90 MB is the game pack. Sizes are computed from the files, not an internet download measurement. [Exact sizes](download.json).
 

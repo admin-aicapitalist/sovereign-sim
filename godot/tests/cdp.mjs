@@ -3,7 +3,8 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const reports = fileURLToPath(new URL('../reports/', import.meta.url));
+const reports = process.env.GODOT_REPORTS_DIR || fileURLToPath(new URL('../reports/', import.meta.url));
+await fs.mkdir(reports, { recursive: true });
 const origin = process.env.GODOT_TEST_URL || 'http://127.0.0.1:8131/';
 const cdp = process.env.GODOT_CDP_URL || 'http://127.0.0.1:9231';
 const page = await (await fetch(`${cdp}/json/new?about:blank`, { method: 'PUT' })).json();

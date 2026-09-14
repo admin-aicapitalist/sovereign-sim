@@ -1,0 +1,17 @@
+*
+!.gcloudignore
+!.dockerignore
+!Dockerfile
+!deploy/
+deploy/*
+!deploy/nginx.conf
+!build/
+build/*
+!build/web/
+build/web/*
+!build/web/*.html
+!build/web/*.js
+!build/web/*.wasm
+!build/web/*.pck
+!build/web/*.png
+!build/web/*.gz

@@ -66,7 +66,7 @@ try {
  await load();await key('load_welcome');s=await state();assert.equal(s.gold,saved.gold);assert(Math.abs(s.time-saved.time)<0.001);assert.equal(s.rng,saved.rng);assert.deepEqual(s.alchemy,saved.alchemy);assert.deepEqual(s.magic,saved.magic);for(const k in s.cooldowns)assert(Math.abs(s.cooldowns[k]-saved.cooldowns[k])<1e-8);assert.equal(s.seed,saved.fixture.seed);assert(s.paused);
  await ev('localStorage.setItem("sovereign-godot-save-v2","{broken")');await key('load');s=await state();assert.match(s.message,/No compatible/);assert(Math.abs(s.time-saved.time)<1e-8);await key('save');
  pass('Reload persistence for the full kingdom, RNG, inventories, research, cooldowns and malformed-save rejection');
- const victory=await fs.readFile(path.join(reports,'full-victory-save.json'),'utf8');
+ const victory=await fs.readFile(new URL('../reports/full-victory-save.json',import.meta.url),'utf8');
  await ev(`localStorage.setItem('sovereign-godot-save-v2',${JSON.stringify(victory)})`);await key('load');s=await state();assert.equal(s.result,'victory');assert.equal(s.stats.lairs,8);assert.equal(s.modal,'end');await shot('full-victory');
  await key('replay');s=await state();assert.equal(s.seed,41972);assert.equal(s.result,'');assert.equal(s.stats.lairs,0);
  await command('damage',{id:s.buildings.find(b=>b.type==='palace').id,amount:999999});await command('step',{seconds:0.1});assert.equal((await state()).result,'defeat');assert.equal((await state()).modal,'end');await shot('full-defeat');await key('replay');
@@ -94,8 +94,11 @@ try {
   for(let i=0;i<600;i++){result=await ev('window.sovereignBenchmark?JSON.parse(window.sovereignBenchmark):null');if(result)break;await delay(200);}
   assert(result,`Benchmark ${count} completes`);assert(result.stats.hits>0&&result.stats.moves>0&&result.stats.paths>0);benchmarks.push(result);console.log(JSON.stringify(result));if(count===1000)await shot('full-crowd-1000');
  }
- await send('Page.navigate',{url:origin});await delay(4000);assert.equal(await ev('typeof window.sovereignCommand'),'undefined');assert.equal(await ev('document.querySelector("#status")===null'),true);pass('Player URL starts without automation controls');
+ await send('Page.navigate',{url:origin});
+ const playerReady=()=>ev(`location.href===${JSON.stringify(new URL(origin).href)} && document.querySelector("canvas")!==null && document.querySelector("#status")===null && typeof window.sovereignCommand==="undefined"`);
+ for(let i=0;i<300;i++){if(await playerReady())break;await delay(200);}
+ assert.equal(await playerReady(),true);pass('Player URL starts without automation controls');
  assert.deepEqual(errors,[],'No browser or engine errors');
- await fs.writeFile(path.join(reports,'full-browser.json'),JSON.stringify({recorded_at:new Date().toISOString(),metadata,first_load_local_ms:firstLoadMs,load_note:'Local HTTP; not an internet download estimate.',checks,benchmarks,errors},null,2)+'\n');
+ await fs.writeFile(path.join(reports,'full-browser.json'),JSON.stringify({recorded_at:new Date().toISOString(),origin,metadata,first_load_ms:firstLoadMs,load_note:'Measured from this test machine with browser cache disabled.',checks,benchmarks,errors},null,2)+'\n');
 } catch(error){await shot('full-failure').catch(()=>{});console.error(JSON.stringify({errors,messages:messages.slice(-30),state:await state().then(s=>({selection:s.selection,mode:s.mode,modal:s.modal,message:s.message,widgets:s.widgets})).catch(()=>null)},null,2));throw error;}
 finally{ws.close();await fetch(`${cdp}/json/close/${page.id}`);}

@@ -1,0 +1,51 @@
+{
+  "metadata": {
+    "labels": {
+      "cloud.googleapis.com/location": "us-central1",
+      "commit": "a69e093",
+      "engine": "godot"
+    }
+  },
+  "spec": {
+    "template": {
+      "spec": {
+        "containers": [
+          {
+            "image": "us-central1-docker.pkg.dev/aiprocessor-468717/cloud-run-source-deploy/sovereign@sha256:d9ff88663639796d94d83f3206a8dd5a4dd8b59883af7245e7bd0b814c39e346",
+            "ports": [
+              {
+                "containerPort": 8080,
+                "name": "http1"
+              }
+            ],
+            "resources": {
+              "limits": {
+                "cpu": "1",
+                "memory": "128Mi"
+              }
+            },
+            "startupProbe": {
+              "failureThreshold": 1,
+              "periodSeconds": 240,
+              "tcpSocket": {
+                "port": 8080
+              },
+              "timeoutSeconds": 240
+            }
+          }
+        ]
+      }
+    }
+  },
+  "status": {
+    "latestReadyRevisionName": "sovereign-00009-v56",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "sovereign-00009-v56"
+      }
+    ],
+    "url": "https://sovereign-og65g5iyra-uc.a.run.app"
+  }
+}

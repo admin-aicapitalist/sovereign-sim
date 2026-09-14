@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 const origin=process.env.GODOT_HOSTING_URL||'http://127.0.0.1:8132/';
 const files=[];
@@ -11,7 +13,10 @@ for(const file of ['index.html','index.js','index.wasm','index.pck']) {
  if(file.endsWith('.wasm'))assert.match(response.headers.get('content-type'),/application\/wasm/);
  files.push({file,content_type:response.headers.get('content-type'),encoding:response.headers.get('content-encoding'),compressed_bytes:Number(response.headers.get('content-length')),decoded_bytes:body.length});
 }
-assert.equal(await (await fetch(new URL('healthz',origin))).text(),'ok\n');
+const health=await fetch(new URL('health',origin));
+assert.equal(health.status,200);assert.equal(await health.text(),'ok\n');
 assert.equal((await fetch(new URL('missing-file',origin))).status,404);
-await fs.writeFile(new URL('../reports/full-hosting.json',import.meta.url),JSON.stringify({recorded_at:new Date().toISOString(),checks:'PASS: container, health, 404, MIME, gzip and byte-for-byte decoded export',files},null,2)+'\n');
+const reportDir=process.env.GODOT_REPORTS_DIR||fileURLToPath(new URL('../reports/',import.meta.url));
+await fs.mkdir(reportDir,{recursive:true});
+await fs.writeFile(path.join(reportDir,'full-hosting.json'),JSON.stringify({recorded_at:new Date().toISOString(),origin,checks:'PASS: container, health, 404, MIME, gzip and byte-for-byte decoded export',files},null,2)+'\n');
 console.log('PASS: compressed Godot container delivery, MIME types, health, 404 and file integrity');
