@@ -9,6 +9,8 @@ const scrollTo=async(name,area="modal")=>{
  for(let i=0;i<18;i++){
   const s=await state(),[x,y]=s.widgets[name].point,[rx,ry,rw,rh]=area==="modal"?s.modal_rect:[12,170,345,s.viewport[1]-410];
   if(x>rx&&x<rx+rw&&y>ry+35&&y<ry+rh-30)return;
+  // Godot routes wheel input through the hovered Control; move into the panel first.
+  await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:rx+rw/2,y:ry+rh/2});
   await send('Input.dispatchMouseEvent',{type:'mouseWheel',x:rx+rw/2,y:ry+rh/2,deltaX:0,deltaY:y>ry+rh-30?260:-260});await delay(350);
  }
  throw Error(`Could not scroll to ${name}`);

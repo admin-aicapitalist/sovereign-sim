@@ -1,0 +1,10 @@
+{
+  "checks": [
+    "All 12 types render eight directions and eight walk poses in the game",
+    "Wind-up, release and worker tool use sample the intended animation states",
+    "All 12 cropped character sprites remain selectable at their world positions",
+    "Save/load retains the character roster",
+    "The updated units render on the 390px DPR2 phone viewport without engine errors"
+  ],
+  "errors": []
+}

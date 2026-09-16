@@ -1,0 +1,52 @@
+{
+  "metadata": {
+    "labels": {
+      "artifact": "786425bf584e",
+      "cloud.googleapis.com/location": "us-central1",
+      "engine": "godot",
+      "release": "royal-art"
+    }
+  },
+  "spec": {
+    "template": {
+      "spec": {
+        "containers": [
+          {
+            "image": "us-central1-docker.pkg.dev/aiprocessor-468717/cloud-run-source-deploy/sovereign@sha256:4fbddc378eae7870290ccc2a9b64e03d25769d46e307b2ab4ffcba05d70fb172",
+            "ports": [
+              {
+                "containerPort": 8080,
+                "name": "http1"
+              }
+            ],
+            "resources": {
+              "limits": {
+                "cpu": "1",
+                "memory": "128Mi"
+              }
+            },
+            "startupProbe": {
+              "failureThreshold": 1,
+              "periodSeconds": 240,
+              "tcpSocket": {
+                "port": 8080
+              },
+              "timeoutSeconds": 240
+            }
+          }
+        ]
+      }
+    }
+  },
+  "status": {
+    "latestReadyRevisionName": "sovereign-00010-rr2",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "sovereign-00010-rr2"
+      }
+    ],
+    "url": "https://sovereign-og65g5iyra-uc.a.run.app"
+  }
+}

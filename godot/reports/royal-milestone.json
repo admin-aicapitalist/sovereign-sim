@@ -1,0 +1,13 @@
+{
+  "recorded_at": "2026-09-16T15:20:30.353Z",
+  "origin": "http://127.0.0.1:8131/",
+  "checks": [
+    "Choose Ember Crown or classic campaign through welcome controls",
+    "Paid guild upgrade completes and supports recruitment",
+    "Objective navigation, monastery rewards and automatic relic equipment",
+    "Boss telegraph, pause, complete save/reload and animated impact",
+    "390px mobile equipment, guild actions and mission help",
+    "Completed native mission renders victory and replays the same mission"
+  ],
+  "errors": []
+}

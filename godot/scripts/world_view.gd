@@ -1,12 +1,14 @@
 extends Node2D
 const Simulation=preload("res://scripts/simulation.gd")
 const Magic=preload("res://scripts/magic.gd")
+const CharacterAnimation=preload("res://scripts/character_animation.gd")
 const Cue=preload("res://scenes/combat_cue.tscn")
 var cues: Dictionary={}
 var cue_revision: int=-1
 var sim: Simulation
 var manifest: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://data/assets.json"))
 var textures: Dictionary={}
+var portraits: Dictionary={}
 var effect_textures: Dictionary={}
 var hit_images: Dictionary={}
 var selected: int=0
@@ -33,11 +35,13 @@ static func iso(p: Vector2) -> Vector2: return Vector2((p.x-p.y)*32,(p.x+p.y)*16
 static func uniso(p: Vector2) -> Vector2: return Vector2(p.x/64+p.y/32,p.y/32-p.x/64)
 func _ready() -> void:
 	for key in manifest: textures[key]=load(manifest[key].src)
+	for key in manifest:
+		if manifest[key].has("portrait"): portraits[key]=load(manifest[key].portrait)
 	for key in sim.definitions.spells: effect_textures[key]=load("res://assets/effects/"+key+".png")
 	for key in ["ward","haste","frost","loot_chest","loot_pouch"]:
 		var name: String="aura_"+key if key in ["ward","haste","frost"] else key
 		effect_textures[name]=load("res://assets/effects/"+name+".png")
-	texture_filter=CanvasItem.TEXTURE_FILTER_LINEAR
+	texture_filter=CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	terrain_material=ShaderMaterial.new(); terrain_material.shader=preload("res://scripts/terrain.gdshader")
 	for key in ["grass","road","dirt","water","paving"]: terrain_material.set_shader_parameter(key,textures["terrain-"+key])
 	fog_material=ShaderMaterial.new(); fog_material.shader=preload("res://scripts/fog.gdshader")
@@ -50,6 +54,7 @@ func make_plane(material: ShaderMaterial,z: int) -> void:
 func refresh() -> void:
 	if not is_node_ready(): return
 	var began: int=Time.get_ticks_usec()
+	texture_filter=CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS if scale.x<0.85 else CanvasItem.TEXTURE_FILTER_LINEAR
 	if revision!=sim.revision:
 		revision=sim.revision
 		var data:=Image.create(sim.size,sim.size,false,Image.FORMAT_RGBA8)
@@ -116,9 +121,11 @@ func hit_test(point: Vector2) -> int:
 	var best: int=0; var distance: float=INF
 	for u in sim.units:
 		if u.dead or u.hostile and not sim.is_visible(u.pos): continue
-		var a: Dictionary=manifest["unit_"+u.type]
-		var d: float=point.distance_to(iso(u.pos)+Vector2(a.selection[0]*u.facing,a.selection[1]))
-		if d<a.selectionRadius and d<distance: best=u.id; distance=d
+		var boss: bool=u.id==sim.mission.boss_id
+		var a: Dictionary=manifest["unit_warlord" if boss else "unit_"+u.type]
+		var factor: float=1.15 if boss else 1
+		var d: float=point.distance_to(iso(u.pos)+Vector2(a.selection[0],a.selection[1])*factor)
+		if d<a.selectionRadius*factor and d<distance: best=u.id; distance=d
 	if best: return best
 	var depth: float=-INF
 	for b in sim.buildings:
@@ -138,6 +145,9 @@ func hit_test(point: Vector2) -> int:
 func paint(key: String,at: Vector2,factor: float=1,frame: int=-1,facing: float=1,tint: Color=Color.WHITE) -> void:
 	var a: Dictionary=manifest[key]
 	var rect:=Rect2(-Vector2(a.anchor[0],a.anchor[1])*factor,Vector2(a.w,a.h)*factor)
+	if frame>=0 and a.frames[frame].has("size"):
+		var cell: Dictionary=a.frames[frame]
+		rect=Rect2(-Vector2(cell.anchor[0],cell.anchor[1])*factor,Vector2(cell["size"][0],cell["size"][1])*factor)
 	draw_set_transform(at,0,Vector2(facing,1))
 	if frame<0: draw_texture_rect(textures[key],rect,false,tint)
 	else:
@@ -217,23 +227,19 @@ func _draw() -> void:
 		else:
 			var u=item.unit; aura(u,p)
 			if selected==u.id or hovered==u.id: ring(p,15,Color("f0d591"))
-			var frame: int=0
-			if u.attacking>0 or (u.state.begins_with("Building") or u.state.begins_with("Repairing")) and u.path_index>=u.path.size(): frame=5+int(sim.time*8+u.id)%3
-			elif u.path_index<u.path.size(): frame=1+int(u.animation)%4
 			var boss: bool=u.id==sim.mission.boss_id
-			var offset_at:=Vector2.ZERO
-			if not u.pending_attack.is_empty():
-				var preparing: float=1-u.pending_attack.remaining/u.pending_attack.duration
-				offset_at=Vector2(-u.facing*4*sin(preparing*PI),-2*sin(preparing*PI)); frame=5+mini(2,int(preparing*3))
-			var tint:=Color(1.45,1.2,0.95) if sim.time-u.last_hit<0.13 else Color("d9b18a") if boss else Color.WHITE
-			paint("unit_"+u.type,p+offset_at,1.3 if boss else 1,frame,u.facing,tint)
+			var art_key: String="unit_warlord" if boss else "unit_"+u.type
+			var frame: int=CharacterAnimation.frame(u,sim,manifest[art_key])
+			var tint:=Color(1.45,1.2,0.95) if sim.time-u.last_hit<0.13 else Color.WHITE
+			paint(art_key,p,1.15 if boss else 1,frame,1,tint)
 			if boss:
 				ring(p,27,Color("cd7447"),2)
-				draw_string(font,p+Vector2(-57,-103),"EMBER WARLORD",HORIZONTAL_ALIGNMENT_LEFT,-1,14,Color("f1c083"))
-				health(p+Vector2(-19,-95),u.hp/u.max_hp,true)
+				var boss_offset: float=manifest.unit_warlord.healthOffset*1.15
+				draw_string(font,p+Vector2(-57,boss_offset-10),"EMBER WARLORD",HORIZONTAL_ALIGNMENT_LEFT,-1,14,Color("f1c083"))
+				health(p+Vector2(-19,boss_offset),u.hp/u.max_hp,true)
 			if not u.equipment.is_empty(): draw_circle(p+Vector2(12,-30),2.5,Color("e5bc67"))
 			var offset: float=manifest["unit_"+u.type].healthOffset
-			if sim.time-u.last_hit<3 or u.id==selected: health(p+Vector2(-19,offset),u.hp/u.max_hp,u.hostile)
+			if not boss and (sim.time-u.last_hit<3 or u.id==selected): health(p+Vector2(-19,offset),u.hp/u.max_hp,u.hostile)
 			if u.hero and u.level>1: draw_string(font,p+Vector2(-9,offset-4),"★ %d"%u.level,HORIZONTAL_ALIGNMENT_LEFT,-1,11,Color("e0ca86"))
 			if u.type=="collector" and u.carried>0: draw_circle(p+Vector2(7,-17),2,Color("e2bf66"))
 	for f in sim.flags.values():

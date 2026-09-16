@@ -86,8 +86,11 @@ func _process(dt: float) -> void:
 			accumulator-=0.05
 	else: accumulator=0
 	var size:=get_viewport_rect().size
-	world.position=size*Vector2(0.5,0.47)-camera*zoom; world.scale=Vector2.ONE*zoom
-	world.visible_rect=Rect2(camera-size*Vector2(0.5,0.47)/zoom,size/zoom)
+	var title_screen: bool=ui.modal_kind=="welcome"
+	var view_origin:=size*(Vector2(0.73,0.64) if title_screen and size.x>=900 else Vector2(0.5,0.47))
+	var view_zoom: float=1.65 if title_screen and size.x>=900 else zoom
+	world.position=view_origin-camera*view_zoom; world.scale=Vector2.ONE*view_zoom
+	world.visible_rect=Rect2(camera-view_origin/view_zoom,size/view_zoom)
 	world.cursor=WorldView.uniso(world.to_local(get_viewport().get_mouse_position())); world.refresh()
 	for event in sim.events: sound.play(event)
 	sim.events.clear()
@@ -195,6 +198,12 @@ func debug_state() -> Dictionary:
 		var tile=sim.find_site(type); var p=world.to_global(WorldView.iso(Vector2(tile)+Vector2.ONE*0.1)); state.build_sites[type]={"tile":[tile.x,tile.y],"point":[p.x,p.y]}
 	for e in sim.units+sim.buildings+sim.flags.values()+sim.loot:
 		var p=world.to_global(WorldView.iso(sim.pos(e))+Vector2(0,-20 if e.kind=="unit" else -35 if e.kind=="building" else 0)); state.entities_on_screen.append({"id":e.id,"point":[p.x,p.y]})
+	state.character_visuals=[]
+	for u in sim.units.slice(0,40):
+		var key: String="unit_warlord" if u.id==sim.mission.boss_id else "unit_"+u.type
+		var art: Dictionary=world.manifest[key]
+		var frame: int=WorldView.CharacterAnimation.frame(u,sim,art)
+		state.character_visuals.append({"id":u.id,"key":key,"frame":frame,"direction":WorldView.CharacterAnimation.direction(u.heading),"pose":art.frames[frame].pose})
 	return state
 func _web_command(args: Array) -> void:
 	var parser:=JSON.new()
@@ -211,6 +220,33 @@ func _web_command(args: Array) -> void:
 			var actor=sim.actors.get(int(request.id))
 			if actor!=null:
 				actor.pos=Vector2(request.x,request.y); actor.target=0; actor.think=0; sim.stop(actor); sim.update_vision(); sim.rebuild_buckets()
+		"character_gallery":
+			# Test-only art fixture, deliberately exercised through the real world renderer.
+			mission_id="classic"; new_game(41972); started=true; sim.paused=true
+			for actor in sim.units: sim.actors.erase(actor.id); sim.by_id.erase(actor.id)
+			sim.units.clear()
+			var center_at: Vector2=sim.pos(sim.palace())+Vector2(7,7)
+			var types: Array=["warrior","guard","ranger","wizard","peasant","collector","thief","goblin","skeleton","rat","troll","troll"]
+			for i in types.size():
+				var across: float=(i%6-2.5)*2.8
+				var down: float=(floori(i/6.0)-0.5)*7.5
+				var at: Vector2=center_at+Vector2(across+down,-across+down)*0.5
+				var actor=sim.add_unit(types[i],at,sim.palace().id)
+				actor.think=999; actor.heading=Vector2.RIGHT
+				if i==11: sim.mission.boss_id=actor.id
+			sim.fixture.trees.assign(sim.fixture.trees.filter(func(t):return Vector2(t.x,t.y).distance_to(center_at)>15))
+			sim.revision+=1; sim.reveal(center_at,20); sim.rebuild_buckets(); camera=WorldView.iso(center_at); zoom=1.55
+		"character_pose":
+			sim.time=float(request.get("time",0))
+			for actor in sim.units:
+				actor.heading=Vector2.from_angle(int(request.get("direction",0))*PI/4)
+				actor.animation=float(request.get("frame",0)); actor.attacking=0; actor.pending_attack={}; sim.stop(actor)
+				actor.state="Patrolling"
+				match request.get("pose","idle"):
+					"walk": actor.path=PackedVector2Array([actor.pos+actor.heading*5]); actor.path_index=0
+					"attack": actor.attacking=0.34-float(request.get("frame",0))*0.05
+					"windup": actor.pending_attack={"target":0,"duration":0.24,"remaining":maxf(0.001,0.24-float(request.get("frame",0))*.08)}
+					"work": actor.state="Building a cottage"
 		"upgrade": sim.upgrade(int(request.id))
 		"select": world.selected=int(request.id)
 		"camera": camera=WorldView.iso(Vector2(request.x,request.y))

@@ -1,0 +1,38 @@
+{
+  "metadata": {
+    "labels": {
+      "artifact": "79e26a633587",
+      "cloud.googleapis.com/location": "us-central1",
+      "engine": "godot",
+      "release": "character-art"
+    }
+  },
+  "status": {
+    "conditions": [
+      {
+        "lastTransitionTime": "2026-09-16T17:00:38.159414Z",
+        "status": "True",
+        "type": "Ready"
+      },
+      {
+        "lastTransitionTime": "2026-09-16T16:59:56.117172Z",
+        "status": "True",
+        "type": "ConfigurationsReady"
+      },
+      {
+        "lastTransitionTime": "2026-09-16T17:00:38.115064Z",
+        "status": "True",
+        "type": "RoutesReady"
+      }
+    ],
+    "latestCreatedRevisionName": "sovereign-00011-8gs",
+    "latestReadyRevisionName": "sovereign-00011-8gs",
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "sovereign-00011-8gs"
+      }
+    ]
+  }
+}

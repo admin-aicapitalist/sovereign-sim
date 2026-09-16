@@ -294,9 +294,10 @@ func navigate(u: Actor, dt: float) -> void:
 		if not walkable(point): u.path=[]; u.repath=0; u.think=0; break
 		var delta: Vector2=point-u.pos; var distance: float=delta.length()
 		if distance>0.00001:
+			u.heading=delta.normalized()
 			u.pos+=delta/distance*minf(distance,remaining)
 			if absf(delta.x-delta.y)>0.02: u.facing=1 if delta.x-delta.y>0 else -1
-			u.animation+=dt*7; stats.moves+=1
+			u.animation+=minf(distance,remaining)*8/0.95; stats.moves+=1
 		remaining-=distance
 		if u.pos.distance_to(point)<0.001: u.path_index+=1
 		else: break
@@ -337,6 +338,7 @@ func attack(u: Actor, e: Variant) -> void:
 	var reach: float=u.definition.range+(e.size*0.45 if e.kind=="building" else 0)
 	if u.pos.distance_to(pos(e))>reach: u.destination=pos(e); return
 	stop(u); Supplies.combat_potions(self,u,e); u.facing=1 if (pos(e).x-u.pos.x)-(pos(e).y-u.pos.y)>0 else -1
+	if pos(e).distance_squared_to(u.pos)>0.00001: u.heading=(pos(e)-u.pos).normalized()
 	if u.cooldown>0: return
 	u.cooldown=u.definition.rate/Magic.attack_multiplier(self,u); u.attacking=0.34
 	if mission.id=="ember_crown":
@@ -539,6 +541,8 @@ func restore(input: Dictionary) -> bool:
 		u.pos=Vector2(item.pos[0],item.pos[1]); u.destination=Vector2(item.destination[0],item.destination[1])
 		for p in item.path: u.path.append(Vector2(p[0],p[1]))
 		u.definition=definitions.units[u.type]
+		u.heading=Vector2(u.facing,0)
+		if u.path_index<u.path.size(): u.heading=(u.path[u.path_index]-u.pos).normalized()
 		if u.id==mission.boss_id: Mission.apply_boss(self,u)
 		units.append(u); actors[u.id]=u; by_id[u.id]=u
 	rebuild_grid(); rebuild_buckets(); revision+=1; fog_revision+=1; notifications.clear(); events.clear(); notify("Kingdom restored."); return true

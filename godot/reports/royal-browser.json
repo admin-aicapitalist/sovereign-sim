@@ -1,0 +1,9 @@
+{
+  "checks": [
+    "Title, campaign selection, HUD and cards at 1440×900, DPR 1",
+    "Title, campaign selection, HUD and cards at 390×844, DPR 2",
+    "Title, campaign selection, HUD and cards at 768×1024, DPR 1",
+    "Live desktop-to-phone resize preserves the CSS viewport and menu controls"
+  ],
+  "errors": []
+}

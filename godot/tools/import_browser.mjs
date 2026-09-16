@@ -21,5 +21,8 @@ for(const [key,a] of [...Object.entries(G.spriteAssets),...Object.entries(G.unit
   assets[key]={...a,source:relative,src:'res://assets/'+key+'.png'};
   delete assets[key].hitRows;
 }
+// Keep the native directional character release when refreshing the legacy map art.
+const characters=path.join(root,'assets/art/units/directional/manifest.json');
+if(fs.existsSync(characters)) Object.assign(assets,JSON.parse(fs.readFileSync(characters,'utf8')));
 fs.writeFileSync(path.join(out,'data/assets.json'),JSON.stringify(assets));
 console.log(`Imported metadata for ${Object.keys(assets).length} original art assets. Run prepare_art.py next.`);

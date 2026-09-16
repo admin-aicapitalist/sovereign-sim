@@ -2,6 +2,10 @@
 
 Sovereign runs in native GDScript, with the new **Ember Crown** mission and the original **Classic Kingdom** campaign. It keeps the illustrated isometric presentation and targets browsers first. The earlier one-lair experiment remains on `migration/godot-slice`.
 
+The **Royal art pass** adds a composed title screen, a matching browser loading screen, carved wood and brass frames, parchment command cards, Cinzel headings and Alegreya body/italic text. Civic buildings have newly rendered slate roofs and warm stone. Terrain includes broad meadow variation, shoreline highlights and slow cloud shadows. Sprite mipmaps keep distant views stable while the closer view retains crisp detail. See [art sources and reproduction](../assets/art/royal/README.md) and [visual verification](reports/ROYAL_ART.md).
+
+The **character release** rebuilds all heroes, staff, monsters and the Warlord with eight viewing directions, layered medieval equipment, cloth motion and dedicated portraits. Each appearance has 144 frames; walking follows distance traveled, while attack poses follow actual wind-up and release. See the [animated previews and checks](reports/CHARACTERS.md) and [editable Blender sources](../assets/art/units/directional/README.md).
+
 Open `project.godot` in **Godot 4.7.2 Standard** and press F5. The checked-in data, art, effects and audio are sufficient to play; the original JavaScript game is not loaded at runtime.
 
 [Play locally](http://127.0.0.1:8131/) while the server below is running. [Ember Crown verification](reports/MILESTONE.md), [original port measurements](reports/RESULTS.md), [port coverage](PORT_STATUS.md).
@@ -62,7 +66,7 @@ For GCP, deploy this `godot/` directory to the existing Cloud Run service. The s
 
 The simulation runs at 20 fixed ticks per second. It uses native `AStarGrid2D`, staggered decisions, spatial opponent buckets and at most 24 new paths per tick. Rendering consumes state/events and never advances combat or delayed spell damage. IDs preserve entity relationships in saves. Save validation completes before replacing the active kingdom. The minimap caches terrain in a small texture, avoiding thousands of polygon commands per frame.
 
-Classic Kingdom preserves map geography and the original definition values. Ember Crown adds attack windups, equipment progression and the authored monastery/boss encounter to the same seeded geography. Native pathfinding, fixed-step scheduling, terrain shading and the Control-based interface produce some differences from the JavaScript presentation and moment-to-moment movement. Actors share walkable space without physical crowd separation, as in the prototype. The camera keeps the fixed illustrated isometric view. The Warlord currently reuses a scaled, tinted troll sprite. See the [content authoring guide](content/README.md) to tune Godot Resources and edit the combat animation scene.
+Classic Kingdom preserves map geography and the original definition values. Ember Crown adds attack windups, equipment progression and the authored monastery/boss encounter to the same seeded geography. Native pathfinding, fixed-step scheduling, terrain shading and the Control-based interface produce some differences from the JavaScript presentation and moment-to-moment movement. Actors share walkable space without physical crowd separation, as in the prototype. The camera keeps the fixed illustrated isometric view. The Warlord uses his own armored sprite and portrait. See the [content authoring guide](content/README.md) to tune Godot Resources and edit the combat animation scene.
 
 ## Refresh source data and art
 
@@ -72,6 +76,7 @@ These optional tools use the frozen migration inputs in `tools/reference/`, incl
 node godot/tools/export_data.mjs
 node godot/tools/import_browser.mjs
 python3 godot/tools/prepare_art.py
+.venv/bin/python godot/tools/style_art.py
 python3 godot/tools/bake_audio.py
 node godot/tools/bake_effects.mjs
 ```
@@ -79,6 +84,8 @@ node godot/tools/bake_effects.mjs
 Unit, building and spell gameplay tuning now comes from the catalog Resources. Refreshing `data/balance.json` alone does not overwrite those authored definitions.
 
 Run the metadata importer immediately before `prepare_art.py`: it restores original atlas coordinates before resampling to 3× logical resolution. That Python tool requires Pillow. Audio baking uses only Python's standard library. Effect baking uses Chrome's remote debugging endpoint on port 9231 and renders the original painted spell artwork into transparent animation atlases. None of these steps modifies the source artwork.
+
+Run `style_art.py` after the base importer to restore the Royal palette, new civic renders, boss atlas, interface textures and mipmap import settings. It also works independently on the checked-in assets. Optional Blender rendering is documented with the art sources above. The UI uses Godot [nine-slice StyleBoxTexture materials](https://docs.godotengine.org/en/stable/classes/class_styleboxtexture.html) so borders retain their proportions at different window sizes.
 
 ## Verify
 
@@ -100,6 +107,7 @@ For browser tests, export and serve the game, then start a separate Chrome with 
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --no-first-run --no-default-browser-check --user-data-dir=/tmp/sovereign-godot-chrome --remote-debugging-port=9231 about:blank
 node godot/tests/browser.mjs
 node godot/tests/milestone_browser.mjs
+node godot/tests/royal_browser.mjs
 ```
 
 Node 22+ supplies the built-in WebSocket client. `GODOT_TEST_URL`, `GODOT_CDP_URL` and `GODOT_BENCH_SECONDS` override the defaults. `GODOT_SKIP_BENCH=1` runs interaction checks only. The suite opens its own tab, uses real mouse/touch events for controls, and uses a test bridge for scenario setup and accelerated simulation. It checks desktop and 390px/DPR2 mobile layouts, research, casting, save/reload, seed controls and the ordinary player URL, then measures 100/300/1,000 actors. The harness disables browser caching so every run exercises the current export. `?test=1` explicitly enables the automation bridge; ordinary player URLs do not expose it.

@@ -1,0 +1,122 @@
+{
+  "warrior": {
+    "frames": 144,
+    "size": [
+      1536,
+      1772
+    ],
+    "png_bytes": 2469645,
+    "rgba_bytes": 10887168,
+    "clipped_frames": []
+  },
+  "ranger": {
+    "frames": 144,
+    "size": [
+      1536,
+      1495
+    ],
+    "png_bytes": 1824644,
+    "rgba_bytes": 9185280,
+    "clipped_frames": []
+  },
+  "wizard": {
+    "frames": 144,
+    "size": [
+      1536,
+      1732
+    ],
+    "png_bytes": 2437262,
+    "rgba_bytes": 10641408,
+    "clipped_frames": []
+  },
+  "guard": {
+    "frames": 144,
+    "size": [
+      1536,
+      2154
+    ],
+    "png_bytes": 2722405,
+    "rgba_bytes": 13234176,
+    "clipped_frames": []
+  },
+  "peasant": {
+    "frames": 144,
+    "size": [
+      1536,
+      1333
+    ],
+    "png_bytes": 1907098,
+    "rgba_bytes": 8189952,
+    "clipped_frames": []
+  },
+  "collector": {
+    "frames": 144,
+    "size": [
+      1536,
+      1407
+    ],
+    "png_bytes": 1714443,
+    "rgba_bytes": 8644608,
+    "clipped_frames": []
+  },
+  "rat": {
+    "frames": 144,
+    "size": [
+      1536,
+      1304
+    ],
+    "png_bytes": 1182987,
+    "rgba_bytes": 8011776,
+    "clipped_frames": []
+  },
+  "goblin": {
+    "frames": 144,
+    "size": [
+      1536,
+      1293
+    ],
+    "png_bytes": 1649198,
+    "rgba_bytes": 7944192,
+    "clipped_frames": []
+  },
+  "skeleton": {
+    "frames": 144,
+    "size": [
+      1536,
+      1710
+    ],
+    "png_bytes": 2192036,
+    "rgba_bytes": 10506240,
+    "clipped_frames": []
+  },
+  "troll": {
+    "frames": 144,
+    "size": [
+      1536,
+      2669
+    ],
+    "png_bytes": 3811863,
+    "rgba_bytes": 16398336,
+    "clipped_frames": []
+  },
+  "thief": {
+    "frames": 144,
+    "size": [
+      1536,
+      1496
+    ],
+    "png_bytes": 1880541,
+    "rgba_bytes": 9191424,
+    "clipped_frames": []
+  },
+  "warlord": {
+    "frames": 144,
+    "size": [
+      1536,
+      3017
+    ],
+    "png_bytes": 4131358,
+    "rgba_bytes": 18536448,
+    "clipped_frames": []
+  }
+}

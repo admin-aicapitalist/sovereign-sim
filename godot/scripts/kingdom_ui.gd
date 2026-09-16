@@ -3,6 +3,9 @@ const Magic=preload("res://scripts/magic.gd")
 const Supplies=preload("res://scripts/supplies.gd")
 const Sanitation=preload("res://scripts/sanitation.gd")
 const MiniMap=preload("res://scripts/minimap.gd")
+const Royal=preload("res://scripts/royal_theme.gd")
+const RoyalCard=preload("res://scripts/royal_card.gd")
+const RoyalOverlay=preload("res://scripts/royal_overlay.gd")
 var main
 var refresh_ms: float=0
 var root: Control
@@ -44,20 +47,22 @@ var tip: int=0
 var action_signature: String=""
 var card_tab: String=""
 var objective_ids: Array=[]
+var hero_count: Label
+var day_count: Label
+var campaign_progress: ProgressBar
+var menu_overlay: Control
+var menu_title: Label
+var menu_tagline: Label
+var menu_caption: Label
 
 func _ready() -> void:
 	root=Control.new(); root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); root.mouse_filter=Control.MOUSE_FILTER_IGNORE; add_child(root)
-	var theme:=Theme.new(); theme.default_font=preload("res://assets/alegreya.ttf"); theme.default_font_size=18
-	var style:=StyleBoxFlat.new(); style.bg_color=Color("69372b"); style.border_color=Color("b49458"); style.set_border_width_all(1)
-	style.content_margin_left=10; style.content_margin_right=10; style.content_margin_top=6; style.content_margin_bottom=6
-	theme.set_stylebox("normal","Button",style)
-	var hover=style.duplicate(); hover.bg_color=Color("895039"); theme.set_stylebox("hover","Button",hover); theme.set_stylebox("pressed","Button",hover)
-	var disabled=style.duplicate(); disabled.bg_color=Color("645b49"); theme.set_stylebox("disabled","Button",disabled)
-	theme.set_color("font_color","Button",Color("f1e0b7")); theme.set_color("font_disabled_color","Button",Color("b8ab8d")); root.theme=theme
+	root.theme=Royal.make()
 	top=panel(root,"28271f"); var top_col:=VBoxContainer.new(); top.add_child(top_col)
 	var line:=HBoxContainer.new(); line.add_theme_constant_override("separation",16); top_col.add_child(line)
-	title=label("SOVEREIGN",25,"ecd4a0"); title.add_theme_font_override("font",preload("res://assets/cinzel.ttf")); line.add_child(title)
-	treasury=label("",21,"ecd4a0"); treasury.size_flags_horizontal=Control.SIZE_EXPAND_FILL; line.add_child(treasury)
+	var crest:=TextureRect.new(); crest.texture=Royal.icon("crest"); crest.custom_minimum_size=Vector2(34,36); crest.expand_mode=TextureRect.EXPAND_IGNORE_SIZE; crest.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED; line.add_child(crest)
+	title=label("SOVEREIGN",23,"ecd4a0"); title.add_theme_font_override("font",Royal.DISPLAY); title.size_flags_horizontal=Control.SIZE_EXPAND_FILL; line.add_child(title)
+	treasury=resource_label(line,"coin","ROYAL TREASURY"); hero_count=resource_label(line,"heroes","HEROES"); day_count=resource_label(line,"sun","THE REIGN")
 	line.add_child(button("pause","Pause",func():main.sim.paused=not main.sim.paused; refresh()))
 	controls=HFlowContainer.new(); controls.add_theme_constant_override("h_separation",7); top_col.add_child(controls)
 	for n in [1,2,3]: controls.add_child(button("speed_"+str(n),str(n)+"×",func():main.speed=n; main.sim.paused=false; refresh()))
@@ -68,8 +73,10 @@ func _ready() -> void:
 	controls.add_child(button("map","Map",func():map_open=not map_open; layout(true)))
 	controls.add_child(button("center","Palace",main.center)); controls.add_child(button("zoom_out","−",func():main.change_zoom(0.86))); controls.add_child(button("zoom_in","+",func():main.change_zoom(1.16)))
 	campaign=panel(root); var campaign_scroll:=ScrollContainer.new(); campaign_scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; campaign.add_child(campaign_scroll); var campaign_col:=VBoxContainer.new(); campaign_col.size_flags_horizontal=Control.SIZE_EXPAND_FILL; campaign_scroll.add_child(campaign_col)
-	campaign_col.add_child(label("THE ROYAL CAMPAIGN",14,"866640")); chapter=label("The Young Kingdom",24); chapter.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; campaign_col.add_child(chapter)
-	quest=label("",17); quest.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; campaign_col.add_child(quest)
+	campaign_col.add_child(label("THE ROYAL CAMPAIGN",11,"866640")); chapter=label("The Young Kingdom",20); chapter.add_theme_font_override("font",Royal.DISPLAY); chapter.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; campaign_col.add_child(chapter)
+	campaign_progress=ProgressBar.new(); campaign_progress.custom_minimum_size.y=5; campaign_progress.show_percentage=false; campaign_progress.max_value=8
+	var track:=StyleBoxFlat.new(); track.bg_color=Color("b5a27a"); var fill:=StyleBoxFlat.new(); fill.bg_color=Color("875039"); campaign_progress.add_theme_stylebox_override("background",track); campaign_progress.add_theme_stylebox_override("fill",fill); campaign_col.add_child(campaign_progress)
+	quest=label("",16); quest.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; campaign_col.add_child(quest)
 	encounter_button=button("encounter","Locate encounter",func():
 		var m: Dictionary=main.sim.mission; var e=main.sim.entity(m.boss_id if m.boss_id and not m.boss_defeated else m.encounter_id)
 		if e!=null: main.center_on(main.sim.pos(e)); main.world.selected=e.id; objectives_open=false; refresh())
@@ -78,29 +85,36 @@ func _ready() -> void:
 	inspector=panel(root); inspector_scroll=ScrollContainer.new(); inspector_scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; inspector.add_child(inspector_scroll)
 	var inspect_col:=VBoxContainer.new(); inspect_col.size_flags_horizontal=Control.SIZE_EXPAND_FILL; inspector_scroll.add_child(inspect_col)
 	var heading:=HBoxContainer.new(); inspect_col.add_child(heading)
-	var caption=label("YOUR KINGDOM",14,"866640"); caption.size_flags_horizontal=Control.SIZE_EXPAND_FILL; heading.add_child(caption)
+	var caption=label("ROYAL LEDGER",12,"866640"); caption.size_flags_horizontal=Control.SIZE_EXPAND_FILL; heading.add_child(caption)
 	heading.add_child(button("close_selection","×",func():main.world.selected=0; refresh()))
 	portrait=TextureRect.new(); portrait.custom_minimum_size=Vector2(0,95); portrait.expand_mode=TextureRect.EXPAND_IGNORE_SIZE; portrait.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED; inspect_col.add_child(portrait)
 	details=label("",18); details.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; inspect_col.add_child(details)
 	actions=VBoxContainer.new(); inspect_col.add_child(actions); inspect_col.move_child(actions,2)
 	map_panel=panel(root,"28271f"); var map_col:=VBoxContainer.new(); map_panel.add_child(map_col)
-	map_col.add_child(label("THE BORDERLANDS",13,"c9ad73")); minimap=MiniMap.new(); minimap.main=main; map_col.add_child(minimap)
+	map_col.add_child(label("THE BORDERLANDS",11,"c9ad73")); minimap=MiniMap.new(); minimap.main=main; map_col.add_child(minimap)
 	deck=panel(root,"28271f"); var deck_col:=VBoxContainer.new(); deck_col.add_theme_constant_override("separation",8); deck.add_child(deck_col)
 	var tabs:=HBoxContainer.new(); deck_col.add_child(tabs)
 	for entry in [["build","Build"],["recruit","Heroes"],["bounty","Bounties"],["spells","Magic"]]:
 		var b=button("tab_"+entry[0],entry[1],func():tab=entry[0]; main.set_mode("",""); update_cards(true))
-		b.size_flags_horizontal=Control.SIZE_EXPAND_FILL; tabs.add_child(b)
-	var scroll:=ScrollContainer.new(); scroll.vertical_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; scroll.custom_minimum_size.y=96; deck_col.add_child(scroll)
+		b.size_flags_horizontal=Control.SIZE_EXPAND_FILL; b.icon=Royal.icon("heroes" if entry[0]=="recruit" else "attack" if entry[0]=="bounty" else entry[0]); b.expand_icon=true; b.add_theme_constant_override("icon_max_width",18); b.add_theme_font_override("font",Royal.DISPLAY); b.add_theme_font_size_override("font_size",13); tabs.add_child(b)
+	var scroll:=ScrollContainer.new(); scroll.vertical_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; scroll.custom_minimum_size.y=110; deck_col.add_child(scroll)
 	cards=HBoxContainer.new(); cards.add_theme_constant_override("separation",7); scroll.add_child(cards)
-	status=label("",16,"e2cca5"); status.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; deck_col.add_child(status)
+	status=label("",14,"c4b799"); status.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS; deck_col.add_child(status)
 	notice=label("",17,"f4e7c6"); notice.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; notice.mouse_filter=Control.MOUSE_FILTER_IGNORE; root.add_child(notice)
 	layout(true); refresh()
 func label(text: String,font_size: int=18,color: String="453525") -> Label:
-	var out:=Label.new(); out.text=text; out.add_theme_font_size_override("font_size",font_size); out.add_theme_color_override("font_color",Color(color)); return out
+	var out:=Label.new(); out.text=text; out.add_theme_font_size_override("font_size",font_size); out.add_theme_color_override("font_color",Color(color))
+	if font_size<=13 or font_size>=24: out.add_theme_font_override("font",Royal.DISPLAY)
+	return out
+func resource_label(parent: Node,key: String,caption: String) -> Label:
+	var row:=HBoxContainer.new(); row.add_theme_constant_override("separation",8); parent.add_child(row)
+	var icon:=TextureRect.new(); icon.texture=Royal.icon(key); icon.custom_minimum_size=Vector2(25,28); icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE; icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED; row.add_child(icon)
+	var col:=VBoxContainer.new(); col.add_theme_constant_override("separation",-3); row.add_child(col)
+	var value:=label("",21,"efdaad"); col.add_child(value); col.add_child(label(caption,9,"b9a785")); return value
 func panel(parent: Node,color: String="e5d3af") -> PanelContainer:
-	var p:=PanelContainer.new(); var style:=StyleBoxFlat.new(); style.bg_color=Color(color); style.border_color=Color("ae8851"); style.set_border_width_all(1); style.set_content_margin_all(12); style.set_corner_radius_all(3); p.add_theme_stylebox_override("panel",style); parent.add_child(p); return p
+	var p:=PanelContainer.new(); p.add_theme_stylebox_override("panel",Royal.box("timber" if color=="28271f" else "parchment",12)); parent.add_child(p); return p
 func button(key: String,text: String,callback: Callable) -> Button:
-	var b:=Button.new(); b.text=text; b.custom_minimum_size.y=34; b.focus_mode=Control.FOCUS_NONE; b.mouse_filter=Control.MOUSE_FILTER_PASS; b.pressed.connect(callback)
+	var b:=Button.new(); b.text=text; b.custom_minimum_size.y=30; b.add_theme_font_size_override("font_size",16); b.focus_mode=Control.FOCUS_NONE; b.mouse_filter=Control.MOUSE_FILTER_PASS; b.mouse_default_cursor_shape=Control.CURSOR_POINTING_HAND; b.pressed.connect(callback)
 	if key!="": widgets[key]=b
 	return b
 func clear(parent: Node) -> void:
@@ -109,29 +123,34 @@ func layout(force: bool=false) -> void:
 	var s: Vector2=main.get_viewport_rect().size
 	if s==last_size and not force: return
 	last_size=s; compact=s.x<900
-	title.visible=s.x>=620; treasury.add_theme_font_size_override("font_size",18 if compact else 21)
+	title.visible=s.x>=760; treasury.add_theme_font_size_override("font_size",17 if compact else 21)
+	hero_count.add_theme_font_size_override("font_size",17 if compact else 21); day_count.add_theme_font_size_override("font_size",17 if compact else 21)
+	for value in [treasury,hero_count,day_count]: value.get_parent().get_child(1).visible=not compact
 	top.position=Vector2.ZERO; top.size=Vector2(s.x,0)
-	var top_height: float=maxf(100,top.get_combined_minimum_size().y)
-	deck.position=Vector2(10,s.y-207); deck.size=Vector2(s.x-20,197)
-	status.custom_minimum_size.y=38
+	var top_height: float=top.get_combined_minimum_size().y
+	deck.position=Vector2(10,s.y-207); deck.size=Vector2(s.x-20 if compact or not map_open else s.x-272,197)
+	status.custom_minimum_size.y=18
 	campaign.visible=not compact or objectives_open
-	campaign.position=Vector2(12,top_height+8); campaign.size=Vector2(minf(270,s.x-24),maxf(120,minf(530,s.y-top_height-240)))
+	objective_list.visible=objectives_open
+	campaign.position=Vector2(12,top_height+12); campaign.size=Vector2(minf(250,s.x-24),maxf(120,minf(530 if objectives_open else 270 if encounter_button.visible else 204,s.y-top_height-240)))
 	inspector.position=Vector2(s.x-288,top_height+8) if not compact else Vector2(12,top_height+8)
 	inspector.size=Vector2(276 if not compact else minf(345,s.x-24),maxf(120,minf(510,s.y-top_height-240)))
-	map_panel.visible=map_open and not inspector.visible and (not compact or not campaign.visible)
-	map_panel.position=Vector2(s.x-244,maxf(top_height+8,s.y-395)) if not compact else Vector2(s.x-162,top_height+8)
-	minimap.custom_minimum_size=Vector2(210,130) if not compact else Vector2(126,84)
-	map_panel.size=Vector2(232,0) if not compact else Vector2(150,0)
+	map_panel.visible=map_open and (not compact or not inspector.visible and not campaign.visible)
+	map_panel.position=Vector2(s.x-252,s.y-207) if not compact else Vector2(s.x-162,top_height+8)
+	minimap.custom_minimum_size=Vector2(218,145) if not compact else Vector2(126,84)
+	map_panel.size=Vector2(242,197) if not compact else Vector2(150,0)
 	notice.position=Vector2(300 if not compact else 18,top_height+12)
 	notice.size=Vector2(maxf(100,s.x-610) if not compact else s.x-36,90)
 	if modal!=null: layout_modal()
+	for p in [top,deck,campaign,inspector,map_panel]:
+		if modal_kind=="welcome": p.visible=false
 func update_cards(force: bool=false) -> void:
 	var s=main.sim
 	var signature: String=tab+str(int(s.gold))+str(s.magic.unlocked)+str(s.alchemy.unlocked)+str(int(s.time))+str(main.world.mode_kind)+main.world.mode_key
 	if not force and signature==card_signature: return
 	card_signature=signature
 	if card_tab!=tab: clear(cards); card_tab=tab
-	for key in ["build","recruit","bounty","spells"]: widgets["tab_"+key].modulate=Color("e8ca8a") if key==tab else Color.WHITE
+	for key in ["build","recruit","bounty","spells"]: Royal.active(widgets["tab_"+key],key==tab)
 	var keys: Array=["warriors","rangers","wizards","marketplace","temple","tower","house","thieves"] if tab=="build" else ["warrior","ranger","wizard","thief"] if tab=="recruit" else ["attack","explore"] if tab=="bounty" else s.definitions.spells.keys()
 	for key in keys:
 		var text: String=""; var tooltip: String=""; var icon: Texture2D=null; var disabled: bool=false
@@ -140,16 +159,15 @@ func update_cards(force: bool=false) -> void:
 		elif tab=="recruit":
 			var d=s.definitions.units[key]; var guilds=s.operating("").filter(func(b):return s.definition_of(b).get("recruits","")==key)
 			text="%s\n%d gold"%[d.name,d.cost]; tooltip="Autonomous hero. Includes 24 gold for supplies."; disabled=guilds.is_empty()
-			var atlas:=AtlasTexture.new(); atlas.atlas=main.world.textures["unit_"+key]; var a=main.world.manifest["unit_"+key].frames[0].frame; atlas.region=Rect2(a[0],a[1],a[2],a[3]); icon=atlas
-		elif tab=="bounty": text=("Attack bounty" if key=="attack" else "Explore bounty")+"\n100 gold"; tooltip="Heroes choose bounties by reward and danger. Select flags to raise or withdraw them."
+			icon=main.world.portraits["unit_"+key]
+		elif tab=="bounty": text=("Attack bounty" if key=="attack" else "Explore bounty")+"\n100 gold"; tooltip="Heroes choose bounties by reward and danger. Select flags to raise or withdraw them."; icon=Royal.icon(key+"-seal")
 		else:
-			var d=s.definitions.spells[key]; text=d.name+"\n"+("Learn at Temple" if not Magic.available(s,key) else str(ceili(s.cooldowns[key]))+"s cooldown" if s.cooldowns[key]>0 else str(int(d.cost))+" gold"); tooltip=d.description
+			var d=s.definitions.spells[key]; text=d.name+"\n"+("Learn at Temple" if not Magic.available(s,key) else str(ceili(s.cooldowns[key]))+"s cooldown" if s.cooldowns[key]>0 else str(int(d.cost))+" gold"); tooltip=d.description; icon=Royal.icon(key+"-seal")
 		var b=widgets.get("command_"+key)
 		if not is_instance_valid(b) or b.get_parent()!=cards:
-			b=button("command_"+key,text,func():command(key)); cards.add_child(b)
-		b.text=text; b.add_theme_font_size_override("font_size",16); b.modulate=Color.WHITE; b.custom_minimum_size=Vector2(174 if tab in ["build","recruit"] else 154,78); b.tooltip_text=tooltip; b.disabled=disabled
-		if icon!=null: b.icon=icon; b.expand_icon=true; b.add_theme_constant_override("icon_max_width",48)
-		if main.world.mode_key==key: b.modulate=Color("e9c987")
+			b=RoyalCard.new(); b.focus_mode=Control.FOCUS_NONE; b.mouse_filter=Control.MOUSE_FILTER_PASS; b.pressed.connect(func():command(key)); widgets["command_"+key]=b; cards.add_child(b)
+		b.custom_minimum_size=Vector2(136 if compact else maxf(120,floorf((deck.size.x-24-49)/8)),104); b.tooltip_text=tooltip
+		b.configure(text,icon,main.world.mode_key==key,disabled)
 func command(key: String) -> void:
 	if tab=="recruit":
 		var s=main.sim
@@ -166,14 +184,15 @@ func refresh() -> void:
 	if root==null: return
 	var began: int=Time.get_ticks_usec()
 	var s=main.sim
-	treasury.text="%dg   %d heroes   Day %d"%[s.gold,s.units.filter(func(u):return not u.dead and u.hero).size(),1+int(s.time/120)]
+	treasury.text="%d"%s.gold; hero_count.text=str(s.units.filter(func(u):return not u.dead and u.hero).size()); day_count.text="Day %d"%(1+int(s.time/120))
 	widgets.pause.text="Resume" if s.paused else "Pause"; widgets.sound.text="Mute" if main.sound.enabled else "Sound"
-	for n in [1,2,3]: widgets["speed_"+str(n)].modulate=Color("e9c987") if main.speed==n else Color.WHITE
+	for n in [1,2,3]: Royal.active(widgets["speed_"+str(n)],main.speed==n)
 	var sanitation=Sanitation.status(s)
 	chapter.text=s.Mission.title(s)
 	encounter_button.visible=s.mission.id=="ember_crown" and s.mission.revealed
 	encounter_button.text="Locate Warlord" if s.mission.boss_id and not s.mission.boss_defeated else "Locate Monastery"
-	quest.text="%d / 8 lairs destroyed\n%s\n\n%s · Seed %d\nCottages: %d / 6 safe%s"%[s.stats.lairs,s.Mission.objective(s),s.fixture.name,s.fixture.seed,sanitation.cottages,"\nRat sewers: %d · next in %ds"%[sanitation.active,sanitation.next_in] if sanitation.next_in>=0 else "\nActive rat sewers: %d"%sanitation.active if sanitation.active>0 else ""]
+	campaign_progress.value=s.stats.lairs
+	quest.text="%d of 8 lairs vanquished\n%s\n\nCottages: %d / 6 safe%s"%[s.stats.lairs,s.Mission.objective(s),sanitation.cottages,"\nRat sewers: %d · next in %ds"%[sanitation.active,sanitation.next_in] if sanitation.next_in>=0 else "\nActive rat sewers: %d"%sanitation.active if sanitation.active>0 else ""]
 	var ids: Array=s.buildings.filter(func(b):return b.hostile and not b.infestation).map(func(b):return b.id)
 	if ids!=objective_ids: clear(objective_list); objective_ids=ids
 	for b in s.buildings:
@@ -217,7 +236,8 @@ func inspect(e) -> void:
 			if e.type=="temple" and e.progress==1: details.text+="\n"+research_status("spell"); add_action("research","Spellbook & research",func():show_research("spell",e.id))
 			if e.type=="house": add_action("demolish","Demolish · no refund",func():s.demolish(e.id); refresh())
 	elif e.kind=="unit":
-		var atlas:=AtlasTexture.new(); atlas.atlas=main.world.textures["unit_"+e.type]; var a=main.world.manifest["unit_"+e.type].frames[0].frame; atlas.region=Rect2(a[0],a[1],a[2],a[3]); portrait.texture=atlas
+		var art_key: String="unit_warlord" if e.id==s.mission.boss_id else "unit_"+e.type
+		portrait.texture=main.world.portraits[art_key]
 		details.text=e.name+"\n"+("Level %d %s\n"%[e.level,e.definition.name] if e.hero else "")+e.state+"\n\nHealth: %d / %d\nAttack: %d · Armor: %d"%[e.hp,e.max_hp,Supplies.damage(s,e),Supplies.armor(s,e)]
 		if e.id==s.mission.boss_id: details.text+="\n\nGround slam: leave the marked circle.\n"+("Enraged: faster slams." if s.mission.enraged else "Enrages at half health.")
 		if e.hero:
@@ -260,18 +280,26 @@ func research_status(kind: String) -> String:
 func open_modal(kind: String) -> void:
 	if modal!=null: close_modal(false)
 	was_paused=main.sim.paused; main.sim.paused=true; modal_kind=kind
-	modal=ColorRect.new(); modal.color=Color(0.035,0.05,0.035,0.72); modal.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); root.add_child(modal)
-	modal_panel=panel(modal); var scroll:=ScrollContainer.new(); scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; modal_panel.add_child(scroll)
+	modal=ColorRect.new(); modal.color=Color(0.035,0.045,0.04,0.82); modal.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); root.add_child(modal)
+	modal_panel=panel(modal); modal_panel.add_theme_stylebox_override("panel",Royal.box("parchment",20)); var scroll:=ScrollContainer.new(); scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; modal_panel.add_child(scroll)
 	modal_column=VBoxContainer.new(); modal_column.size_flags_horizontal=Control.SIZE_EXPAND_FILL; modal_column.add_theme_constant_override("separation",12); scroll.add_child(modal_column); layout_modal()
 func layout_modal() -> void:
 	var s: Vector2=main.get_viewport_rect().size
-	modal_panel.size=Vector2(minf(720,s.x-24),minf(740,s.y-32)); modal_panel.position=(s-modal_panel.size)/2
+	if modal_kind=="welcome":
+		var small: bool=s.x<900
+		modal_panel.size=Vector2(minf(510,s.x-48),minf(694,s.y-76)); modal_panel.position=Vector2(24 if small else maxf(64,s.x*.075),(s.y-modal_panel.size.y)/2)
+		if is_instance_valid(menu_title): menu_title.add_theme_font_size_override("font_size",35 if small else 49)
+		if is_instance_valid(menu_tagline): menu_tagline.add_theme_font_size_override("font_size",21 if small else 25)
+		if is_instance_valid(menu_caption): menu_caption.visible=not small; menu_caption.position=Vector2(s.x-420,s.y-90); menu_caption.size=Vector2(370,50)
+	else:
+		modal_panel.size=Vector2(minf(720,s.x-24),minf(740,s.y-32)); modal_panel.position=(s-modal_panel.size)/2
 func modal_text(text: String,font_size: int=18) -> void:
-	var l=label(text,font_size); l.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; modal_column.add_child(l)
+	var l=label(text,font_size,"ddcfaf" if modal_kind=="welcome" else "453525"); l.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; modal_column.add_child(l)
 func close_modal(resume: bool=true) -> void:
 	if modal==null: return
 	root.remove_child(modal); modal.queue_free(); modal=null; modal_kind=""
 	if resume: main.sim.paused=was_paused
+	top.visible=true; deck.visible=true; layout(true)
 func show_research(kind: String,id: int) -> void:
 	open_modal("research"); modal_text("The royal spellbook" if kind=="spell" else "Prepare them for adventure",30)
 	modal_text("Study once for the crown and every wizard. You cast with gold; wizards use mana. One study at a time; losing every Temple pauses study." if kind=="spell" else "You fund recipes. Heroes buy supplies with personal gold. One study at a time; losing every Marketplace pauses research.")
@@ -289,20 +317,30 @@ func show_research(kind: String,id: int) -> void:
 		b.disabled=done or locked or not state.project.is_empty() or s.gold<d.get("research",0); modal_column.add_child(b)
 	modal_column.add_child(button("close_modal","Return to the kingdom",func():close_modal(); refresh()))
 func show_welcome() -> void:
-	open_modal("welcome"); modal_text("A crown. A kingdom.\nA little chaos.",36)
-	modal_text("Raise a realm in the untamed borderlands. Build guilds, entice heroes, and let adventure unfold. You wear the crown. They choose the quest.")
-	modal_text(main.sim.Mission.title(main.sim)+"\n"+main.sim.fixture.name+" · Seed "+str(main.sim.fixture.seed),17)
-	modal_text(main.sim.definitions.mission.description if main.mission_id=="ember_crown" else "The original eight-lair campaign.",17)
+	open_modal("welcome"); modal.color=Color.TRANSPARENT
+	menu_overlay=RoyalOverlay.new(); menu_overlay.welcome=true; modal.add_child(menu_overlay); modal.move_child(menu_overlay,0)
+	modal_panel.add_theme_stylebox_override("panel",StyleBoxEmpty.new()); modal_column.add_theme_constant_override("separation",14)
+	var crest:=TextureRect.new(); crest.texture=Royal.icon("crest"); crest.custom_minimum_size=Vector2(68,76); crest.expand_mode=TextureRect.EXPAND_IGNORE_SIZE; crest.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT; crest.size_flags_horizontal=Control.SIZE_SHRINK_BEGIN; modal_column.add_child(crest)
+	modal_text("A KINGDOM AWAITS ITS SOVEREIGN",11)
+	menu_title=label("SOVEREIGN",49,"efdfb6"); modal_column.add_child(menu_title)
+	menu_tagline=label("A crown. A kingdom. A little chaos.",25,"cdb27b"); menu_tagline.add_theme_font_override("font",Royal.ITALIC); menu_tagline.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; modal_column.add_child(menu_tagline)
+	var rule:=HSeparator.new(); var line:=StyleBoxLine.new(); line.color=Color("9c824e"); line.thickness=1; rule.add_theme_stylebox_override("separator",line); modal_column.add_child(rule)
+	modal_text("Raise a realm in the untamed borderlands. Build guilds, gather heroes, and let adventure unfold.\nYou wear the crown. They choose the quest.",19)
+	modal_text("CHOOSE YOUR CHRONICLE",11)
 	var choices:=HBoxContainer.new(); modal_column.add_child(choices)
 	for key in ["ember_crown","classic"]:
-		var choice=button("mission_"+key,"The Ember Crown" if key=="ember_crown" else "Classic Kingdom",func():main.mission_id=key; main.new_game(main.sim.fixture.seed); show_welcome())
-		choice.size_flags_horizontal=Control.SIZE_EXPAND_FILL; choice.add_theme_font_size_override("font_size",16); choice.modulate=Color("e8ca8a") if main.mission_id==key else Color.WHITE; choices.add_child(choice)
+		var choice=button("mission_"+key,"The Ember Crown\nRelics & reckoning" if key=="ember_crown" else "Classic Kingdom\nThe original chronicle",func():main.mission_id=key; main.new_game(main.sim.fixture.seed); show_welcome())
+		choice.size_flags_horizontal=Control.SIZE_EXPAND_FILL; choice.add_theme_font_size_override("font_size",16); choice.custom_minimum_size.y=62; Royal.active(choice,main.mission_id==key); choices.add_child(choice)
+	modal_text("Uncover the Ashen Monastery and defeat the Ember Warlord." if main.mission_id=="ember_crown" else "Tame the frontier. Destroy eight lairs and defend your Palace.",16)
 	var seed_edit:=LineEdit.new(); seed_edit.placeholder_text="Optional map seed or name"; widgets.seed_input=seed_edit; modal_column.add_child(seed_edit)
-	modal_column.add_child(button("start","Begin your reign",func():
+	var begin=button("start","Begin your reign     ›",func():
 		if seed_edit.text.strip_edges()!="": main.new_game(SimulationSeed(seed_edit.text)); main.pinned_seed=main.sim.fixture.seed
-		close_modal(false); main.sim.paused=false; main.started=true; main.sound.enable(); refresh()))
-	modal_column.add_child(button("random_map","Choose a fresh map",func():main.pinned_seed=-1; main.new_game(); show_welcome()))
-	modal_column.add_child(button("load_welcome","Load saved kingdom",func():main.load_game()))
+		close_modal(false); main.sim.paused=false; main.started=true; main.sound.enable(); refresh())
+	Royal.primary(begin); begin.custom_minimum_size.y=54; modal_column.add_child(begin)
+	var secondary:=HBoxContainer.new(); modal_column.add_child(secondary)
+	for b in [button("random_map","A fresh map",func():main.pinned_seed=-1; main.new_game(); show_welcome()),button("load_welcome","Load kingdom",func():main.load_game())]: b.size_flags_horizontal=Control.SIZE_EXPAND_FILL; secondary.add_child(b)
+	menu_caption=label(main.sim.fixture.name.to_upper()+"\nMap "+str(main.sim.fixture.seed)+"  ·  The untamed borderlands",14,"d8c89f"); menu_caption.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT; menu_caption.mouse_filter=Control.MOUSE_FILTER_IGNORE; modal.add_child(menu_caption)
+	layout(true)
 func SimulationSeed(text: String) -> int: return main.sim.SeedRng.normalize(text)
 func show_help() -> void:
 	open_modal("help"); modal_text("The art of ruling",30)

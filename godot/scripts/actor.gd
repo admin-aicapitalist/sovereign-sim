@@ -23,6 +23,8 @@ var destination := Vector2.ZERO
 var path: PackedVector2Array = []
 var path_index: int = 0
 var facing: float = 1
+## Presentation only; old saves remain valid and infer heading from their path.
+var heading := Vector2.RIGHT
 var animation: float = 0
 var attacking: float = 0
 var dead: bool = false

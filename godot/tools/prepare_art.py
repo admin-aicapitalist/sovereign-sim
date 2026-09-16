@@ -8,6 +8,9 @@ ROOT = Path(__file__).resolve().parents[2]
 PROJECT = ROOT / 'godot'
 assets = json.loads((PROJECT / 'data/assets.json').read_text())
 for key, data in assets.items():
+    if 'directions' in data:
+        copyfile(ROOT / data['source'], PROJECT/'assets'/f'{key}.png')
+        continue
     image = Image.open(ROOT / data['source']).convert('RGBA')
     density = image.width / data['w'] / (4 if 'frames' in data else 1)
     ratio = min(1, 3 / density)

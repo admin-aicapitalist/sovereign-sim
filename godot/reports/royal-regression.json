@@ -1,0 +1,29 @@
+{
+  "recorded_at": "2026-09-16T15:16:27.902Z",
+  "origin": "http://127.0.0.1:8131/",
+  "metadata": {
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36",
+    "hardwareConcurrency": 14,
+    "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+    "viewport": [
+      1440,
+      900
+    ],
+    "devicePixelRatio": 1,
+    "crossOriginIsolated": false
+  },
+  "first_load_ms": 1964.5237080000002,
+  "load_note": "Measured from this test machine with browser cache disabled.",
+  "checks": [
+    "Welcome, audio toggle, pause, mouse construction, workers, recruitment and capacity",
+    "Attack and exploration bounties, raise and refund through visible controls",
+    "All hero guilds, potion prerequisites, Temple research, royal healing and farsight",
+    "Reload persistence for the full kingdom, RNG, inventories, research, cooldowns and malformed-save rejection",
+    "Native campaign victory save renders the ending; Palace defeat and replay controls work",
+    "390px DPR2 layout, touch pan/tap, zoom, selection, horizontal cards and scrollable help/research",
+    "Replay, fresh maps and named seeds",
+    "Player URL starts without automation controls"
+  ],
+  "benchmarks": [],
+  "errors": []
+}

@@ -9,5 +9,5 @@ void fragment(){
 	float alpha=(1.0-smoothstep(0.02,0.98,fog.r))*0.96;
 	alpha=max(alpha,(1.0-smoothstep(0.0,1.0,fog.g))*0.57);
 	float inside=step(0.0,tile.x)*step(0.0,tile.y)*(1.0-step(map_size,tile.x))*(1.0-step(map_size,tile.y));
-	COLOR=vec4(0.035,0.065,0.055,alpha*inside);
+	COLOR=vec4(0.045,0.060,0.054,alpha*inside);
 }

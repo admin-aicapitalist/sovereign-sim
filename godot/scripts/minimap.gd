@@ -15,7 +15,7 @@ func _draw() -> void:
 	if main==null: return
 	var began: int=Time.get_ticks_usec()
 	var s=main.sim
-	draw_rect(Rect2(Vector2.ZERO,size),Color("1c2c25"))
+	draw_rect(Rect2(Vector2.ZERO,size),Color("242920"))
 	# Keep thousands of tile polygons out of the per-frame canvas command list.
 	# A tiny raster is transformed into the same isometric diamond.
 	if geography==null or revision!=s.revision or fog_revision!=s.fog_revision:
@@ -35,6 +35,13 @@ func _draw() -> void:
 	draw_set_transform_matrix(Transform2D(Vector2(size.x,size.y)/(2*s.size),Vector2(-size.x,size.y)/(2*s.size),Vector2(size.x*0.5,3)))
 	draw_texture(texture,Vector2.ZERO)
 	draw_set_transform_matrix(Transform2D.IDENTITY)
+	var border:=PackedVector2Array([Vector2(size.x*.5,3),Vector2(size.x,size.y*.5+3),Vector2(size.x*.5,size.y+3),Vector2(0,size.y*.5+3),Vector2(size.x*.5,3)])
+	draw_polyline(border,Color("6a7051"),1,true)
+	var compass:=Vector2(17,size.y-19)
+	draw_line(compass-Vector2(0,10),compass+Vector2(0,9),Color("b9a778"),1,true)
+	draw_line(compass-Vector2(7,0),compass+Vector2(7,0),Color("b9a778"),1,true)
+	draw_colored_polygon(PackedVector2Array([compass-Vector2(0,10),compass+Vector2(3,1),compass,compass-Vector2(3,-1)]),Color("c7b27b"))
+	draw_string(preload("res://assets/cinzel.ttf"),compass+Vector2(-4,-13),"N",HORIZONTAL_ALIGNMENT_LEFT,-1,9,Color("baa57a"))
 	var view: Rect2=main.world.visible_rect
 	var corners:=PackedVector2Array()
 	for p in [view.position,view.position+Vector2(view.size.x,0),view.end,view.position+Vector2(0,view.size.y),view.position]:
