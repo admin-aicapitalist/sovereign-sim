@@ -1,0 +1,17 @@
+{
+  "checks": [
+    "heal renders with dedicated casting poses and freezes when paused",
+    "ward renders with dedicated casting poses and freezes when paused",
+    "haste renders with dedicated casting poses and freezes when paused",
+    "lightning renders with dedicated casting poses and freezes when paused",
+    "frost renders with dedicated casting poses and freezes when paused",
+    "farsight renders with dedicated casting poses and freezes when paused",
+    "Meteor warning survives save/load, impacts on the damage tick, and produces a bounded camera impulse",
+    "meteor renders with dedicated casting poses and freezes when paused",
+    "Reactive wards, melee arcs, fireball trails and arrows follow actual combat events",
+    "Wizard staff charging advances into the real projectile release",
+    "Visible effects respect the 24-spell / 80-impact rendering budget",
+    "Phone DPR2 rendering and all spell/combat paths finish without browser or Godot errors"
+  ],
+  "errors": []
+}

@@ -1,0 +1,178 @@
+{
+  "ice-0": {
+    "src": "res://assets/arcane/ice-0.png",
+    "size": [
+      22.5,
+      43.0
+    ],
+    "anchor": [
+      11.000102996826172,
+      38.007429122924805
+    ]
+  },
+  "ice-1": {
+    "src": "res://assets/arcane/ice-1.png",
+    "size": [
+      22.5,
+      43.0
+    ],
+    "anchor": [
+      11.250102996826172,
+      38.007429122924805
+    ]
+  },
+  "ice-2": {
+    "src": "res://assets/arcane/ice-2.png",
+    "size": [
+      24.75,
+      42.25
+    ],
+    "anchor": [
+      11.750102996826172,
+      37.257429122924805
+    ]
+  },
+  "ice-3": {
+    "src": "res://assets/arcane/ice-3.png",
+    "size": [
+      22.25,
+      41.0
+    ],
+    "anchor": [
+      10.750102996826172,
+      36.007429122924805
+    ]
+  },
+  "meteor-0": {
+    "src": "res://assets/arcane/meteor-0.png",
+    "size": [
+      44.25,
+      44.5
+    ],
+    "anchor": [
+      22.500102996826172,
+      22.000097274780273
+    ]
+  },
+  "meteor-1": {
+    "src": "res://assets/arcane/meteor-1.png",
+    "size": [
+      45.25,
+      44.25
+    ],
+    "anchor": [
+      23.000102996826172,
+      22.250097274780273
+    ]
+  },
+  "meteor-2": {
+    "src": "res://assets/arcane/meteor-2.png",
+    "size": [
+      45.0,
+      43.25
+    ],
+    "anchor": [
+      22.250102996826172,
+      21.000097274780273
+    ]
+  },
+  "meteor-3": {
+    "src": "res://assets/arcane/meteor-3.png",
+    "size": [
+      44.5,
+      43.75
+    ],
+    "anchor": [
+      22.500102996826172,
+      21.500097274780273
+    ]
+  },
+  "meteor-4": {
+    "src": "res://assets/arcane/meteor-4.png",
+    "size": [
+      44.25,
+      44.0
+    ],
+    "anchor": [
+      22.250102996826172,
+      22.000097274780273
+    ]
+  },
+  "meteor-5": {
+    "src": "res://assets/arcane/meteor-5.png",
+    "size": [
+      43.5,
+      44.0
+    ],
+    "anchor": [
+      20.750102996826172,
+      22.500097274780273
+    ]
+  },
+  "meteor-6": {
+    "src": "res://assets/arcane/meteor-6.png",
+    "size": [
+      43.5,
+      45.0
+    ],
+    "anchor": [
+      21.000102996826172,
+      23.000097274780273
+    ]
+  },
+  "meteor-7": {
+    "src": "res://assets/arcane/meteor-7.png",
+    "size": [
+      44.0,
+      44.25
+    ],
+    "anchor": [
+      20.750102996826172,
+      22.500097274780273
+    ]
+  },
+  "smoke-0": {
+    "src": "res://assets/arcane/smoke-0.png",
+    "size": [
+      96,
+      96
+    ],
+    "anchor": [
+      48,
+      48
+    ]
+  },
+  "smoke-1": {
+    "src": "res://assets/arcane/smoke-1.png",
+    "size": [
+      96,
+      96
+    ],
+    "anchor": [
+      48,
+      48
+    ]
+  },
+  "smoke-2": {
+    "src": "res://assets/arcane/smoke-2.png",
+    "size": [
+      96,
+      96
+    ],
+    "anchor": [
+      48,
+      48
+    ]
+  },
+  "smoke-3": {
+    "src": "res://assets/arcane/smoke-3.png",
+    "size": [
+      96,
+      96
+    ],
+    "anchor": [
+      48,
+      48
+    ]
+  }
+}

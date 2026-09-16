@@ -44,6 +44,7 @@ var vision: Array = []
 var ruins: Array = []
 var projectiles: Array = []
 var effects: Array = []
+var effect_serial: int=0
 var events: Array = []
 var notifications: Array = []
 var paths_this_tick: int = 0
@@ -56,8 +57,11 @@ func notify(text: String, sound: String = "") -> void:
 	message=text; notifications.append({"text":text,"at":time})
 	if notifications.size()>4: notifications.pop_front()
 	if sound!="": events.append(sound)
-func fx(type: String, point: Vector2, value: float=0, life: float=1.2) -> void:
-	if not stress: effects.append({"type":type,"x":point.x,"y":point.y,"value":value,"started":time,"life":life})
+func fx(type: String, point: Vector2, value: float=0, life: float=1.2) -> Dictionary:
+	effect_serial+=1
+	var effect: Dictionary={"type":type,"x":point.x,"y":point.y,"value":value,"started":time,"life":life,"serial":effect_serial}
+	if not stress: effects.append(effect)
+	return effect
 func reset(seed_value: int = -1) -> void:
 	if seed_value<0:
 		seed_value=int(Crypto.new().generate_random_bytes(4).decode_u32(0))
@@ -304,10 +308,17 @@ func navigate(u: Actor, dt: float) -> void:
 func stop(u: Actor) -> void: u.path=[]; u.path_index=0; u.destination=u.pos
 func hurt_unit(u: Actor, damage: float) -> void: hurt(u,damage,null)
 func hurt_building(b: Dictionary, damage: float) -> void: hurt(b,damage,null)
-func hurt(e: Variant, damage: float, attacker: Variant) -> void:
+func hurt(e: Variant, damage: float, attacker: Variant, damage_kind: String="physical") -> void:
 	if e==null or e.dead: return
 	var actual: float=maxf(1,damage-(Supplies.armor(self,e) if e is Actor else 0))
-	e.hp-=actual; e.last_hit=time; stats.hits+=1; fx("hit",pos(e),actual)
+	e.hp-=actual; e.last_hit=time; stats.hits+=1
+	var impact:=fx("hit",pos(e),actual,0.75)
+	impact.target=e.id; impact.element=damage_kind
+	impact.armored=e.type in ["warrior","guard","skeleton"] or e.kind=="building"
+	impact.warded=e.kind=="unit" and e.magic_buffs.ward>0
+	if attacker!=null: impact.origin=[pos(attacker).x,pos(attacker).y]
+	if is_visible(pos(e)) and damage_kind in ["physical","arrow"]:
+		events.append("shield-hit" if impact.warded else "combat-metal" if impact.armored else "combat-body")
 	if e.kind=="building" and e.hostile and not e.reinforced: e.reinforced=true; e.spawn=minf(e.spawn,4)
 	if e.hp>0: return
 	e.hp=0; e.dead=true; stats.kills+=1; stats["slain" if e.hostile else "losses"]+=1; fx("collapse" if e.kind=="building" else "death",pos(e),0,2.2)
@@ -352,11 +363,12 @@ func resolve_attack(u: Actor,e: Variant) -> void:
 	var amount: float=Supplies.damage(self,u,e)
 	if u.definition.range>2: shoot(u,e,amount,"fireball" if u.type=="wizard" else "arrow")
 	else:
+		var swing:=fx("swing",u.pos,0,0.32)
+		swing.origin=[pos(e).x,pos(e).y]; swing.target=u.id; swing.weapon=u.type
 		hurt(e,amount,u)
-		if is_visible(u.pos): events.append("hit")
 func shoot(attacker: Variant, e: Variant, damage: float, type: String) -> void:
 	var point: Vector2=pos(attacker)
-	projectiles.append({"x":point.x,"y":point.y,"target":e.id,"attacker":attacker.id,"damage":damage,"type":type,"speed":11 if type=="fireball" else 19,"life":2.0})
+	projectiles.append({"x":point.x,"y":point.y,"target":e.id,"attacker":attacker.id,"damage":damage,"type":type,"speed":11 if type=="fireball" else 19,"life":2.0,"origin":[point.x,point.y],"started":time})
 	if is_visible(point): events.append("fire" if type=="fireball" else "bow")
 func update_projectiles(dt: float) -> void:
 	var keep: Array=[]
@@ -366,11 +378,12 @@ func update_projectiles(dt: float) -> void:
 		var point:=Vector2(p.x,p.y); var destination: Vector2=pos(e)
 		var distance: float=point.distance_to(destination); var step: float=p.speed*dt
 		if distance<step+0.3:
-			hurt(e,p.damage,attacker)
+			hurt(e,p.damage,attacker,p.type)
 			if p.type=="fireball":
-				fx("fire",destination)
+				fx("fire",destination,0,0.9)
+				if is_visible(destination): events.append("fire-impact")
 				for other in nearby(destination,1.6,e.hostile):
-					if other!=e: hurt(other,p.damage*0.35,attacker)
+					if other!=e: hurt(other,p.damage*0.35,attacker,"fireball")
 		else:
 			point=point.move_toward(destination,step); p.x=point.x; p.y=point.y; keep.append(p)
 	projectiles=keep
@@ -496,6 +509,7 @@ func restore(input: Dictionary) -> bool:
 	if data.fixture.get("size")!=size or data.fixture.get("tiles",[]).size()!=size*size or data.buildings.is_empty(): return false
 	if not validate_collections(data): return false
 	var actor_schema: Dictionary=Actor.new().save(); var ids: Dictionary={}
+	actor_schema.erase("heading") # Optional in version 3 saves made before directional casting.
 	for i in data.fixture.tiles.size():
 		var t=data.fixture.tiles[i]
 		if not shape(t,fixture.tiles[0]) or t.kind not in ["grass","path","water","bridge"] or t.x!=i%size or t.y!=int(i/size): return false
@@ -512,6 +526,9 @@ func restore(input: Dictionary) -> bool:
 		if (b.tier!=1 and b.tier!=2) or b.upgrade_remaining<0 or (b.tier==2 and b.upgrade_remaining>0): return false
 	for item in data.units:
 		if not shape(item,actor_schema) or not definitions.units.has(item.type) or not valid_id(item.id,data.next_id,ids): return false
+		if item.has("heading"):
+			if not item.heading is Array or item.heading.size()!=2 or not finite_number(item.heading[0]) or not finite_number(item.heading[1]): return false
+			if absf(item.heading[0])>1.001 or absf(item.heading[1])>1.001: return false
 		if item.kind!="unit" or not keyed_values(item.potions,definitions.potions,TYPE_FLOAT) or not keyed_values(item.buffs,{"strength":0,"stoneskin":0},TYPE_FLOAT) or not keyed_values(item.magic_buffs,{"ward":0,"haste":0,"frost":0},TYPE_FLOAT) or not keyed_values(item.spell_cooldowns,definitions.spells,TYPE_FLOAT): return false
 		if not item.last_spell.is_empty() and (not shape(item.last_spell,{"key":"","at":0.0}) or not definitions.spells.has(item.last_spell.key)): return false
 		if not valid_point(item.pos) or not valid_point(item.destination) or item.max_hp<=0 or item.path_index<0 or item.path_index>item.path.size(): return false
@@ -530,6 +547,7 @@ func restore(input: Dictionary) -> bool:
 			if not key is String or not definitions.items.has(key): return false
 	if data.gold<0 or data.time<0 or data.result not in ["","victory","defeat"]: return false
 	for key in SAVE_FIELDS: set(key,data[key].duplicate(true) if data[key] is Dictionary or data[key] is Array else data[key])
+	for effect in effects: effect_serial=maxi(effect_serial,int(effect.get("serial",0)))
 	rng.state=int(data.rng); loot_rng.state=int(data.loot_rng); sanitation_rng.state=int(data.sanitation_rng)
 	units.clear(); actors.clear(); buildings.assign(data.buildings.duplicate(true)); loot.assign(data.loot.duplicate(true)); flags.clear(); by_id.clear()
 	for b in buildings: by_id[int(b.id)]=b
@@ -543,6 +561,7 @@ func restore(input: Dictionary) -> bool:
 		u.definition=definitions.units[u.type]
 		u.heading=Vector2(u.facing,0)
 		if u.path_index<u.path.size(): u.heading=(u.path[u.path_index]-u.pos).normalized()
+		if item.has("heading"): u.heading=Vector2(item.heading[0],item.heading[1])
 		if u.id==mission.boss_id: Mission.apply_boss(self,u)
 		units.append(u); actors[u.id]=u; by_id[u.id]=u
 	rebuild_grid(); rebuild_buckets(); revision+=1; fog_revision+=1; notifications.clear(); events.clear(); notify("Kingdom restored."); return true
@@ -576,8 +595,29 @@ func validate_collections(data: Dictionary) -> bool:
 		if tree.type not in ["pine0","pine1","pine2","pine3","pine4","pine5","oak0","oak1","oak2","oak3","oak4","oak5"] or tree.scale<=0: return false
 	for effect in data.effects:
 		if effect.life<=0 or effect.type.begins_with("spell_") and not definitions.spells.has(effect.type.trim_prefix("spell_")): return false
+		if not valid_visual(effect): return false
 	for projectile in data.projectiles:
 		if projectile.type not in ["arrow","fireball"] or projectile.life<=0 or projectile.speed<=0: return false
+		if not valid_visual(projectile): return false
+	return true
+func valid_visual(item: Dictionary) -> bool:
+	# Optional presentation data keeps old saves readable and rejects malformed new data.
+	for key in ["serial","target","caster","started","radius","delay"]:
+		if item.has(key) and not finite_number(item[key]): return false
+	for key in ["serial","target","caster"]:
+		if item.has(key) and (item[key]<0 or item[key]>1e12 or item[key]!=floorf(item[key])): return false
+	if item.has("radius") and (item.radius<=0 or item.radius>size): return false
+	if item.has("delay") and (item.delay<=0 or item.delay>60): return false
+	for key in ["armored","warded"]:
+		if item.has(key) and not item[key] is bool: return false
+	for key in ["element","weapon"]:
+		if item.has(key) and not item[key] is String: return false
+	if item.has("origin") and not valid_point(item.origin): return false
+	if item.has("targets"):
+		if not item.targets is Array or item.targets.size()>64: return false
+		for target in item.targets:
+			if not shape(target,{"id":0,"x":0.0,"y":0.0}) or not valid_point([target.x,target.y]): return false
+			if target.id<=0 or target.id>1e12 or target.id!=floorf(target.id): return false
 	return true
 func valid_id(value: Variant, next: float, ids: Dictionary) -> bool:
 	if value<=0 or value>=next or value!=int(value) or ids.has(int(value)): return false

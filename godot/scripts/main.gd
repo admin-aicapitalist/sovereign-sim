@@ -91,7 +91,10 @@ func _process(dt: float) -> void:
 	var view_zoom: float=1.65 if title_screen and size.x>=900 else zoom
 	world.position=view_origin-camera*view_zoom; world.scale=Vector2.ONE*view_zoom
 	world.visible_rect=Rect2(camera-view_origin/view_zoom,size/view_zoom)
-	world.cursor=WorldView.uniso(world.to_local(get_viewport().get_mouse_position())); world.refresh()
+	world.presentation_time=sim.time+accumulator
+	world.refresh()
+	world.position+=world.camera_impulse
+	world.cursor=WorldView.uniso(world.to_local(get_viewport().get_mouse_position()))
 	for event in sim.events: sound.play(event)
 	sim.events.clear()
 	if not benchmark.is_empty():
@@ -199,6 +202,11 @@ func debug_state() -> Dictionary:
 	for e in sim.units+sim.buildings+sim.flags.values()+sim.loot:
 		var p=world.to_global(WorldView.iso(sim.pos(e))+Vector2(0,-20 if e.kind=="unit" else -35 if e.kind=="building" else 0)); state.entities_on_screen.append({"id":e.id,"point":[p.x,p.y]})
 	state.character_visuals=[]
+	state.arcane_count=world.arcane_effects.size(); state.effects=sim.effects; state.projectiles=sim.projectiles
+	state.presentation_time=world.presentation_time; state.camera_impulse=[world.camera_impulse.x,world.camera_impulse.y]
+	state.wizard_visuals=[]
+	for u in sim.units:
+		if u.type=="wizard": state.wizard_visuals.append({"id":u.id,"visual":world.wizard_visual(u)})
 	for u in sim.units.slice(0,40):
 		var key: String="unit_warlord" if u.id==sim.mission.boss_id else "unit_"+u.type
 		var art: Dictionary=world.manifest[key]
@@ -247,6 +255,35 @@ func _web_command(args: Array) -> void:
 					"attack": actor.attacking=0.34-float(request.get("frame",0))*0.05
 					"windup": actor.pending_attack={"target":0,"duration":0.24,"remaining":maxf(0.001,0.24-float(request.get("frame",0))*.08)}
 					"work": actor.state="Building a cottage"
+		"arcane_gallery":
+			mission_id="classic"; new_game(41972); started=true; sim.paused=true
+			var gallery: Dictionary=preload("res://scripts/arcane_gallery.gd").setup(sim)
+			camera=WorldView.iso(gallery.center); zoom=1.75; set_mode("","")
+			var spell: String=request.get("spell","")
+			if sim.definitions.spells.has(spell):
+				var at: Vector2=gallery.foe if sim.definitions.spells[spell].get("offensive",false) else gallery.friend
+				if spell=="farsight": at=gallery.center
+				sim.paused=false
+				if request.get("royal",false): Simulation.Magic.cast(sim,spell,at)
+				else: Simulation.Magic.wizard_cast(sim,sim.entity(gallery.wizard),spell,at)
+				sim.paused=true
+		"arcane_action":
+			var wizard=sim.units.filter(func(u):return u.type=="wizard")[0]
+			var enemy=sim.units.filter(func(u):return u.type=="goblin")[0]
+			var warrior=sim.units.filter(func(u):return u.type=="warrior")[0]
+			match request.get("kind",""):
+				"fireball": sim.shoot(wizard,enemy,40,"fireball"); wizard.attacking=0.34
+				"arrow": sim.shoot(sim.units.filter(func(u):return u.type=="ranger")[0],enemy,30,"arrow")
+				"melee":
+					enemy.pos=warrior.pos+Vector2(0.6,0); warrior.heading=Vector2.RIGHT; warrior.attacking=0.34
+					sim.resolve_attack(warrior,enemy)
+				"shield": sim.hurt(warrior,35,enemy)
+				"windup": wizard.pending_attack={"target":enemy.id,"duration":0.8,"remaining":0.8}; wizard.attacking=1
+				"move":
+					warrior.heading=Vector2.RIGHT; warrior.path=PackedVector2Array([warrior.pos+Vector2(4,0)]); warrior.path_index=0
+				"crowd":
+					for i in 140: sim.hurt(enemy,1,warrior)
+					for i in 36: sim.fx("spell_farsight",enemy.pos,0,2.4)
 		"upgrade": sim.upgrade(int(request.id))
 		"select": world.selected=int(request.id)
 		"camera": camera=WorldView.iso(Vector2(request.x,request.y))

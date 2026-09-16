@@ -1,0 +1,13 @@
+{
+  "frames": 244,
+  "average_fps": 48.771712406774995,
+  "frame_p95_ms": 66.69999999999891,
+  "effects_in_simulation": 176,
+  "rendered_effects": 104,
+  "viewport": [
+    1440,
+    900
+  ],
+  "note": "Synthetic saturation: 24 overlapping spells and 80 impacts, paused to sustain maximum density for the measurement; desktop Chrome, 3s warmup and 5s sample.",
+  "errors": []
+}

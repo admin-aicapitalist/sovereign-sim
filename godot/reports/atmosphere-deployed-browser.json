@@ -1,0 +1,15 @@
+{
+  "origin": "https://sovereign-432652279722.us-central1.run.app/",
+  "checks": [
+    "house: smoke moves and pauses correctly",
+    "rangers: smoke moves and pauses correctly",
+    "thieves: smoke moves and pauses correctly",
+    "warriors: smoke, flag moves and pauses correctly",
+    "palace: flag, flag, flag moves and pauses correctly",
+    "tower: flag moves and pauses correctly",
+    "Posted bounty cloth ripples and keeps its reward readable",
+    "Atmosphere clock and bounty survive save/load",
+    "Desktop and phone rendering finish without browser or Godot errors"
+  ],
+  "errors": []
+}

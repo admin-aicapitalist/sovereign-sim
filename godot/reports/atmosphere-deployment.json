@@ -1,0 +1,12 @@
+{
+  "recorded_at": "2026-09-16T19:12:56.369801+00:00",
+  "url": "https://sovereign-432652279722.us-central1.run.app/",
+  "revision": "sovereign-00013-84n",
+  "traffic_percent": 100,
+  "rollback_revision": "sovereign-00012-dzn",
+  "pck_sha256": "b64bc36fe4b52a20a882a3d54b71eda0075486b29a2ca72d034599da780d3a90",
+  "gzip_bytes": 38144733,
+  "hosting_verified": true,
+  "live_atmosphere_checks": 9,
+  "errors": []
+}

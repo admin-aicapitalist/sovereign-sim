@@ -1,0 +1,35 @@
+{
+  "recorded_at": "2026-09-16T18:34:52.864Z",
+  "origin": "https://sovereign-432652279722.us-central1.run.app/",
+  "checks": "PASS: container, health, 404, MIME, gzip and byte-for-byte decoded export",
+  "files": [
+    {
+      "file": "index.html",
+      "content_type": "text/html",
+      "encoding": "gzip",
+      "compressed_bytes": 0,
+      "decoded_bytes": 4148
+    },
+    {
+      "file": "index.js",
+      "content_type": "application/javascript",
+      "encoding": "gzip",
+      "compressed_bytes": 0,
+      "decoded_bytes": 279815
+    },
+    {
+      "file": "index.wasm",
+      "content_type": "application/wasm",
+      "encoding": "gzip",
+      "compressed_bytes": 0,
+      "decoded_bytes": 39514754
+    },
+    {
+      "file": "index.pck",
+      "content_type": "application/octet-stream",
+      "encoding": "gzip",
+      "compressed_bytes": 0,
+      "decoded_bytes": 28089520
+    }
+  ]
+}

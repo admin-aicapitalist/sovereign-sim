@@ -14,7 +14,8 @@ ROOT=Path(__file__).resolve().parents[2]
 TYPES=['warrior','ranger','wizard','guard','peasant','collector','rat','goblin','skeleton','troll','thief','warlord']
 
 
-def pack(kind,source):
+def pack(kind,source,asset_name=None):
+    asset_name=asset_name or kind
     meta=json.loads((source/f'{kind}.json').read_text())
     density=meta['render_size']/meta['logical_size']
     origin=[v*meta['render_size'] for v in meta['anchor']]
@@ -48,6 +49,9 @@ def pack(kind,source):
                     'size':[tile.width/density,tile.height/density],
                     'anchor':[(origin[0]-crop[0])/density,(origin[1]-crop[1])/density],
                     'bounds':[(opaque[i]-crop[i%2])/density for i in range(4)]})
+                sockets=meta.get('sockets',{}).get(f'{animation}-{pose}-{direction}',{})
+                if sockets:
+                    frames[-1]['sockets']={key:[(p[i]-meta['anchor'][i])*meta['logical_size'] for i in range(2)] for key,p in sockets.items()}
     assert not clips, f'Clipped geometry: {clips}'
     # Shelf packing keeps every character in one texture. 4px transparent gutters
     # and per-frame source regions prevent neighboring poses from bleeding.
@@ -63,10 +67,10 @@ def pack(kind,source):
     for tile,frame in zip(images,frames): atlas.paste(tile,tuple(frame['frame'][:2]))
     out=ROOT/'assets/art/units/directional'
     out.mkdir(parents=True,exist_ok=True)
-    atlas.save(out/f'{kind}.png',optimize=True)
-    atlas.save(ROOT/f'godot/assets/unit_{kind}.png',optimize=True)
+    atlas.save(out/f'{asset_name}.png',optimize=True)
+    atlas.save(ROOT/f'godot/assets/unit_{asset_name}.png',optimize=True)
     first=frames[0]
-    entry={'src':f'res://assets/unit_{kind}.png','source':f'assets/art/units/directional/{kind}.png',
+    entry={'src':f'res://assets/unit_{asset_name}.png','source':f'assets/art/units/directional/{asset_name}.png',
         'sourceSize':list(atlas.size),'w':first['size'][0],'h':first['size'][1],'anchor':first['anchor'],
         'frames':frames,'animations':animations,'directions':meta['directions'],
         'selection':[(meta['selection'][i]-meta['anchor'][i])*meta['logical_size'] for i in range(2)],
@@ -74,7 +78,7 @@ def pack(kind,source):
         'healthOffset':first['bounds'][1]-first['anchor'][1]-7,
         'density':density,'animation_fps':{'idle':3,'walk':12,'attack':12}}
     return entry,images,{'frames':len(frames),'size':list(atlas.size),
-        'png_bytes':(out/f'{kind}.png').stat().st_size,'rgba_bytes':width*height*4,'clipped_frames':clips}
+        'png_bytes':(out/f'{asset_name}.png').stat().st_size,'rgba_bytes':width*height*4,'clipped_frames':clips}
 
 
 def showcase(all_images,entries):

@@ -23,6 +23,7 @@ TYPES = [*geo.TYPES, 'warlord']
 ANIMATIONS = {'idle': 4, 'walk': 8, 'attack': 6}
 M = {}
 G = None
+SOCKETS = {}
 
 
 def part(name):
@@ -441,6 +442,10 @@ def humanoid(kind,animation,frame):
     elif wizard:
         right=(.43,-.16,1.30+bob)
         left=interpolate([(-.39,-.15,1.23),(-.43,-.24,1.82),(-.38,-.72,1.53),(-.44,-.38,1.22)],attack) if attack>=0 else (-.42,-.13-swing,1.19+bob)
+        if animation=='cast':
+            t=frame/(ANIMATIONS['cast']-1)
+            right=interpolate([(.43,-.16,1.30),(.36,-.04,1.53),(.36,-.22,1.65),(.42,-.35,1.41),(.43,-.16,1.30)],t)
+            left=interpolate([(-.42,-.13,1.19),(-.27,-.24,1.58),(-.22,-.38,1.99),(-.42,-.84,1.60),(-.42,-.13,1.19)],t)
     elif collector:
         left=(-.36,-.32,1.24+bob); right=(.40,-.16+swing,1.11+bob)
     for side,hand in ((-1,left),(1,right)):
@@ -499,12 +504,19 @@ def humanoid(kind,animation,frame):
     elif wizard:
         part('Equipment / ironwood staff, carved gold cage and azure crystal')
         x,y,z=right
+        # Move the entire staff with the grip; export matching articulated sockets.
+        before={key:len(vertices) for key,(vertices,_) in G.parts.items()}
         tube((x,y,.07),(x+.04,y,2.49+bob),.026,'wood')
         for zz in (1.10,1.26,2.35): loft([(x,y,zz,.044,.044),(x,y,zz+.06,.044,.044)],'gold',10)
         for side in (-1,1):
             seam([(x,y,2.30+bob),(x+side*.10,y,2.45+bob),(x+side*.08,y,2.63+bob)],'gold',.018)
         cone((x,y,2.52+bob),.10,(x,y,2.72+bob),'jewel',6)
         cone((x,y,2.52+bob),.10,(x,y,2.36+bob),'magic',6)
+        lift=z-1.30-bob
+        for key,(vertices,_) in G.parts.items():
+            for i in range(before.get(key,0),len(vertices)):
+                xx,yy,zz=vertices[i]; vertices[i]=(xx,yy,zz+lift)
+        SOCKETS.update(staff=Vector((x,y,2.60+bob+lift)),hand=Vector(left)+Vector((0,-.045,.065)))
         if .15<attack<.8: ball(Vector(left)+Vector((0,-.04,.06)),(.055,.055,.072),'magic',8,12)
     elif worker:
         part('Equipment / carpenters mallet, chisels and measuring rule')
@@ -736,12 +748,17 @@ def articulate(kind,animation,frame):
         lean=[0,-.075,-.10,.17,.09,0][frame]
         twist=[0,-.09,-.15,.11,.06,0][frame]
         if kind in ('ranger','wizard','collector'): lean*=.40; twist*=.60
+    elif animation=='cast':
+        t=frame/(ANIMATIONS['cast']-1)
+        lean=interpolate([(0,0,0),(-.06,-.05,0),(-.075,-.12,0),(.10,.10,0),(0,0,0)],t)[0]
+        twist=interpolate([(0,0,0),(-.06,-.05,0),(-.075,-.12,0),(.10,.10,0),(0,0,0)],t)[1]
     elif animation=='walk':
         lean=.032; twist=math.sin(phase)*.048
     else:
         lean=math.sin(phase)*.007; twist=math.sin(phase)*.008
     pivot=Vector((0,0,1.18 if kind in ('troll','warlord') else .88 if kind=='goblin' else 1.04))
     rotation=Matrix.Rotation(lean,3,'X') @ Matrix.Rotation(twist,3,'Z')
+    for key,p in SOCKETS.items(): SOCKETS[key]=pivot+rotation@(p-pivot)
     for (name,_),(vertices,_) in G.parts.items():
         if any(word in name for word in ('balanced stance','bent legs')): continue
         rigid=any(word in name.lower() for word in ('equipment','elbows','corded arms'))
@@ -778,9 +795,11 @@ def main():
     parser.add_argument('--samples',type=int,default=32)
     parser.add_argument('--preview',action='store_true')
     parser.add_argument('--portraits',action='store_true')
+    parser.add_argument('--casting',action='store_true',help='Additional 16-pose wizard performance; leaves the base character atlases untouched.')
     parser.add_argument('--output',type=Path,default=Path('/tmp/sovereign-unit-renders'))
     args=parser.parse_args(sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else [])
     args.output.mkdir(parents=True,exist_ok=True)
+    if args.casting: args.only=['wizard']; ANIMATIONS.clear(); ANIMATIONS['cast']=16
     sources=ROOT/'assets/art/units/directional'; sources.mkdir(parents=True,exist_ok=True)
     for kind in args.only:
         bpy.ops.wm.read_factory_settings(use_empty=True); M.clear(); materials()
@@ -793,11 +812,11 @@ def main():
             camera.data.ortho_scale=2.05 if kind in ('troll','warlord','wizard') else 1.8 if kind!='rat' else 1.9
         poses=[('idle',0)] if args.preview or args.portraits else [(a,i) for a,n in ANIMATIONS.items() for i in range(n)]
         direction_count=1 if args.preview or args.portraits else 8
-        mesh_objects=[]
+        mesh_objects=[]; sockets={}
         for animation,frame in poses:
             for obj in mesh_objects:
                 data=obj.data; bpy.data.objects.remove(obj,do_unlink=True); bpy.data.meshes.remove(data)
-            G=art.Geometry(); geo.g=G
+            G=art.Geometry(); geo.g=G; SOCKETS.clear()
             if kind=='rat': rat(animation,frame)
             elif kind in ('troll','warlord'): beast(kind,animation,frame)
             else: humanoid(kind,animation,frame)
@@ -809,6 +828,8 @@ def main():
             for direction in range(direction_count):
                 # Direction 0 faces screen southeast, then south, southwest, west, NW, N, NE, E.
                 for obj in mesh_objects: obj.rotation_euler.z=math.pi/2-direction*math.pi/4
+                rotation=Matrix.Rotation(math.pi/2-direction*math.pi/4,3,'Z')
+                sockets[f'{animation}-{frame}-{direction}']={key:project(rotation@point) for key,point in SOCKETS.items()}
                 scene.render.filepath=str(args.output/f'{kind}-portrait.png' if args.portraits else args.output/f'{kind}-{animation}-{frame}-{direction}.png')
                 bpy.ops.render.render(write_still=True)
             if animation=='idle' and frame==0 and not args.portraits:
@@ -816,11 +837,15 @@ def main():
                 bpy.context.preferences.filepaths.save_version=0
                 bpy.ops.wm.save_as_mainfile(filepath=str(sources/f'{kind}.blend'),compress=True)
             print('CHARACTER',kind,animation,frame,'directions',direction_count,flush=True)
+            if args.casting and frame==8:
+                bpy.context.preferences.filepaths.save_version=0
+                bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/'assets/art/units/directional/wizard-casting.blend'),compress=True)
         if args.portraits: continue
         metadata={'type':kind,'render_size':args.resolution,'logical_size':156 if kind in ('troll','warlord') else 132,
                   'anchor':project((0,0,0)), 'selection':project((0,0,.35 if kind=='rat' else 1.65 if kind in ('troll','warlord') else .85 if kind=='goblin' else 1.13)),
                   'directions':['SE','S','SW','W','NW','N','NE','E'], 'animations':ANIMATIONS,
                   'selection_radius':16 if kind=='rat' else 31 if kind in ('troll','warlord') else 21}
+        metadata['sockets']=sockets
         (args.output/f'{kind}.json').write_text(json.dumps(metadata,indent=2)+'\n')
         print('COMPLETE',kind,flush=True)
 

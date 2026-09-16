@@ -38,6 +38,7 @@ static func wizard_cast(s,u,key: String,point: Vector2) -> bool:
 	if not s.in_bounds(point) or u.pos.distance_to(point)>=u.definition.castRange or u.cast_timer>0 or u.spell_cooldowns.get(key,0)>0 or u.mana<d.mana: return false
 	if key!="farsight" and targets(s,key,point).is_empty(): return false
 	u.mana-=d.mana; u.spell_cooldowns[key]=d.cooldown; u.cast_timer=3; u.attacking=0.6; u.cooldown=maxf(u.cooldown,0.7); u.last_spell={"key":key,"at":s.time}; s.stats.wizard_spells+=1
+	if point.distance_squared_to(u.pos)>0.00001: u.heading=(point-u.pos).normalized()
 	apply(s,key,point,u)
 	if s.is_visible(u.pos): s.events.append("spell-"+key)
 	return true
@@ -53,10 +54,14 @@ static func apply(s,key: String,point: Vector2,caster) -> void:
 			if key=="heal": e.hp=minf(e.max_hp,e.hp+d.heal)
 			elif key in ["ward","haste"]: e.magic_buffs[key]=d.duration
 			else:
-				s.hurt(e,d.splash if key=="lightning" and i>0 else d.damage,caster)
+				s.hurt(e,d.splash if key=="lightning" and i>0 else d.damage,caster,key)
 				if key=="frost" and not e.dead and e.kind=="unit": e.magic_buffs.frost=d.duration
 	var at: Vector2=s.pos(chosen[0]) if key=="lightning" and not chosen.is_empty() else point
-	s.fx("spell_"+key,at,0,d.visualDuration)
+	var effect: Dictionary=s.fx("spell_"+key,at,0,d.delay if key=="meteor" else d.visualDuration)
+	effect.radius=d.radius; effect.targets=[]
+	for e in chosen.slice(0,64): effect.targets.append({"id":e.id,"x":s.pos(e).x,"y":s.pos(e).y})
+	if caster!=null: effect.caster=caster.id; effect.origin=[caster.pos.x,caster.pos.y]
+	if key=="meteor": effect.delay=d.delay
 static func update(s,dt: float) -> void:
 	var p=s.magic.project
 	if not p.is_empty() and not s.operating("temple").is_empty():
@@ -69,7 +74,9 @@ static func update(s,dt: float) -> void:
 	s.magic.impacts=s.magic.impacts.filter(func(i):return i.at>s.time)
 	for impact in due:
 		var point:=Vector2(impact.x,impact.y)
-		for e in targets(s,"meteor",point): s.hurt(e,s.definitions.spells.meteor.damage,s.entity(impact.caster))
+		for e in targets(s,"meteor",point): s.hurt(e,s.definitions.spells.meteor.damage,s.entity(impact.caster),"meteor")
+		var burst: Dictionary=s.fx("meteor_impact",point,0,2.5)
+		burst.radius=s.definitions.spells.meteor.radius
 		if s.is_visible(point): s.events.append("meteor-impact")
 static func update_unit(s,u,dt: float) -> void:
 	for key in u.magic_buffs: u.magic_buffs[key]=maxf(0,u.magic_buffs[key]-dt)

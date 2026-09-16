@@ -3,6 +3,20 @@ const Simulation=preload("res://scripts/simulation.gd")
 const Magic=preload("res://scripts/magic.gd")
 const CharacterAnimation=preload("res://scripts/character_animation.gd")
 const Cue=preload("res://scenes/combat_cue.tscn")
+const Arcane=preload("res://scripts/arcane_layer.gd")
+const Atmosphere=preload("res://scripts/atmosphere.gd")
+var atmosphere:=Atmosphere.new()
+var arcane_layers: Array=[]
+var arcane_effects: Array=[]
+var arcane_units: Array=[]
+var arcane_projectiles: Array=[]
+var arcane_art: Dictionary={}
+var arcane_textures: Dictionary={}
+var plumes: Dictionary={}
+var plume_texture: ImageTexture
+var hit_reactions: Dictionary={}
+var presentation_time: float=0
+var camera_impulse:=Vector2.ZERO
 var cues: Dictionary={}
 var cue_revision: int=-1
 var sim: Simulation
@@ -34,18 +48,23 @@ var rails: Array=[]
 static func iso(p: Vector2) -> Vector2: return Vector2((p.x-p.y)*32,(p.x+p.y)*16)
 static func uniso(p: Vector2) -> Vector2: return Vector2(p.x/64+p.y/32,p.y/32-p.x/64)
 func _ready() -> void:
+	manifest.unit_wizard_cast=JSON.parse_string(FileAccess.get_file_as_string("res://data/casting.json"))
+	arcane_art=JSON.parse_string(FileAccess.get_file_as_string("res://data/arcane_art.json"))
+	for key in arcane_art: arcane_textures[key]=load(arcane_art[key].src)
+	var white:=Image.create(1,1,false,Image.FORMAT_RGBA8); white.fill(Color.WHITE); plume_texture=ImageTexture.create_from_image(white)
 	for key in manifest: textures[key]=load(manifest[key].src)
+	for key in atmosphere.art: textures[key]=load(atmosphere.art[key].src)
 	for key in manifest:
 		if manifest[key].has("portrait"): portraits[key]=load(manifest[key].portrait)
-	for key in sim.definitions.spells: effect_textures[key]=load("res://assets/effects/"+key+".png")
-	for key in ["ward","haste","frost","loot_chest","loot_pouch"]:
-		var name: String="aura_"+key if key in ["ward","haste","frost"] else key
-		effect_textures[name]=load("res://assets/effects/"+name+".png")
+	for key in ["loot_chest","loot_pouch"]: effect_textures[key]=load("res://assets/effects/"+key+".png")
 	texture_filter=CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	terrain_material=ShaderMaterial.new(); terrain_material.shader=preload("res://scripts/terrain.gdshader")
 	for key in ["grass","road","dirt","water","paving"]: terrain_material.set_shader_parameter(key,textures["terrain-"+key])
 	fog_material=ShaderMaterial.new(); fog_material.shader=preload("res://scripts/fog.gdshader")
 	make_plane(terrain_material,-10); make_plane(fog_material,100)
+	for i in 3:
+		var layer:=Arcane.new(); layer.world=self; layer.pass_index=i; layer.z_index=-1 if i==0 else i
+		add_child(layer); arcane_layers.append(layer)
 	refresh()
 func make_plane(material: ShaderMaterial,z: int) -> void:
 	var white:=Image.create(1,1,false,Image.FORMAT_RGBA8); white.fill(Color.WHITE)
@@ -71,14 +90,85 @@ func refresh() -> void:
 		else: vision.update(data)
 		fog_material.set_shader_parameter("vision",vision)
 	terrain_material.set_shader_parameter("clock",sim.time)
-	sync_cues(); queue_redraw(); refresh_ms=(Time.get_ticks_usec()-began)/1000.0
+	sync_arcane(); sync_cues(); queue_redraw(); refresh_ms=(Time.get_ticks_usec()-began)/1000.0
+func sync_arcane() -> void:
+	arcane_effects.clear(); arcane_units.clear(); arcane_projectiles.clear(); hit_reactions.clear(); camera_impulse=Vector2.ZERO
+	var spell_count: int=0; var impact_count: int=0
+	for i in range(sim.effects.size()-1,-1,-1):
+		var e: Dictionary=sim.effects[i]
+		if not (e.type.begins_with("spell_") or e.type in ["meteor_impact","fire","slam","hit","swing","death"]): continue
+		var p:=iso(sim.pos(e))
+		if not sim.is_visible(sim.pos(e)) or not visible_rect.grow(320).has_point(p): continue
+		if e.type.begins_with("spell_") or e.type=="meteor_impact":
+			if spell_count>=24: continue
+			spell_count+=1
+		else:
+			if impact_count>=80: continue
+			impact_count+=1
+		arcane_effects.push_front(e)
+		if e.type=="hit" and e.has("target") and not hit_reactions.has(int(e.target)): hit_reactions[int(e.target)]=e
+		var age: float=presentation_time-e.started
+		if e.type in ["meteor_impact","slam"] and age>=0 and age<0.45 and visible_rect.has_point(p):
+			var strength: float=3.5*pow(1-age/0.45,2)
+			camera_impulse+=Vector2(sin(age*83),sin(age*67+1))*strength
+	camera_impulse=camera_impulse.limit_length(4)
+	for u in sim.units:
+		if arcane_units.size()>=192: break
+		if u.type!="wizard" and u.magic_buffs.ward<=0 and u.magic_buffs.haste<=0 and u.magic_buffs.frost<=0: continue
+		if u.dead or not sim.is_visible(u.pos) or not visible_rect.grow(90).has_point(iso(u.pos)): continue
+		arcane_units.append(u)
+	for p in sim.projectiles:
+		if arcane_projectiles.size()>=128: break
+		if sim.is_visible(sim.pos(p)) and visible_rect.grow(90).has_point(iso(sim.pos(p))): arcane_projectiles.append(p)
+	for layer in arcane_layers: layer.queue_redraw()
+	sync_plumes()
+func sync_plumes() -> void:
+	var active: Dictionary={}
+	for e in arcane_effects:
+		if e.type not in ["spell_meteor","meteor_impact","fire"]: continue
+		var age: float=presentation_time-e.started; var t: float=clampf(age/e.life,0,1)
+		var falling: bool=e.type=="spell_meteor"; var major: bool=e.type=="meteor_impact"
+		var duration: float=0.75 if major else 0.4
+		if not falling and age>=duration: continue
+		for i in (5 if major else 1):
+			if active.size()>=32: break
+			var key: String=str(e.get("serial",0))+"/"+str(e.started)+"/"+str(i)
+			active[key]=true
+			if not plumes.has(key):
+				var sprite:=Sprite2D.new(); sprite.texture=plume_texture; sprite.centered=false; sprite.offset=Vector2(-0.5,-1)
+				var shader:=ShaderMaterial.new(); shader.shader=preload("res://scripts/arcane_plume.gdshader"); sprite.material=shader
+				sprite.z_index=3; add_child(sprite); plumes[key]=sprite
+			var sprite: Sprite2D=plumes[key]
+			if falling:
+				sprite.position=iso(sim.pos(e))+Vector2(145,-330)*pow(1-t,1.1)
+				sprite.rotation=Vector2(145,-330).angle()+PI/2; sprite.scale=Vector2(69,165)
+			else:
+				sprite.position=iso(sim.pos(e))+Arcane.ellipse(i*TAU/5,18+age*75) if major else iso(sim.pos(e))+Vector2(0,-10)
+				sprite.rotation=(i-2)*0.22 if major else 0
+				sprite.scale=Vector2(62+age*58,78+sin(age/duration*PI)*60) if major else Vector2(37,51)
+			sprite.material.set_shader_parameter("age",age+i*0.17)
+			sprite.material.set_shader_parameter("power",0.85 if falling else pow(1-age/duration,1.3)*0.85)
+	for key in plumes.keys():
+		if not active.has(key): plumes[key].queue_free(); plumes.erase(key)
+func wizard_visual(u) -> Dictionary:
+	var direction: int=CharacterAnimation.direction(u.heading)
+	var pose: int=-1
+	var spell_age: float=presentation_time-u.last_spell.get("at",-100)
+	if u.path_index>=u.path.size():
+		if spell_age>=0 and spell_age<0.9: pose=8+clampi(int(spell_age/0.9*8),0,7)
+		elif not u.pending_attack.is_empty(): pose=clampi(int((1-u.pending_attack.remaining/u.pending_attack.duration)*9),0,8)
+		elif u.attacking>0:
+			var recovery: float=0.2 if sim.mission.id=="ember_crown" else 0.34
+			pose=8+clampi(int((1-u.attacking/recovery)*8),0,7)
+	var cast_frame: Dictionary=manifest.unit_wizard_cast.frames[maxi(0,pose)*8+direction]
+	return {"key":"unit_wizard_cast" if pose>=0 else "unit_wizard","frame":pose*8+direction if pose>=0 else CharacterAnimation.frame(u,sim,manifest.unit_wizard),"sockets":cast_frame.sockets}
 func sync_cues() -> void:
 	if cue_revision!=sim.revision:
 		for node in cues.values(): node.queue_free()
 		cues.clear(); cue_revision=sim.revision
 	var alive: Dictionary={}
 	for e in sim.effects:
-		if e.type not in ["hit","death","upgrade","relic","slam"] or not sim.is_visible(sim.pos(e)): continue
+		if e.type not in ["upgrade","relic"] or not sim.is_visible(sim.pos(e)): continue
 		var at:=iso(sim.pos(e))
 		if not visible_rect.grow(150).has_point(at): continue
 		var key: String=str(e.started)+"/"+str(e.x)+"/"+str(e.y)+"/"+e.type
@@ -161,10 +251,7 @@ func ring(at: Vector2,radius: float,color: Color,width: float=1.5) -> void:
 func health(at: Vector2,fraction: float,hostile: bool) -> void:
 	draw_rect(Rect2(at,Vector2(38,5)),Color("242d26")); draw_rect(Rect2(at+Vector2.ONE,Vector2(36*clampf(fraction,0,1),3)),Color("be7257") if hostile else Color("c2c890"))
 func aura(u,point: Vector2) -> void:
-	for key in u.magic_buffs:
-		if u.magic_buffs[key]<=0: continue
-		var frame: int=int(sim.time*6)%12
-		draw_texture_rect_region(effect_textures["aura_"+key],Rect2(point+Vector2(-32,-70),Vector2(64,96)),Rect2(frame%4*96,int(frame/4)*144,96,144),Color(1,1,1,minf(1,u.magic_buffs[key])))
+	if u.magic_buffs.haste>0: ring(point,16,Color(0.85,0.69,0.42,0.25),1)
 func _draw() -> void:
 	if sim==null or textures.is_empty(): return
 	var began: int=Time.get_ticks_usec()
@@ -205,6 +292,7 @@ func _draw() -> void:
 			var b=item.building; var factor: float=1.03 if b.type=="palace" else 0.89
 			if selected==int(b.id) or hovered==int(b.id): ring(p,b.size*24,Color("f0d591"))
 			paint(b.type,p,factor,-1,1,Color(1,1,1,0.4+0.6*b.progress))
+			atmosphere.building(self,b,p,factor)
 			if b.get("tier",1)>1:
 				ring(p,b.size*20,Color("a99758"),2); draw_string(font,p+Vector2(-6,-100),"II",HORIZONTAL_ALIGNMENT_LEFT,-1,17,Color("f1d598"))
 			if b.get("upgrade_remaining",0)>0: health(p+Vector2(-19,-100),1-b.upgrade_remaining/sim.definition_of(b).upgrade_time,false)
@@ -213,11 +301,7 @@ func _draw() -> void:
 			var a: Dictionary=manifest[b.type]
 			for effect in a.get("effects",[]):
 				var at: Vector2=p+(Vector2(effect.at[0],effect.at[1])-Vector2(a.anchor[0],a.anchor[1]))*factor
-				if effect.type=="smoke":
-					for i in 3:
-						var t: float=fmod(sim.time*0.14+i*0.33+b.id*0.11,1)
-						draw_circle(at+Vector2(sin(t*7+b.id)*5,-t*31),2+t*5,Color(0.83,0.84,0.72,(1-t)*0.13))
-				elif effect.type=="fire": draw_circle(at,4+sin(sim.time*10+b.id),Color(0.92,0.61,0.26,0.4))
+				if effect.type=="fire": draw_circle(at,4+sin(sim.time*10+b.id),Color(0.92,0.61,0.26,0.4))
 		elif item.has("loot"):
 			var pile=item.loot
 			if selected==int(pile.id): ring(p,20,Color("e0c985"))
@@ -230,8 +314,16 @@ func _draw() -> void:
 			var boss: bool=u.id==sim.mission.boss_id
 			var art_key: String="unit_warlord" if boss else "unit_"+u.type
 			var frame: int=CharacterAnimation.frame(u,sim,manifest[art_key])
-			var tint:=Color(1.45,1.2,0.95) if sim.time-u.last_hit<0.13 else Color.WHITE
-			paint(art_key,p,1.15 if boss else 1,frame,1,tint)
+			if u.type=="wizard":
+				var visual:=wizard_visual(u); art_key=visual.key; frame=visual.frame
+			var hit_age: float=presentation_time-u.last_hit
+			var recoil:=Vector2.ZERO
+			var tint:=Color(1.22,1.14,0.98) if hit_age<0.12 else Color.WHITE
+			if hit_reactions.has(u.id) and hit_age>=0 and hit_age<0.24:
+				var impact: Dictionary=hit_reactions[u.id]
+				if impact.has("origin"): recoil=(p-iso(Vector2(impact.origin[0],impact.origin[1]))).normalized()*sin(hit_age/0.24*PI)*2.7
+				if impact.get("element","")=="frost": tint=Color(0.8,1.12,1.2)
+			paint(art_key,p+recoil,1.15 if boss else 1,frame,1,tint)
 			if boss:
 				ring(p,27,Color("cd7447"),2)
 				var boss_offset: float=manifest.unit_warlord.healthOffset*1.15
@@ -244,21 +336,10 @@ func _draw() -> void:
 			if u.type=="collector" and u.carried>0: draw_circle(p+Vector2(7,-17),2,Color("e2bf66"))
 	for f in sim.flags.values():
 		if f.dead: continue
-		var p:=iso(sim.pos(f)); var wave: float=sin(sim.time*3+f.id)*2
+		var p:=iso(sim.pos(f))
+		if not visible_rect.grow(100).has_point(p): continue
 		if selected==int(f.id): ring(p,22,Color("f0d591"))
-		draw_line(p,p+Vector2(0,-65),Color("d1b880"),2)
-		draw_colored_polygon(PackedVector2Array([p+Vector2(0,-65),p+Vector2(28,-61+wave),p+Vector2(24,-44+wave),p+Vector2(0,-47)]),Color("963f33") if f.type=="attack" else Color("627c69"))
-		draw_string(font,p+Vector2(4,-50),str(int(f.reward)),HORIZONTAL_ALIGNMENT_LEFT,-1,13,Color("fff0c8"))
-	for projectile in sim.projectiles:
-		if not sim.is_visible(sim.pos(projectile)): continue
-		var target=sim.entity(projectile.target)
-		if target==null: continue
-		var a:=iso(sim.pos(projectile))+Vector2(0,-19); var b:=iso(sim.pos(target))+Vector2(0,-19)
-		var direction: Vector2=(b-a).normalized()
-		if projectile.type=="arrow": draw_line(a-direction*9,a,Color("e1d8b0"),1.3,true)
-		else:
-			for i in range(5,-1,-1): draw_circle(a-direction*i*4,3+i*0.6,Color(0.9,0.53,0.23,0.5-i*0.07))
-			draw_circle(a,3.2,Color("f1d6a1"))
+		atmosphere.bounty(self,f,p)
 	if sim.mission.slam_remaining>0:
 		var at:=Vector2(sim.mission.slam_x,sim.mission.slam_y)
 		if sim.is_visible(at):
@@ -271,14 +352,16 @@ func _draw() -> void:
 	draw_effects()
 	draw_preview(); draw_ms=(Time.get_ticks_usec()-began)/1000.0
 func draw_effects() -> void:
+	var labels: int=0
 	for e in sim.effects:
 		var at:=Vector2(e.x,e.y)
 		if e.type!="spell_farsight" and not sim.is_visible(at): continue
 		var p:=iso(at); var age: float=sim.time-e.started; var t: float=age/e.life
 		if t<0 or t>=1 or not visible_rect.grow(500).has_point(p): continue
-		if e.type.begins_with("spell_"):
-			var key: String=e.type.trim_prefix("spell_"); var frame: int=clampi(int(t*16),0,15)
-			draw_texture_rect_region(effect_textures[key],Rect2(p+Vector2(-256,-480),Vector2(512,640)),Rect2(frame%4*384,int(frame/4)*480,384,480))
+		if e.type=="hit":
+			if labels>=24 or e.has("target") and hit_reactions.get(int(e.target),{})!=e: continue
+			labels+=1
+		if e.type.begins_with("spell_") or e.type in ["meteor_impact","fire","swing"]: continue
 		elif e.type in ["heal","level"]:
 			ring(p,12+t*40,Color(0.82,0.83,0.57,1-t))
 			for i in 8: draw_circle(p+Vector2(cos(i*0.785)*(8+t*15),-t*40+sin(i*0.785)*5),1.6,Color(0.9,0.85,0.63,1-t))
@@ -286,9 +369,14 @@ func draw_effects() -> void:
 		elif e.type=="gold": draw_string(font,p+Vector2(-10,-25-t*25),"+%d"%e.value,HORIZONTAL_ALIGNMENT_LEFT,-1,14,Color(0.96,0.87,0.62,1-t))
 		else:
 			for i in (24 if e.type=="collapse" else 7):
+				if e.type=="hit": break
 				var spread: float=(42 if e.type=="collapse" else 16)*fmod(i*0.371+0.1,1)
 				draw_circle(p+Vector2(cos(i*1.91)*spread*t,-12+sin(i*1.91)*spread*t-t*15),1+fmod(i*0.61,2),Color(0.82,0.73,0.54,1-t))
-			if e.type=="hit": draw_string(font,p+Vector2(-5,-30-t*17),str(ceili(e.value)),HORIZONTAL_ALIGNMENT_LEFT,-1,10,Color(0.91,0.82,0.63,1-t))
+			if e.type=="hit":
+				var label: String=str(ceili(e.value))
+				var offset:=Vector2(-5+sin(e.get("serial",0)*2.4)*9,-33-t*27)
+				draw_string_outline(font,p+offset,label,HORIZONTAL_ALIGNMENT_LEFT,-1,12,3,Color(0.10,0.12,0.11,1-t))
+				draw_string(font,p+offset,label,HORIZONTAL_ALIGNMENT_LEFT,-1,12,Color(0.98,0.9,0.7,1-t))
 func draw_preview() -> void:
 	if mode_kind=="build":
 		var tile:=Vector2i(cursor.floor()); var d: Dictionary=sim.definitions.buildings[mode_key]
@@ -300,5 +388,13 @@ func draw_preview() -> void:
 		var hit=sim.entity(hit_test(iso(cursor))); var point: Vector2=Magic.target_point(sim,mode_key,cursor,hit)
 		var d: Dictionary=sim.definitions.spells[mode_key]
 		var valid: bool=Magic.available(sim,mode_key) and sim.gold>=d.cost and sim.cooldowns[mode_key]<=0 and (mode_key=="farsight" or sim.is_visible(point) and not Magic.targets(sim,mode_key,point).is_empty())
-		ring(iso(point),d.radius*sqrt(2)*32,Color(d.color) if valid else Color("b27464"))
+		var color: Color=Arcane.color_for(mode_key) if valid else Color("b27464")
+		var at:=iso(point); var radius: float=d.radius*sqrt(2)*32
+		ring(at,radius,color,1.6); ring(at,radius-4,Color(color,0.25),1)
+		for i in 8:
+			var a: float=i*PI/4
+			draw_line(at+Arcane.ellipse(a,radius+4),at+Arcane.ellipse(a,radius+10),color,1.8,true)
+		for target in Magic.targets(sim,mode_key,point).slice(0,32):
+			var p:=iso(sim.pos(target))
+			if sim.is_visible(sim.pos(target)): ring(p,13,Color(color,0.65),1.5)
 	elif mode_kind=="bounty": ring(iso(cursor),20,Color("ecce8b"))

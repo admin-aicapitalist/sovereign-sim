@@ -51,6 +51,7 @@ func save() -> Dictionary:
 		var value = get(key)
 		out[key] = value.duplicate(true) if value is Dictionary else value
 	out.pos = [pos.x,pos.y]
+	out.heading = [heading.x,heading.y]
 	out.destination = [destination.x,destination.y]
 	out.path = []
 	for p in path: out.path.append([p.x,p.y])

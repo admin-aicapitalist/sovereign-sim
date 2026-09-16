@@ -1,0 +1,11 @@
+{
+  "url": "https://sovereign-432652279722.us-central1.run.app/",
+  "revision": "sovereign-00012-dzn",
+  "traffic_percent": 100,
+  "rollback_revision": "sovereign-00011-8gs",
+  "pck_sha256": "3ef05223aff7054ff43bbd66b7685c9b12c889624d411e2ef452e23a7f564ed8",
+  "gzip_bytes": 37543342,
+  "hosting_verified": true,
+  "live_spell_checks": 12,
+  "errors": []
+}

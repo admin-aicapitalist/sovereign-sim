@@ -6,6 +6,10 @@ The **Royal art pass** adds a composed title screen, a matching browser loading 
 
 The **character release** rebuilds all heroes, staff, monsters and the Warlord with eight viewing directions, layered medieval equipment, cloth motion and dedicated portraits. Each appearance has 144 frames; walking follows distance traveled, while attack poses follow actual wind-up and release. See the [animated previews and checks](reports/CHARACTERS.md) and [editable Blender sources](../assets/art/units/directional/README.md).
 
+The **magic and combat release** adds 128 wizard casting frames, effects attached to staff and palm sockets, seven distinct native spell animations, a turbulent meteor fire shader, rendered quartz and molten rock, reactive wards, weapon arcs, recoil and 18 original stereo cues. Effects follow the real targets and damage timing, freeze with pause, and survive save/load. See [visuals and verification](reports/ARCANE.md) and [editable effect sources](../assets/art/magic/README.md).
+
+The **living buildings pass** adds drifting chimney smoke to cottages and timber guilds, and rippling cloth on palace, guild, tower and bounty flags. The five rooftop flags use newly rendered building plates with their baked cloth removed; the original poles, architecture and projection stay fixed. A shared breeze animates cloth folds and expanding smoke wisps using the simulation clock. Rebuild with `blender --background --python-exit-code 1 --python godot/tools/render_atmosphere.py` followed by `.venv/bin/python godot/tools/finish_atmosphere.py`; verify with `node godot/tests/atmosphere_browser.mjs` after exporting.
+
 Open `project.godot` in **Godot 4.7.2 Standard** and press F5. The checked-in data, art, effects and audio are sufficient to play; the original JavaScript game is not loaded at runtime.
 
 [Play locally](http://127.0.0.1:8131/) while the server below is running. [Ember Crown verification](reports/MILESTONE.md), [original port measurements](reports/RESULTS.md), [port coverage](PORT_STATUS.md).
