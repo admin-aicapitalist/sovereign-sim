@@ -280,6 +280,15 @@ func debug_state() -> Dictionary:
 		var tile=sim.find_site(type); var p=world.to_global(WorldView.iso(Vector2(tile)+Vector2.ONE*0.1)); state.build_sites[type]={"tile":[tile.x,tile.y],"point":[p.x,p.y]}
 	for e in sim.units+sim.buildings+sim.flags.values()+sim.loot:
 		var p=world.to_global(WorldView.iso(sim.pos(e))+Vector2(0,-20 if e.kind=="unit" else -35 if e.kind=="building" else 0)); state.entities_on_screen.append({"id":e.id,"point":[p.x,p.y]})
+	state.occupancy={}
+	for b in sim.buildings:
+		var inside: Array=sim.Shelter.occupants(sim,b.id)
+		if not inside.is_empty(): state.occupancy[str(int(b.id))]=inside.map(func(u):return u.id)
+	state.performers=[]
+	for b in sim.buildings:
+		for item in world.leisure.performers(world,b,WorldView.iso(sim.pos(b))):
+			var performer: Dictionary=item.performer; var point: Vector2=world.to_global(item.at)
+			state.performers.append({"building":b.id,"actor":performer.actor,"point":[point.x,point.y],"frame":world.leisure.frame(performer.actor,world.presentation_time,performer.phase+b.id*0.017)})
 	state.character_visuals=[]
 	state.run=sim.run; state.settlement_profile=settlements.profile; state.completion_saved=completion_saved; state.storage_message=storage_message
 	state.modal_text="\n".join(ui.modal.find_children("*","Label",true,false).map(func(label):return label.text)) if ui.modal!=null else ""
@@ -308,7 +317,7 @@ func _web_command(args: Array) -> void:
 		"position":
 			var actor=sim.actors.get(int(request.id))
 			if actor!=null:
-				actor.pos=Vector2(request.x,request.y); actor.target=0; actor.think=0; sim.stop(actor); sim.update_vision(); sim.rebuild_buckets()
+				sim.Shelter.leave(sim,actor); actor.pos=Vector2(request.x,request.y); actor.target=0; actor.think=0; sim.stop(actor); sim.update_vision(); sim.rebuild_buckets()
 		"character_gallery":
 			# Test-only art fixture, deliberately exercised through the real world renderer.
 			mission_id="classic"; new_game(41972); started=true; sim.paused=true
@@ -389,10 +398,13 @@ func _web_command(args: Array) -> void:
 			var thief=cast[3]; thief.journey.cycles=1; sim.Journey.change(sim,thief,"mastery","Completed a journey. Stronger, and more selective about offers.")
 			sim.add_building("temple",sim.find_site("temple"))
 			var inn=sim.add_building("inn",sim.find_site("inn")); sim.add_building("brothel",sim.find_site("brothel"))
-			wizard.hp=wizard.max_hp; wizard.gold=200; wizard.pos=sim.near_open(sim.pos(inn)); wizard.journey.leisure_place=inn.id; sim.Court.leisure(sim,wizard)
-			thief.pos=wizard.pos+Vector2(0.2,0.2)
+			wizard.hp=wizard.max_hp; wizard.gold=200; wizard.pos=sim.Shelter.door(sim,inn); wizard.journey.leisure_place=inn.id; sim.Court.leisure(sim,wizard)
+			thief.pos=sim.Shelter.door(sim,inn)
 			var fallen=sim.recruit(sim.building(warrior.home).id); sim.hurt(fallen,999999,null)
 			sim.rebuild_buckets(); sim.update_vision(); center()
+		"leisure_fixture":
+			prepare_settlement(41972); begin_settlement(true)
+			preload("res://scripts/leisure_gallery.gd").setup(sim); center(); zoom=1.75
 		"damage": sim.hurt(sim.entity(int(request.id)),request.amount,null)
 		"reveal": sim.reveal(Vector2(request.x,request.y),request.get("radius",10))
 		"laboratory":

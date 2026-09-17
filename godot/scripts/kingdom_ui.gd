@@ -243,16 +243,24 @@ func refresh() -> void:
 func inspect(e) -> void:
 	var s=main.sim
 	var signature: String=str(e.id)+(str(e.progress==1)+str(e.tier) if e.kind=="building" else "")
+	if e.kind=="building": signature+=str(s.Shelter.occupants(s,e.id).map(func(u):return u.id))
 	if signature!=action_signature: clear(actions); action_signature=signature
 	portrait.visible=e.kind in ["unit","building"]
 	if e.kind=="building":
 		portrait.texture=main.world.textures[e.type]
 		var d=s.definition_of(e)
-		details.text=e.site_name+"\nHealth: %d / %d\n"%[e.hp,e.max_hp]+("Construction: %d%%"%(e.progress*100) if e.progress<1 else "Operational")+"\n\n"+d.description
+		details.text=e.site_name+"\nHealth: %d / %d\n"%[e.hp,e.max_hp]+("Construction: %d%%"%(e.progress*100) if e.progress<1 else "Operational")
 		if e.infestation: details.text="Overcrowded Sewer\nHealth: %d / 650\nRats every 18 seconds. No gold, loot or XP. Reduce cottages to prevent recurrence."%e.hp
-		if e.hostile: details.text+="\n\nPossible drops: "+loot_description(e); add_action("action","Post attack bounty · 100g",func():var f=s.place_flag("attack",s.pos(e),e.id); main.world.selected=f.get("id",e.id); refresh())
+		if e.hostile: details.text+="\n\n"+d.description+"\n\nPossible drops: "+loot_description(e); add_action("action","Post attack bounty · 100g",func():var f=s.place_flag("attack",s.pos(e),e.id); main.world.selected=f.get("id",e.id); refresh())
 		else:
 			details.text+="\n\nTax reserves: %dg"%e.tax
+			var occupants: Array=s.Shelter.occupants(s,e.id)
+			if e.type in s.Shelter.TYPES:
+				details.text+="\n\nInside: %d"%occupants.size()
+				for hero in occupants:
+					details.text+="\n"+hero.name+" · "+hero.state+" · HP %d/%d"%[hero.hp,hero.max_hp]
+					add_action("occupant_"+str(hero.id),hero.name+" · Journal",func():HeroUI.journal(self,hero.id))
+			details.text+="\n\n"+d.description
 			if d.has("recruits"):
 				details.text+="\nGuild tier: %d · Capacity: %d"%[e.tier,s.guild_capacity(e)]
 				if e.tier>1: details.text+="\nGuild support: +%d attack, +%d armor\nApplies to this guild’s heroes while it stands."%[d.upgrade_damage,d.upgrade_armor]
@@ -264,7 +272,7 @@ func inspect(e) -> void:
 			if e.type=="thieves" and not s.run.is_empty():
 				details.text+="\nGuild bank: %dg · Seizure %s\nThieves keep half; half of each theft enters this bank."%[s.Court.bank(s,e.id),"ready" if s.Court.wait_time(s)==0 else "in %ds"%s.Court.wait_time(s)]
 				add_action("confiscate","Confiscate guild bank",func():s.Court.confiscate(s,e.id); refresh(),e.progress<1 or s.Court.wait_time(s)>0 or s.Court.bank(s,e.id)<=0)
-			if e.type in ["inn","brothel"]: details.text+="\nVisit: %dg from a hero’s purse. Collectors carry the proceeds.\nPatrons nearby: %d"%[d.visit_cost,s.units.filter(func(u):return not u.dead and u.journey.get("leisure_place",0)==e.id and u.journey.get("leisure_until",0)>s.time).size()]
+			if e.type in ["inn","brothel"]: details.text+="\nVisit: %dg from a hero’s purse. Collectors carry the proceeds.\nPaying patrons inside: %d"%[d.visit_cost,s.units.filter(func(u):return not u.dead and u.journey.get("leisure_place",0)==e.id and u.journey.get("leisure_until",0)>s.time).size()]
 			if e.type=="house": add_action("demolish","Demolish · no refund",func():s.demolish(e.id); refresh())
 	elif e.kind=="unit":
 		var art_key: String="unit_warlord" if e.id==s.mission.boss_id else "unit_"+e.type
@@ -272,6 +280,7 @@ func inspect(e) -> void:
 		details.text=e.name+"\n"+("Level %d %s\n"%[e.level,e.definition.name] if e.hero else "")+e.state+"\n\nHealth: %d / %d\nAttack: %d · Armor: %d"%[e.hp,e.max_hp,Supplies.damage(s,e),Supplies.armor(s,e)]
 		if e.id==s.mission.boss_id: details.text+="\n\nGround slam: leave the marked circle.\n"+("Enraged: faster slams." if s.mission.enraged else "Enrages at half health.")
 		if e.hero:
+			if e.inside>0: details.text+="\nInside "+s.building(e.inside).site_name
 			var progress=HeroUI.Progress.context(s,e)
 			details.text+="\n\nNext: level %d · %d XP to go\n%s"%[e.level+1,progress.xp_needed,progress.advice]
 			add_action("hero_journal","Journal & next steps",func():HeroUI.journal(self,e.id))
@@ -396,6 +405,7 @@ func show_help() -> void:
 	modal_text("Guild upgrades add two beds, 25% building health, and guild support (+4 attack, +2 armor). Select a completed guild to fund training. Heroes automatically equip better relic weapons and armor from safe treasure; equipment drops on death for another hero to recover.")
 	modal_text("The Ashen March: two lairs reveal the monastery; you can also discover it naturally. Clearing it calls the Warlord in 90 seconds. He guards the ruins until heroes approach. Heroes try to dodge marked slams; healing and protective magic help them survive. He enrages at half health." if not main.sim.run.is_empty() else "The Ember Crown: reveal the monastery, defeat the Warlord and clear all eight lairs.")
 	modal_text("Six completed cottages are safe. Each group of four excess cottages sustains another rat sewer after 60 seconds. Demolish cottages without a refund to reduce pressure. Urban rats give no loot or experience.")
+	modal_text("Heroes enter guilds, temples, inns and brothels to shelter and rest. Flickering lights and a waving pennant mark occupied buildings. Select a building to see its residents; Hero Journeys lists everyone’s indoor location.")
 	modal_text("Click/tap to select or place. Drag with a finger or right mouse button to pan. Wheel or +/− to zoom. WASD/arrows pan, Space pauses, 1/2/3 changes speed, F centers the Palace, Esc/right-click cancels. Shift-click builds several. Use the minimap to travel.")
 	modal_text(main.sim.fixture.name+" · Map seed "+str(main.sim.fixture.seed))
 	if main.sim.run.is_empty(): modal_column.add_child(button("replay","Replay this map",func():var seed:int=main.sim.fixture.seed; close_modal(false); main.new_game(seed); main.started=true; main.sim.paused=false; refresh()))

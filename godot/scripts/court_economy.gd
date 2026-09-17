@@ -27,7 +27,9 @@ static func thieve(s,u) -> bool:
 	if victim==null: return false
 	if not s.nearby(victim.pos,6,true).is_empty(): return false
 	u.goal=0; u.target=0
-	if u.pos.distance_to(victim.pos)>1.8: s.go(u,victim.pos,"Seeking a distracted patron"); return true
+	if victim.inside>0:
+		if not s.Shelter.seek(s,u,s.building(victim.inside),"Following a patron inside","Picking pockets"): return true
+	elif u.pos.distance_to(victim.pos)>1.8: s.go(u,victim.pos,"Seeking a distracted patron"); return true
 	var amount: float=minf(20,floorf(victim.gold*0.25)); var cut: float=floorf(amount*0.5)
 	victim.gold-=amount; u.gold+=amount-cut
 	var account=ledger(s); account.banks[str(guild.id)]=bank(s,guild.id)+cut; account.stolen+=amount
@@ -38,17 +40,16 @@ static func thieve(s,u) -> bool:
 	return true
 static func patron(s,u) -> bool:
 	var site=s.building(int(u.journey.get("leisure_place",0)))
-	return not site.is_empty() and not site.dead and site.progress==1 and site.type in ["inn","brothel"] and u.pos.distance_to(s.pos(site))<3.5
+	return not site.is_empty() and not site.dead and site.progress==1 and site.type in ["inn","brothel"] and u.inside==site.id
 static func leisure(s,u) -> void:
 	u.goal=0; u.target=0
 	if thieve(s,u): return
 	var j: Dictionary=u.journey
-	if not s.nearby(u.pos,6,true).is_empty():
-		j.leisure_until=0; j.leisure_place=0; s.go(u,s.pos(s.palace()),"Seeking shelter at the castle"); return
+	if u.inside==0 and not s.nearby(u.pos,6,true).is_empty():
+		j.leisure_until=0; j.leisure_place=0; s.Shelter.seek(s,u,s.Journey.home(s,u),"Seeking shelter","Sheltering inside"); return
 	var site=s.building(int(j.leisure_place))
 	if not site.is_empty() and not site.dead and site.progress==1 and j.leisure_until>s.time:
-		if u.pos.distance_to(s.pos(site))<3.5: s.stop(u); u.state="Drinking at the Inn" if site.type=="inn" else "Visiting the Brothel"
-		else: s.go(u,s.pos(site),"Returning to "+site.site_name)
+		s.Shelter.seek(s,u,site,"Returning to "+site.site_name,"Drinking at the Inn" if site.type=="inn" else "Visiting the Brothel")
 		return
 	if s.time>=j.leisure_next:
 		var places: Array=s.operating("").filter(func(b):return b.type in ["inn","brothel"] and s.pos(b).distance_to(s.pos(s.palace()))<16 and u.gold>=s.definition_of(b).visit_cost and s.nearby(s.pos(b),6,true).is_empty())
@@ -56,17 +57,16 @@ static func leisure(s,u) -> void:
 		if site.is_empty() or site not in places:
 			site=places[(u.id+int(s.time/30))%places.size()] if not places.is_empty() else {}
 		if not site.is_empty():
+			if u.inside>0: s.Shelter.leave(s,u)
 			j.leisure_place=site.id
-			if u.pos.distance_to(s.pos(site))>=3.5: s.go(u,s.pos(site),"Heading to "+site.site_name); return
+			if not s.Shelter.seek(s,u,site,"Heading to "+site.site_name,"Drinking at the Inn" if site.type=="inn" else "Visiting the Brothel"): return
 			var cost: float=s.definition_of(site).visit_cost
 			u.gold-=cost; site.tax+=cost; j.spent+=cost; ledger(s).spent+=cost
 			j.leisure_until=s.time+18; j.leisure_next=s.time+30
 			u.state="Drinking at the Inn" if site.type=="inn" else "Visiting the Brothel"; s.stop(u)
 			s.Settlement.event(s,"leisure",u,"Spent %dg at %s; purse %dg"%[cost,site.site_name,u.gold]); return
 	j.leisure_place=0
-	if u.pos.distance_to(s.pos(s.palace()))>5: s.go(u,s.pos(s.palace()),"Returning to the castle"); return
-	if u.path_index>=u.path.size(): s.go(u,s.near_point(s.pos(s.palace()),4),"Lingering near the castle")
-	u.state="Withdrawing near the castle" if s.Journey.is_shadow(u) else "Waiting near the castle"
+	s.Shelter.seek(s,u,s.Journey.home(s,u),"Returning to the castle","Sheltering inside" if s.Journey.is_shadow(u) else "Waiting inside")
 static func valid(value: Variant,next_id: float,time: float,buildings: Array) -> bool:
 	if not value is Dictionary or not value.get("banks") is Dictionary: return false
 	for key in ["confiscate_ready","confiscated","spent","stolen"]:

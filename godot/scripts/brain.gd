@@ -14,21 +14,24 @@ static func think(s,u) -> void:
 		else: u.target=0; wander(s,u,s.pos(s.palace()),5)
 static func hero(s,u) -> void:
 	s.Journey.update(s,u)
-	if s.Mission.dodge(s,u): return
+	if u.inside==0 and s.Mission.dodge(s,u): return
 	if u.hp<u.max_hp*s.Journey.retreat_threshold(u) or u.state in ["Resting","Fleeing"] and u.hp<u.max_hp*0.86:
-		var home=s.nearest(u.pos,s.operating("temple"))
-		if home==null: home=s.entity(u.home)
-		if home==null or home.dead: home=s.palace()
-		if u.pos.distance_to(s.pos(home))<3.5:
-			if u.state!="Resting": s.Settlement.event(s,"recovery",u,home.site_name)
-			u.state="Resting"; u.target=0; s.stop(u); u.hp=minf(u.max_hp,u.hp+(11 if home.type=="temple" else 7))
-		else:
-			if u.state!="Fleeing": s.Settlement.event(s,"retreat",u)
-			s.go(u,s.pos(home),"Fleeing")
+		var home=s.building(u.inside) if u.inside>0 else s.nearest(u.pos,s.operating("temple"))
+		if home==null or home.is_empty(): home=s.entity(u.home)
+		if not s.Shelter.usable(home): home=s.palace()
+		var was_resting: bool=u.state=="Resting"
+		var was_fleeing: bool=u.state=="Fleeing"
+		if s.Shelter.seek(s,u,home,"Fleeing","Resting"):
+			if not was_resting: s.Settlement.event(s,"recovery",u,home.site_name)
+			u.hp=minf(u.max_hp,u.hp+(11 if home.type=="temple" else 7))
+		elif not was_resting and not was_fleeing: s.Settlement.event(s,"retreat",u)
 		return
 	if u.state in ["Resting","Fleeing"]:
-		s.Settlement.event(s,"recovered",u); u.state="Seeking adventure"; s.stop(u)
+		s.Settlement.event(s,"recovered",u); u.state="Seeking adventure"; s.Shelter.leave(s,u); s.stop(u)
 	if s.Journey.is_shadow(u): s.Journey.override_behavior(s,u); return
+	if u.inside>0:
+		if s.Journey.override_behavior(s,u): return
+		s.Shelter.leave(s,u)
 	var enemy=s.nearest(u.pos,s.nearby(u.pos,u.definition.range+3,true))
 	if enemy!=null: u.target=enemy.id; u.state="Fighting "+enemy.definition.name; return
 	if s.Journey.override_behavior(s,u): return

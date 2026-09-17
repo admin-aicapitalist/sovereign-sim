@@ -27,7 +27,7 @@ for key in ('inn', 'brothel'):
     pad = math.ceil(ratio * 2)
     crop = (max(0, bb[0]-pad), max(0, bb[1]-pad), min(source.width, bb[2]+pad), min(source.height, bb[3]+pad))
     sprite = combined.crop(crop)
-    sprite = ImageEnhance.Color(sprite).enhance(.88)
+    sprite = ImageEnhance.Color(sprite).enhance(1.05)
     sprite.save(root / f'godot/assets/{key}.png', optimize=True)
     solid = source.crop(crop).getchannel('A').point(lambda x: 255 if x >= 96 else 0)
     manifest[key] = {
@@ -36,6 +36,8 @@ for key in ('inn', 'brothel'):
         'bounds': [v/ratio for v in solid.getbbox()], 'pixelArt': False,
         'sourceSize': list(sprite.size), 'src': f'res://assets/{key}.png',
         'source': f'godot/assets/{key}.png',
+        'visitors': [dict(actor=v['actor'], phase=v['phase'], at=[(v['at_normalized'][0]*source.width-crop[0])/ratio,(v['at_normalized'][1]*source.height-crop[1])/ratio]) for v in meta.get('visitors',[])],
+        'lanterns': [dict(color=v['color'],at=[(v['at_normalized'][0]*source.width-crop[0])/ratio,(v['at_normalized'][1]*source.height-crop[1])/ratio]) for v in meta.get('lanterns',[])],
         'effects': [{'type': e['type'], 'at': [(e['at_normalized'][0]*source.width-crop[0])/ratio, (e['at_normalized'][1]*source.height-crop[1])/ratio]} for e in meta['effects']],
     }
     print(key, sprite.size)

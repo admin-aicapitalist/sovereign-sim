@@ -27,21 +27,25 @@ Calls, hesitation, commitment, ordeals and homecoming remain journey context: ca
 | --- | --- |
 | Inn | Costs 180g to build. A visit costs the patron 8g. |
 | Brothel | Costs 240g to build. A visit costs the patron 14g. |
-| Patrons | Heroes considering/refusing a call or stuck in Shadow visit operating venues within 16 tiles of the castle. Each paid visit lasts 18s; another can begin after 30s. Broke heroes linger outside. Venues in danger are avoided. |
+| Patrons | Heroes considering/refusing a call or stuck in Shadow visit operating venues within 16 tiles of the castle. Each paid visit lasts 18s; another can begin after 30s. Broke heroes shelter in their home guild, falling back to the Palace. Venues in danger are avoided. |
 | Venue income | The fee leaves the hero’s purse and enters venue tax reserves. A collector must deliver it to the Palace. No passive venue income is created. |
-| Theft | An available Persona thief approaches a living non-thief patron. Within 1.8 tiles, the thief takes 25% of the remaining purse, rounded down, capped at 20g. Each thief has a saved 20s cooldown. The patron must have at least 4g and be physically at an operating venue. |
+| Theft | An available Persona thief approaches a living non-thief patron. The thief enters the patron’s venue and takes 25% of the remaining purse, rounded down, capped at 20g. Each thief has a saved 20s cooldown. The patron must have at least 4g and be inside an operating venue. |
 | Guild cut | Half the stolen amount, rounded down, enters the thief’s own operating guild bank; the thief keeps the remainder. A lost guild cannot receive new deposits. |
 | Confiscation | Transfer one operating guild’s full bank into the royal treasury. The **120s cooldown is kingdom-wide**, so multiple guilds cannot bypass it. Empty/invalid seizures do not consume the cooldown. Collectors cannot take guild-bank reserves. |
 
 The economy menu shows every operating Thieves’ Guild bank, the next seizure time and build actions for both venues and the guild. Guild selection also exposes its bank and confiscation action. Hero rows show where their money is being spent; journals record visits and thefts.
 
+## Indoor shelter
+
+Heroes walk to a building’s entrance, disappear inside, and emerge on walkable ground. Guilds and Temples handle physical recovery and journey reflection; paid Inn/Brothel visits also restore health. Indoor rest never clears Shadow without royal support. Buildings protect their occupants from outside combat until destroyed, then release them. Occupied buildings flicker with light and fly a waving pennant: gold normally, crimson if a Shadow hero is inside. The building panel lists residents, activity and health; Hero Journeys shows each indoor location. Find hero focuses their shelter. See [art, rules and verification](LEISURE.md).
+
 ## Saves and verification
 
-Version-two journey data separates aspect from phase and persists recovery arrangements, visits and theft cooldowns. Version-one journeys migrate; existing Shadow stays Shadow. Earlier settlements without journeys begin tracking at the saved time. Court bank balances and the kingdom-wide seizure timer live in the saved settlement. Malformed state is rejected before the live world changes. Standalone chronicles retain their prior hero behavior.
+Version-two journey data separates aspect from phase and persists recovery arrangements, visits and theft cooldowns. Version-one journeys migrate; existing Shadow stays Shadow. Earlier settlements without journeys begin tracking at the saved time. Court bank balances and the kingdom-wide seizure timer live in the saved settlement. Malformed state is rejected before the live world changes. Standalone chronicles also use indoor physical recovery; Persona/Shadow and the castle economy remain settlement rules.
 
 - [Journey and economy checks](journey-systems.json): 112 checks, including all four persistent Shadows, relapse, support, lost recovery sites, purse/bank conservation, cooldowns, migration and malformed saves.
 - [Browser checks](journey-browser.json): roster visibility, inline support, real-time decisions/theft, confiscation, phone layout, saved recovery and cooldowns, and paid construction of both venues. All five groups pass.
-- [Settlement campaigns](settlement-campaign.json): all 12 configurations win with autonomous heroes and paid construction, recruitment, research, bounties and targeted royal recovery. Wins take about **428–568 simulation seconds**, with **0–4 hero deaths**. Human pacing and economic balance remain provisional.
+- [Settlement campaigns](settlement-campaign.json): all 12 configurations win with autonomous heroes and paid construction, recruitment, research, bounties and targeted royal recovery. Wins take about **404–572 simulation seconds**, with **0–1 hero deaths**. Human pacing and economic balance remain provisional.
 - Existing settlement rules: 77 checks pass. Standalone simulation: 108 checks pass. The seven settlement-browser groups and four desktop/phone/tablet layout groups also pass.
 
 The new buildings are authored with the repository’s Blender geometry/material helpers in `tools/art/render_buildings.py`, then finished with `godot/tools/finish_leisure.py`. No runtime model calls are used. Social bonds, additional classes and a full personality vector remain future work.

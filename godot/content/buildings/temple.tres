@@ -4,7 +4,7 @@
 script = ExtResource("1")
 id = "temple"
 name = "Temple of Light"
-description = "Research spells for the sovereign and every wizard. Heroes also recover faster near this sanctuary."
+description = "Research spells for the sovereign and every wizard. Heroes also recover faster inside this sanctuary."
 hp = 900
 cost = 400
 size = 2

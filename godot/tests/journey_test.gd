@@ -40,7 +40,7 @@ func run() -> void:
 	u.pos=s.pos(lair); J.update(s,u); check(u.journey.stage=="ordeal","Reaching the actual target starts the ordeal")
 	var cloned=S.new(); check(cloned.restore(save(s)) and JSON.parse_string(JSON.stringify(cloned.entity(u.id).journey,"",true,true))==JSON.parse_string(JSON.stringify(u.journey,"",true,true)),"Journey stage, call and history survive JSON save/load")
 	s.hurt(lair,999999,u); check(u.journey.stage=="return","Winning the calling objective causes Reward & Return")
-	u.pos=s.pos(J.home(s,u)); J.override_behavior(s,u); s.time+=15; J.override_behavior(s,u)
+	u.pos=s.Shelter.door(s,J.home(s,u)); J.override_behavior(s,u); s.time+=15; J.override_behavior(s,u)
 	check(u.journey.stage=="mastery" and u.journey.cycles==1,"Homecoming and reflection finish a journey exactly once")
 	var damage: float=s.Supplies.damage(s,u); J.override_behavior(s,u)
 	check(u.journey.cycles==1 and s.Supplies.damage(s,u)==damage,"Mastery does not repeatedly award its completed-cycle bonus")
@@ -48,7 +48,7 @@ func run() -> void:
 	var weak=s.add_unit("goblin",s.near_point(s.pos(s.palace())))
 	var easy=s.place_flag("attack",weak.pos,weak.id,100)
 	check(not J.allows(s,u,easy) and J.allows(s,u,rival),"Mastery refuses petty offers while allowing worthy ones")
-	s.hurt(u,999999,null); var record=s.run.heroes[str(u.id)]
+	s.Shelter.leave(s,u); s.hurt(u,999999,null); var record=s.run.heroes[str(u.id)]
 	check(record.dead and record.journey.stage=="mastery" and record.journey.cycles==1,"Fallen heroes retain their final journey in the all-hero archive")
 	s.tick(3); check(s.run.heroes[str(u.id)].journey.history[-1].reason.contains("Fell"),"Death history survives actor cleanup")
 
@@ -75,7 +75,7 @@ func run() -> void:
 		check(cloned.restore(healthy_save) and J.is_shadow(cloned.entity(u.id)),type+" remains in Shadow after full-health reload")
 		gold=s.gold; check(J.sponsor(s,u) and s.gold==gold-J.RECOVERY_COST and J.is_shadow(u),type+" king funds recovery without instant cure")
 		check(not J.sponsor(s,u) and s.gold==gold-J.RECOVERY_COST,type+" cannot be charged twice for recovery")
-		var site=s.entity(u.journey.recovery_site); u.pos=s.pos(site); u.hp=u.max_hp*0.5
+		var site=s.entity(u.journey.recovery_site); u.pos=s.Shelter.door(s,site); u.hp=u.max_hp*0.5
 		for i in 4: s.time+=1; J.override_behavior(s,u)
 		check(u.journey.recovery_progress==0,type+" recovery waits for physical health")
 		u.hp=u.max_hp
@@ -128,21 +128,21 @@ func economy_checks() -> void:
 	var s=fresh(); var patron=hero(s); var thief=hero(s,"thief")
 	var inn=s.add_building("inn",s.find_site("inn")); var brothel=s.add_building("brothel",s.find_site("brothel"))
 	patron.gold=200; s.hurt(patron,patron.max_hp*0.9,null); patron.hp=patron.max_hp
-	patron.pos=s.pos(inn); patron.journey.leisure_place=inn.id
+	patron.pos=s.Shelter.door(s,inn); patron.journey.leisure_place=inn.id
 	var treasury: float=s.gold; s.Court.leisure(s,patron)
 	check(patron.gold==192 and inn.tax==8 and s.gold==treasury and J.is_shadow(patron),"Inn transfers personal spending into local taxes without curing Shadow")
 	s.Court.leisure(s,patron); check(patron.gold==192,"A continuing visit does not charge every decision")
-	thief.pos=patron.pos; var purse: float=thief.gold
+	s.Shelter.leave(s,thief); thief.pos=s.Shelter.door(s,s.building(patron.inside)); var purse: float=thief.gold
 	check(s.Court.thieve(s,thief),"Idle thief picks a real nearby patron’s pocket")
 	check(patron.gold==172 and thief.gold==purse+10 and s.Court.bank(s,thief.home)==10,"Theft conserves gold: half to thief, half to own guild bank")
 	check(not s.Court.thieve(s,thief) and patron.gold==172,"Theft cooldown prevents repeated immediate theft")
 	check(s.Court.confiscate(s,thief.home) and s.gold==treasury+10 and s.Court.bank(s,thief.home)==0,"King transfers guild bank to treasury")
 	var ready: float=s.run.court.confiscate_ready
 	check(not s.Court.confiscate(s,thief.home) and s.run.court.confiscate_ready==ready,"Empty or cooling-down seizure cannot duplicate money or reset cooldown")
-	s.time+=31; patron.pos=s.pos(brothel); patron.journey.leisure_place=brothel.id; s.Court.leisure(s,patron)
+	s.time+=31; s.Shelter.leave(s,patron); patron.pos=s.Shelter.door(s,brothel); patron.journey.leisure_place=brothel.id; s.Court.leisure(s,patron)
 	check(patron.gold==158 and brothel.tax==14 and patron.state=="Visiting the Brothel","Brothel charges its own fee from a new physical visit")
-	thief.pos=patron.pos; s.Court.thieve(s,thief)
-	var second=hero(s,"thief"); second.pos=patron.pos; s.Court.thieve(s,second)
+	s.Shelter.leave(s,thief); thief.pos=s.Shelter.door(s,s.building(patron.inside)); s.Court.thieve(s,thief)
+	var second=hero(s,"thief"); second.pos=s.Shelter.door(s,brothel); s.Court.thieve(s,second)
 	check(s.Court.bank(s,second.home)>0 and not s.Court.confiscate(s,second.home),"A second guild cannot bypass the kingdom-wide seizure cooldown")
 	var data=save(s); var restored=S.new(); check(restored.restore(data),"Court ledger and visit state restore")
 	check(restored.Court.bank(restored,thief.home)==s.Court.bank(s,thief.home) and restored.Court.wait_time(restored)==s.Court.wait_time(s),"Bank balances and seizure cooldown survive reload")
@@ -153,9 +153,9 @@ func economy_checks() -> void:
 	s.time=ready; check(s.Court.confiscate(s,thief.home),"King can confiscate again after 120 game seconds")
 	patron.gold=0; patron.journey.leisure_until=0; patron.journey.leisure_next=0; s.Court.leisure(s,patron)
 	check(patron.gold==0 and J.is_shadow(patron) and not s.Court.patron(s,patron),"Broke heroes linger safely without free visits or negative purses")
-	s.hurt(thief,thief.max_hp*0.9,null); thief.hp=thief.max_hp
+	s.Shelter.leave(s,thief); s.hurt(thief,thief.max_hp*0.9,null); thief.hp=thief.max_hp
 	check(not s.Court.thieve(s,thief),"Shadow thief also refuses its normal guild work")
 	# A hostile beside a healthy Shadow warrior must not provoke voluntary combat.
-	patron.pos=s.near_point(s.pos(s.palace()),4); var foe=s.add_unit("goblin",patron.pos+Vector2.ONE); s.rebuild_buckets(); s.Brain.hero(s,patron)
+	s.Shelter.leave(s,patron); patron.pos=s.near_point(s.pos(s.palace()),4); var foe=s.add_unit("goblin",patron.pos+Vector2.ONE); s.rebuild_buckets(); s.Brain.hero(s,patron)
 	check(patron.target==0 and J.is_shadow(patron),"Shadow warrior retreats instead of acquiring a nearby combat target")
 	check(not J.allows(s,patron,s.place_flag("explore",patron.pos,0)),"Shadow warrior cannot clear its state by taking old exploration tasks")

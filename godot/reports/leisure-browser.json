@@ -1,0 +1,17 @@
+{
+  "origin": "http://127.0.0.1:8131/",
+  "checks": [
+    "inn: occupants, animated lights/flags, scenery loops and exact pause",
+    "brothel: occupants, animated lights/flags, scenery loops and exact pause",
+    "warriors: occupants, animated lights/flags and exact pause",
+    "rangers: occupants, animated lights/flags and exact pause",
+    "wizards: occupants, animated lights/flags and exact pause",
+    "thieves: occupants, animated lights/flags and exact pause",
+    "temple: occupants, animated lights/flags and exact pause",
+    "Occupant journal, focus on shelter, all-hero locations and saved occupancy work through real UI",
+    "Departure removes stale occupant actions; collapse releases heroes and removes scenery actors",
+    "Venue loops follow the shared game clock at 2× speed",
+    "390px phone shows venue art, residents and all-hero indoor locations without runtime errors"
+  ],
+  "errors": []
+}

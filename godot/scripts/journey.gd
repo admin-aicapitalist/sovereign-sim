@@ -39,7 +39,7 @@ static func sponsor(s,u) -> bool:
 static func restore_persona(s,u) -> void:
 	var j: Dictionary=u.journey
 	j.entered+=s.time-j.shadow_since; j.aspect="persona"; j.recovery_site=0; j.recovery_progress=0.0; j.returned=-1
-	u.goal=0; u.target=0; s.stop(u)
+	u.goal=0; u.target=0; s.Shelter.leave(s,u); s.stop(u)
 	remember(s,u,"Persona restored through royal support. Experience retained; another defeat can awaken Shadow.")
 	s.Settlement.event(s,"journey",u,"Persona restored · "+PRACTICES[u.type]); s.notify(u.name+" has found their purpose again.")
 	if j.stage in COMMITTED: change(s,u,"refusal","Ready to reconsider the interrupted call with support.")
@@ -77,7 +77,7 @@ static func worthy(s,f) -> bool:
 	return f.reward>=150 or target!=null and target.max_hp>=500
 static func gates(s,u) -> Dictionary:
 	var f=active_flag(s,u)
-	var allies: int=s.units.filter(func(other):return other.hero and not other.dead and not is_shadow(other) and other.id!=u.id and other.hp>=other.max_hp*0.6 and other.pos.distance_to(u.pos)<10).size()
+	var allies: int=s.units.filter(func(other):return other.hero and not other.dead and not is_shadow(other) and other.inside==0 and other.id!=u.id and other.hp>=other.max_hp*0.6 and other.pos.distance_to(u.pos)<10).size()
 	var safety: bool=u.potions.healing>0 or s.operating("temple").any(func(b):return s.pos(b).distance_to(u.pos)<12)
 	var premium: bool=f!=null and f.reward>=150
 	return {"healthy":u.hp>=u.max_hp*0.6,"allies":allies,"safety":safety,"premium":premium,"ready":u.hp>=u.max_hp*0.6 and (allies>0 or safety or premium)}
@@ -169,8 +169,7 @@ static func override_behavior(s,u) -> bool:
 		var site=s.entity(int(j.recovery_site))
 		if site!=null and not site.dead and site.progress==1:
 			var elapsed: float=clampf(s.time-j.recovery_at,0,1); j.recovery_at=s.time
-			if u.pos.distance_to(s.pos(site))>=3.5: s.go(u,s.pos(site),"Seeking royal support"); return true
-			s.stop(u); u.state=PRACTICES[u.type]
+			if not s.Shelter.seek(s,u,site,"Seeking royal support",PRACTICES[u.type]): return true
 			if u.hp>=u.max_hp*0.6 and s.nearby(u.pos,6,true).is_empty(): j.recovery_progress+=elapsed
 			if j.recovery_progress>=RECOVERY_SECONDS: restore_persona(s,u)
 			return true
@@ -178,8 +177,8 @@ static func override_behavior(s,u) -> bool:
 		return true
 	if j.stage=="return":
 		var base=home(s,u)
-		if u.pos.distance_to(s.pos(base))>=3.5: s.go(u,s.pos(base),"Returning from the ordeal"); return true
-		s.stop(u); u.state="Reflecting on the journey"; u.hp=minf(u.max_hp,u.hp+7)
+		if not s.Shelter.seek(s,u,base,"Returning from the ordeal","Reflecting on the journey"): return true
+		u.hp=minf(u.max_hp,u.hp+7)
 		if j.returned<0: j.returned=s.time
 		if s.time-j.returned>=15 and u.hp>=u.max_hp*0.86:
 			j.cycles+=1; change(s,u,"mastery","Completed a journey. Stronger, and more selective about offers.")

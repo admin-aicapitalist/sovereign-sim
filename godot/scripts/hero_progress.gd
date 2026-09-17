@@ -7,9 +7,9 @@ static func context(s,u) -> Dictionary:
 	var flag=s.entity(u.goal)
 	var target=s.entity(u.target)
 	if recovery(s,u):
-		var home=s.nearest(u.pos,s.operating("temple"))
+		var home=s.building(u.inside) if u.inside>0 else s.nearest(u.pos,s.operating("temple"))
 		if home==null: home=s.entity(u.home)
-		if home==null or home.dead: home=s.palace()
+		if not s.Shelter.usable(home): home=s.palace()
 		info.goal=("Resting at " if u.state=="Resting" else "Returning to ")+home.site_name
 		info.advice="Let them recover to about 86% health before another expedition. A Temple restores health faster; healing potions help before retreat."
 		info.focus=home.id; info.focus_label="View recovery site"
@@ -35,6 +35,7 @@ static func context(s,u) -> Dictionary:
 		info.focus=flag.id; info.focus_label="View current bounty"
 	else:
 		info.advice="Post an exploration bounty on a reachable approach. Rangers and thieves favor scouting; claiming the flag earns 20 XP." if u.type in ["ranger","thief"] else "Post an attack bounty on a nearby discovered threat. Heroes weigh reward, danger, distance and health; they choose whether to answer."
+	if u.inside>0: info.activity="Inside "+s.building(u.inside).site_name+" · "+u.state
 	return info
 static func history(s,id: int) -> Array:
 	var lines: Array=[]

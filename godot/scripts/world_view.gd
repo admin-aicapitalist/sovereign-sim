@@ -4,6 +4,8 @@ const Magic=preload("res://scripts/magic.gd")
 const CharacterAnimation=preload("res://scripts/character_animation.gd")
 const Cue=preload("res://scenes/combat_cue.tscn")
 const Arcane=preload("res://scripts/arcane_layer.gd")
+const Leisure=preload("res://scripts/leisure_visuals.gd")
+var leisure:=Leisure.new()
 const Atmosphere=preload("res://scripts/atmosphere.gd")
 var atmosphere:=Atmosphere.new()
 var arcane_layers: Array=[]
@@ -48,6 +50,7 @@ var rails: Array=[]
 static func iso(p: Vector2) -> Vector2: return Vector2((p.x-p.y)*32,(p.x+p.y)*16)
 static func uniso(p: Vector2) -> Vector2: return Vector2(p.x/64+p.y/32,p.y/32-p.x/64)
 func _ready() -> void:
+	leisure.prepare()
 	manifest.unit_wizard_cast=JSON.parse_string(FileAccess.get_file_as_string("res://data/casting.json"))
 	arcane_art=JSON.parse_string(FileAccess.get_file_as_string("res://data/arcane_art.json"))
 	for key in arcane_art: arcane_textures[key]=load(arcane_art[key].src)
@@ -115,7 +118,7 @@ func sync_arcane() -> void:
 	for u in sim.units:
 		if arcane_units.size()>=192: break
 		if u.type!="wizard" and u.magic_buffs.ward<=0 and u.magic_buffs.haste<=0 and u.magic_buffs.frost<=0: continue
-		if u.dead or not sim.is_visible(u.pos) or not visible_rect.grow(90).has_point(iso(u.pos)): continue
+		if u.dead or u.inside>0 or not sim.is_visible(u.pos) or not visible_rect.grow(90).has_point(iso(u.pos)): continue
 		arcane_units.append(u)
 	for p in sim.projectiles:
 		if arcane_projectiles.size()>=128: break
@@ -210,7 +213,7 @@ func hit_test(point: Vector2) -> int:
 		if not f.dead and Rect2(iso(sim.pos(f))+Vector2(-10,-75),Vector2(44,75)).has_point(point): return f.id
 	var best: int=0; var distance: float=INF
 	for u in sim.units:
-		if u.dead or u.hostile and not sim.is_visible(u.pos): continue
+		if u.dead or u.inside>0 or u.hostile and not sim.is_visible(u.pos): continue
 		var boss: bool=u.id==sim.mission.boss_id
 		var a: Dictionary=manifest["unit_warlord" if boss else "unit_"+u.type]
 		var factor: float=1.15 if boss else 1
@@ -273,18 +276,22 @@ func _draw() -> void:
 		if visible_rect.grow(150).has_point(p): scene.append({"y":p.y,"tree":tree,"at":p})
 	for b in sim.buildings:
 		var p:=iso(sim.pos(b))
-		if not b.dead and (not b.hostile or sim.is_explored(sim.pos(b))) and visible_rect.grow(250).has_point(p): scene.append({"y":p.y+6,"building":b,"at":p})
+		if not b.dead and (not b.hostile or sim.is_explored(sim.pos(b))) and visible_rect.grow(250).has_point(p):
+			scene.append({"y":p.y+6,"building":b,"at":p})
+			scene.append_array(leisure.performers(self,b,p))
 	for pile in sim.loot:
 		var p:=iso(sim.pos(pile))
 		if not pile.dead and sim.is_visible(sim.pos(pile)) and visible_rect.grow(60).has_point(p): scene.append({"y":p.y,"loot":pile,"at":p})
 	rendered_units=0
 	for u in sim.units:
 		var p:=iso(u.pos)
-		if not u.dead and (not u.hostile or sim.is_visible(u.pos)) and visible_rect.grow(70).has_point(p): scene.append({"y":p.y,"unit":u,"at":p}); rendered_units+=1
+		if not u.dead and u.inside==0 and (not u.hostile or sim.is_visible(u.pos)) and visible_rect.grow(70).has_point(p): scene.append({"y":p.y,"unit":u,"at":p}); rendered_units+=1
 	scene.sort_custom(func(a,b):return a.y<b.y)
 	for item in scene:
 		var p: Vector2=item.at
-		if item.has("rail"):
+		if item.has("performer"):
+			leisure.draw_performer(self,item)
+		elif item.has("rail"):
 			paint("bridge-rail",p,1,-1,item.rail.flip)
 		elif item.has("tree"):
 			paint(item.tree.type,p+Vector2(sin(sim.time*0.6+item.tree.x)*0.65,0),item.tree.scale*0.84)
@@ -293,6 +300,7 @@ func _draw() -> void:
 			if selected==int(b.id) or hovered==int(b.id): ring(p,b.size*24,Color("f0d591"))
 			paint(b.type,p,factor,-1,1,Color(1,1,1,0.4+0.6*b.progress))
 			atmosphere.building(self,b,p,factor)
+			leisure.occupied(self,b,p,factor,sim.Shelter.occupants(sim,b.id))
 			if b.get("tier",1)>1:
 				ring(p,b.size*20,Color("a99758"),2); draw_string(font,p+Vector2(-6,-100),"II",HORIZONTAL_ALIGNMENT_LEFT,-1,17,Color("f1d598"))
 			if b.get("upgrade_remaining",0)>0: health(p+Vector2(-19,-100),1-b.upgrade_remaining/sim.definition_of(b).upgrade_time,false)

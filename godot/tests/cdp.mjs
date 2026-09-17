@@ -54,7 +54,14 @@ const load = async (query = '?test=1&seed=41972') => {
   const destination=new URL(query,origin);destination.searchParams.set('_test_load',String(start));
   await send('Page.navigate', { url: destination.href });
   for (let i = 0; i < 300; i++) {
-    if (await ev(`location.href===${JSON.stringify(destination.href)} && typeof window.sovereignCommand === "function" && !!window.sovereignState`)) { await delay(600); return performance.now() - start; }
+    if (await ev(`(() => {
+      if (location.href!==${JSON.stringify(destination.href)} || typeof window.sovereignCommand !== "function" || !window.sovereignState) return false;
+      const s=JSON.parse(window.sovereignState),r=document.querySelector('canvas')?.getBoundingClientRect();
+      // The bridge can exist while the canvas is 1px and Godot is still arranging
+      // a phone modal. Wait for the rendered viewport and bounded scroll regions.
+      return r && r.width>100 && r.height>100 && Math.abs(s.viewport[0]-r.width)<2 && Math.abs(s.viewport[1]-r.height)<2 &&
+        Object.values(s.widgets).every(w=>!w.clip_rect || w.clip_rect[1]+w.clip_rect[3]<=s.viewport[1]+2);
+    })()`)) { await delay(350); return performance.now() - start; }
     await delay(200);
   }
   throw Error(`Godot did not start: ${JSON.stringify({ errors, messages })}`);

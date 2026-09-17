@@ -1,0 +1,38 @@
+{
+  "courtesan_red": {
+    "frames": 16,
+    "texture_size": [
+      408,
+      756
+    ],
+    "png_bytes": 283117,
+    "clipped": false
+  },
+  "courtesan_black": {
+    "frames": 16,
+    "texture_size": [
+      408,
+      756
+    ],
+    "png_bytes": 258612,
+    "clipped": false
+  },
+  "drinker": {
+    "frames": 16,
+    "texture_size": [
+      284,
+      744
+    ],
+    "png_bytes": 198869,
+    "clipped": false
+  },
+  "brawl": {
+    "frames": 16,
+    "texture_size": [
+      660,
+      852
+    ],
+    "png_bytes": 403320,
+    "clipped": false
+  }
+}

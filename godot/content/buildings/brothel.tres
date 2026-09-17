@@ -4,7 +4,7 @@
 script = ExtResource("1")
 id = "brothel"
 name = "Brothel"
-description = "A place for idle heroes to spend their fortunes near the castle. Each 18-second visit costs 14 personal gold, collected as taxes. Distracted patrons attract thieves; leisure does not cure Shadow."
+description = "A crimson refuge where idle heroes rest and spend their fortunes near the castle. Each 18-second visit costs 14 personal gold, collected as taxes. Distracted patrons attract thieves; leisure does not cure Shadow."
 hp = 650
 cost = 240
 size = 2

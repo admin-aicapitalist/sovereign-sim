@@ -9,6 +9,7 @@ static func meter(ui,parent: Node,value: float,maximum: float,color: String) -> 
 	bar.add_theme_stylebox_override("background",track); bar.add_theme_stylebox_override("fill",fill); parent.add_child(bar)
 static func focus(ui,id: int) -> void:
 	var e=ui.main.sim.entity(id)
+	if e!=null and e.kind=="unit" and e.inside>0: id=e.inside; e=ui.main.sim.entity(id)
 	if e==null or e.dead: return
 	ui.close_modal(); ui.main.set_mode("",""); ui.main.world.selected=id; ui.main.center_on(ui.main.sim.pos(e)); ui.objectives_open=false; ui.inspector_scroll.scroll_vertical=0; ui.refresh()
 static func choose_bounty(ui,type: String) -> void:

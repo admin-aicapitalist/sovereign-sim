@@ -4,7 +4,7 @@
 script = ExtResource("1")
 id = "inn"
 name = "Inn"
-description = "Refusing and Shadow heroes linger here near the castle. Each 18-second visit costs 8 personal gold, collected as taxes. Patrons attract thieves; leisure does not restore Persona."
+description = "Refusing and Shadow heroes shelter and rest inside this inn near the castle. Each 18-second visit costs 8 personal gold, collected as taxes. Patrons attract thieves; leisure does not restore Persona."
 hp = 600
 cost = 180
 size = 2

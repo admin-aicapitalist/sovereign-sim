@@ -10,7 +10,7 @@ async function key(name){
   const [x,y]=w.point,b=w.clip_rect||s.modal_rect;
   if(!s.modal||(y>b[1]+8&&y<b[1]+b[3]-8)){await click([x,y]);return;}
   await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:b[0]+b[2]/2,y:b[1]+b[3]/2});
-  await send('Input.dispatchMouseEvent',{type:'mouseWheel',x:b[0]+b[2]/2,y:b[1]+b[3]/2,deltaX:0,deltaY:y<b[1]? -280:280});await delay(160);
+  await send('Input.dispatchMouseEvent',{type:'mouseWheel',x:b[0]+b[2]/2,y:b[1]+b[3]/2,deltaX:0,deltaY:y<b[1]? -280:280});await delay(450); // The UI bridge refreshes every 250 ms; wait for new scrolled coordinates.
  }
  throw Error(`Could not reach ${name}`);
 }

@@ -22,6 +22,8 @@ Build guilds and recruit warriors, rangers, wizards and thieves. Heroes choose t
 
 Open **Hero Journeys** to track Persona or Shadow, interrupted journeys, locations, purses and support actions for the entire roster. A crushing defeat can send even veterans into persistent Shadow. Fund a hero’s recovery from their row, then protect their time at a guild or Temple. Refusing heroes spend money at the new **Inn** and **Brothel**. Thieves steal from patrons and bank half; open **Guild banks & leisure** to confiscate guild reserves once per 120 game seconds. See [the rules and verification](reports/JOURNEYS.md).
 
+Heroes now enter **guilds, Temples, Inns and Brothels** to shelter and rest. Occupied buildings show flickering lights and waving pennants; select one to see its residents, or track everyone’s location in Hero Journeys. The shadow venues have new dark sprites, beckoning courtesans, a drinking patron and a street brawl. See [the animations and shelter checks](reports/LEISURE.md).
+
 In **The Ashen March**, victory requires defeating the Ember Warlord while the Palace stands. Other lairs provide optional preparation and rewards. Two lairs reveal the monastery, or heroes can discover it naturally. Clearing it starts a visible 90-second recovery window before the Warlord arrives. He guards the ruins, marks his ground slam, and calls reinforcements once at half health. Scheduled Palace raids begin after three minutes; there is no unrelated ten-minute troll arrival.
 
 Results record accomplishments, losses, notable heroes and 0–17 Renown. **Guild Compact** costs 10 Renown and trades 15% cheaper guild construction for 10% lower periodic taxes. **Rich Ruins** trades stronger frontier defenders for better frontier treasure. Base classes and services are available immediately. The **Reign** menu offers save-and-leave or abandonment; completed results offer a fresh settlement or replay of the same conditions with a new run identity.
@@ -71,6 +73,8 @@ For GCP, deploy this `godot/` directory to the existing Cloud Run service. The s
 | --- | --- |
 | Seeded geography, roads, bridges, forests, lair sites | `seed_rng.gd`, `world_generator.gd`; generated at runtime, with exact reference-map parity |
 | Buildings, construction, recruitment, taxes, combat, waves, XP, projectiles, campaign | `simulation.gd`, `actor.gd`, `brain.gd` |
+| Indoor shelter, protected occupants, recovery and destruction exits | `shelter.gd`, `brain.gd` |
+| Shadow venue scenery and occupied lights/pennants | `leisure_visuals.gd`, `leisure_cast.json` |
 | Potion research, personal shopping, inventory, buffs, physical treasure | `supplies.gd` |
 | Temple research, seven royal spells, wizard decisions/mana, delayed meteors | `magic.gd` |
 | Overcrowding, safe sewer placement, recurring rats, demolition | `sanitation.gd` |
@@ -116,6 +120,8 @@ From the repository root:
 /path/to/Godot --headless --path godot --script tests/extended_simulation_test.gd
 /path/to/Godot --headless --path godot --script tests/milestone_test.gd
 /path/to/Godot --headless --path godot --script tests/milestone_campaign.gd
+/path/to/Godot --headless --path godot --script tests/journey_test.gd
+/path/to/Godot --headless --path godot --script tests/shelter_test.gd
 /path/to/Godot --headless --path godot --script tests/settlement_test.gd
 /path/to/Godot --headless --path godot --script tests/settlement_campaign.gd
 ```
@@ -130,6 +136,8 @@ node godot/tests/browser.mjs
 node godot/tests/milestone_browser.mjs
 node godot/tests/royal_browser.mjs
 node godot/tests/settlement_browser.mjs
+node godot/tests/journey_browser.mjs
+node godot/tests/leisure_browser.mjs
 ```
 
 Node 22+ supplies the built-in WebSocket client. `GODOT_TEST_URL`, `GODOT_CDP_URL` and `GODOT_BENCH_SECONDS` override the defaults. `GODOT_SKIP_BENCH=1` runs interaction checks only. The suite opens its own tab, uses real mouse/touch events for controls, and uses a test bridge for scenario setup and accelerated simulation. It checks desktop and 390px/DPR2 mobile layouts, research, casting, save/reload, seed controls and the ordinary player URL, then measures 100/300/1,000 actors. The harness disables browser caching so every run exercises the current export. `?test=1` explicitly enables the automation bridge; ordinary player URLs do not expose it.

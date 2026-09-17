@@ -629,7 +629,49 @@ def build_thieves():
     chimney(1.7,1.5,4.02,.95)
 
 
+def shadow_materials(kind):
+    """Venue-specific materials; keep the shared architectural scale and lighting."""
+    global plaster, amber_glass
+    brothel=kind=="brothel"
+    palette=("19151c","251820","341a24","421c2a","21181f") if brothel else ("24252c","303039","39313a","29272e","403039")
+    art.roofs=[art.weathered_material(kind+" / black glazed slate "+str(i),c,27) for i,c in enumerate(palette)]
+    art.roof_dark=art.material(kind+" / deep eaves","110e16")
+    art.roof_ridge=art.material(kind+" / ridge caps","54202e" if brothel else "443138")
+    art.woods=[art.weathered_material(kind+" / black timber "+str(i),c,24) for i,c in enumerate(("141117","25181f","342129","1c151c"))]
+    plaster=art.weathered_material(kind+" / wine plaster","8e1632" if brothel else "554049",17)
+    art.stones=[art.weathered_material(kind+" / dark masonry "+str(i),c,19) for i,c in enumerate(("51454a","645258","483e47","71595e"))]
+    art.stone_trim=art.weathered_material(kind+" / dark carved edges","33242d",24)
+    art.stone_light=art.weathered_material(kind+" / window carving","9a626c" if brothel else "887477",24)
+    art.iron=art.material(kind+" / wrought iron","12131b")
+    art.cloth=art.weathered_material(kind+" / crimson velvet","be1035" if brothel else "6e2033",20)
+    art.gold=art.material(kind+" / aged copper","986b55")
+    art.gold_light=art.material(kind+" / rose brass","d6a685")
+    art.amber=art.material(kind+" / luminous windows","ff526b" if brothel else "f1a04d",.32)
+    amber_glass=art.material(kind+" / lantern glass","ff234e" if brothel else "ef843d",.65)
+
+
+def velvet_drape(x,y,z,width,height):
+    group("Shadow venue · gathered velvet with brass hems")
+    for i in range(20):
+        a=i/20; b=(i+1)/20
+        def point(t,v):
+            return (x+(t-.5)*width,y-.09-.075*math.sin(t*math.pi*10),z+height*(1-v)+.10*math.sin(t*math.pi)*v)
+        g.poly([point(a,0),point(b,0),point(b,1),point(a,1)],art.cloth)
+    g.rod((x-width*.55,y-.12,z+height+.03),(x+width*.55,y-.12,z+height+.03),.034,art.gold)
+
+
+def venue_lantern(x,y,z):
+    group("Shadow venue · caged lanterns")
+    g.rod((x,y+.20,z+.42),(x,y-.12,z+.42),.025,art.iron)
+    g.rod((x,y-.12,z+.42),(x,y-.12,z+.25),.018,art.iron)
+    g.box((x,y-.12,z),(.25,.25,.43),amber_glass)
+    for dx in (-.15,.15):
+        for dy in (-.15,.15): g.rod((x+dx,y-.12+dy,z-.23),(x+dx,y-.12+dy,z+.23),.021,art.iron)
+    for zz in (-.24,.24): g.box((x,y-.12,z+zz),(.34,.34,.065),art.iron)
+
+
 def build_inn():
+    shadow_materials("inn")
     paving()
     timber_hall(-.3,.55,4.0,3.7,3.0,1.55)
     door(-.35,-1.33,w=.9,h=1.8)
@@ -647,9 +689,19 @@ def build_inn():
             g.box((x,y,.58),(1.3,.23,.13),art.woods[0])
     barrel(2.45,.75,s=.85)
     barrel(2.45,1.65,s=.75)
+    velvet_drape(-1.6,-1.36,1.0,.48,1.35)
+    venue_lantern(.9,-1.48,1.9)
+    venue_lantern(2.44,-.5,2.25)
+    group("Inn · spilled ale, broken stool and empty tankards")
+    for x,y in ((1.9,-2.8),(2.5,-2.6),(-2.45,-2.7)):
+        g.frustum(x,y,.25,.10,.11,.18,art.woods[2],10)
+        g.frustum(x,y,.43,.083,.083,.01,art.door_dark,10)
+    g.box((2.65,-2.3,.29),(.55,.38,.10),art.woods[1])
+    g.rod((2.6,-2.25,.30),(2.9,-2.05,.65),.04,art.woods[1],6)
 
 
 def build_brothel():
+    shadow_materials("brothel")
     paving()
     timber_hall(.1,.65,4.35,3.6,3.65,1.45)
     door(.15,-1.2,w=1.0,h=1.9)
@@ -657,15 +709,29 @@ def build_brothel():
     g.box((.1,-1.65,2.35),(4.6,1.1,.16),art.woods[0])
     for x in (-1.95,2.15):
         g.rod((x,-2.08,.24),(x,-2.08,2.4),.065,art.woods[0])
-        art.banner((x,-2.12),0,1.05,.4,.9)
+        velvet_drape(x,-2.12,.55,.55,1.75)
     for x in (-1.3,1.5):
-        art.banner((x,-1.21),0,2.8,.65,.67)
-        g.box((x,-1.35,1.9),(.23,.23,.4),amber_glass)
+        velvet_drape(x,-1.21,2.73,.68,.78)
+        venue_lantern(x,-1.42,1.75)
     for i in range(12):
         x=-2.05+i*.4
         g.rod((x,-2.1,2.42),(x,-2.1,2.94),.023,art.iron)
     g.rod((-2.05,-2.1,2.94),(2.35,-2.1,2.94),.035,art.iron)
     stairs(.15,-2.7,1.4,3)
+    group("Brothel · scalloped red canopy and black iron crest")
+    for i in range(24):
+        x=-2.15+i*4.5/24; nx=x+4.5/24
+        g.poly([(x,-1.24,3.08),(nx,-1.24,3.08),(nx,-2.35,2.57),(x,-2.35,2.57)],art.cloth)
+        g.poly([(x,-2.35,2.57),(nx,-2.35,2.57),(nx,-2.35,2.39),(x,-2.35,2.39-.09*math.sin(i/24*math.pi*8))],art.cloth)
+    g.rod((-2.24,-2.36,2.56),(2.43,-2.36,2.56),.027,art.gold)
+    venue_lantern(2.47,-.65,2.5)
+    g.rod((2.42,.1,3.75),(3.07,.1,3.75),.035,art.iron)
+    g.box((2.99,.1,3.25),(.11,.72,.72),art.iron)
+    heart=[]
+    for i in range(40):
+        a=i*math.tau/40
+        heart.append((3.06,.1+.018*16*math.sin(a)**3,3.28+.018*(13*math.cos(a)-5*math.cos(2*a)-2*math.cos(3*a)-math.cos(4*a))))
+    g.poly(heart,art.cloth)
 
 
 BUILDERS={key:globals()["build_"+key] for key in TYPES}
@@ -722,6 +788,11 @@ def setup_scene(resolution,samples,out,key):
               "camera_elevation_degrees":30,"ortho_scale":14.3,
               "plot_size":1 if key in ("house","tower") else 2,
               "effects":[{"type":e["type"],"at_normalized":project(e["point"])} for e in effects]}
+    if key in ("inn","brothel"):
+        cast=[("courtesan_red",(-1.1,-3.45,.23),0), ("courtesan_black",(2.55,-2.95,.23),.45)] if key=="brothel" else [("drinker",(-2.3,-2.95,.23),.2),("brawl",(1.75,-3.5,.23),0)]
+        metadata["visitors"]=[{"actor":actor,"at_normalized":project(at),"phase":phase} for actor,at,phase in cast]
+        lamps=[(-1.3,-1.54,1.75),(1.5,-1.54,1.75),(2.47,-.77,2.5)] if key=="brothel" else [(.9,-1.6,1.9),(2.44,-.62,2.25)]
+        metadata["lanterns"]=[{"at_normalized":project(at),"color":"f52b51" if key=="brothel" else "e99642"} for at in lamps]
     (out/f"{key}.json").write_text(json.dumps(metadata,indent=2)+"\n")
 
 

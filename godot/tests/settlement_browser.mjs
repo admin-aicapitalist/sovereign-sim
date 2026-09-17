@@ -57,7 +57,7 @@ try{
  await key('heroes');await key('hero_'+hero.id);s=await state();assert.match(s.modal_text,/recover to about 86% health/);assert.match(s.modal_text,/Began resting|Withdrew to recover/);
  await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});await delay(500);s=await state();
  assert(s.modal_rect[0]>=0&&s.modal_rect[0]+s.modal_rect[2]<=390);assert(s.widgets.hero_find.rect[1]+s.widgets.hero_find.rect[3]<=844);await shot('settlement-hero-mobile');
- await key('hero_roster');await shot('settlement-heroes-mobile');await key('hero_'+hero.id);await key('hero_find');s=await state();assert.equal(s.selection,hero.id);assert(s.widgets.hero_journal);await frozen('Hero journal preserves deliberate pause');
+ await key('hero_roster');await shot('settlement-heroes-mobile');await key('hero_'+hero.id);await key('hero_find');s=await state();const resting=s.units.find(u=>u.id===hero.id);assert.equal(s.selection,resting.inside||hero.id);assert(s.widgets[resting.inside?'occupant_'+hero.id:'hero_journal']);await frozen('Hero journal preserves deliberate pause');
  await send('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});await delay(500);await command('step',{seconds:30});
  pass('Heroes roster, journal, XP guidance, recovery history and service/bounty navigation work on desktop and phone');
  if(s.widgets.dismiss_hint)await key('dismiss_hint');

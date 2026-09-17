@@ -162,7 +162,7 @@ func hero_checks() -> void:
 	check(hero.state=="Fleeing" and info.goal.contains(guild.site_name) and info.advice.contains("86%"),"Wounded hero explains retreat and recovery threshold")
 	var events: int=s.run.events.size(); s.Brain.hero(s,hero)
 	check(s.run.events.size()==events,"Retreat history records transitions without repeating each decision")
-	hero.pos=s.pos(guild); s.Brain.hero(s,hero)
+	hero.pos=s.Shelter.door(s,guild); s.Brain.hero(s,hero)
 	check(hero.state=="Resting" and HeroProgress.history(s,hero.id)[0].contains("Began resting"),"Journal records the actual recovery site")
 	hero.hp=hero.max_hp; s.Brain.hero(s,hero)
 	check(HeroProgress.history(s,hero.id).any(func(line):return line.contains("Recovered enough")),"Recovery becomes a recorded event")
@@ -180,7 +180,7 @@ func hero_checks() -> void:
 	hero.target=0; var before: float=hero.xp
 	var rat=s.add_unit("rat",hero.pos); rat.infestation=true; s.hurt(rat,999999,hero)
 	check(hero.xp==before,"Urban rats cannot advance hero XP")
-	s.hurt(hero,999999,null); s.grant_experience(hero,100)
+	s.Shelter.leave(s,hero); s.hurt(hero,999999,null); s.grant_experience(hero,100)
 	check(hero.xp==before and s.run.heroes[str(hero.id)].dead,"Fallen heroes retain their history and cannot gain experience")
 	var legacy=S.new(); var old=legacy.add_unit("warrior",legacy.near_point(legacy.pos(legacy.palace())))
 	check(HeroProgress.history(legacy,old.id).is_empty() and HeroProgress.context(legacy,old).xp_needed==45,"Standalone heroes show progress without inventing past events")

@@ -16,6 +16,7 @@ static func open(ui) -> void:
 	footer.add_child(ui.button("heroes_close","Return to kingdom",func():ui.close_modal(); ui.refresh()))
 	refresh(ui); ui.layout(true)
 static func location(s,u) -> String:
+	if u.inside>0: return "Inside "+s.building(u.inside).site_name
 	var places: Array=s.buildings.filter(func(b):return not b.dead and (not b.hostile or s.is_explored(s.pos(b))))
 	var nearest=s.nearest(u.pos,places)
 	return ("Near " if u.pos.distance_to(s.pos(nearest))<8 else "Outside ")+nearest.site_name if nearest!=null else "On the frontier"

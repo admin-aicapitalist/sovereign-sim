@@ -185,6 +185,8 @@ The playable settlement uses **Persona ↔ Shadow dynamics**, with the journey r
 
 Refusing and Shadow heroes spend personal gold at an **Inn** or **Brothel** near the castle. Available Thieves steal from distracted patrons, keeping half and depositing half in their own guild bank. The king can confiscate an operating guild bank, with a kingdom-wide 120-second cooldown. Venue fees become taxes delivered by collectors. Spending and theft transfer existing money; leisure does not cure Shadow.
 
+Heroes enter guilds, Temples, Inns and Brothels to shelter and rest. Occupants disappear from outdoor combat and emerge when ready; losing the building releases them. Animated lights and an occupancy pennant show when someone is inside, while building panels and the all-hero overview expose names, locations and activity. The shadow venues use dark architecture with animated courtesans, drinking and street brawling. See [indoor rules and art](godot/reports/LEISURE.md).
+
 The live **Hero Journeys** menu foregrounds Persona/Shadow, interrupted purpose, purse, location and the king’s next action for every hero. It links to **Guild banks & leisure**. See [implemented rules and validation](godot/reports/JOURNEYS.md) for current values and migration. This direction supersedes the passive Shadow recovery triggers and mandatory linear progression described in the original design below; the broader class and social-system proposals remain future scope.
 
 #### 4.2.2 The Journey State Machine

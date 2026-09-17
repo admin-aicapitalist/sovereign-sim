@@ -11,6 +11,7 @@ const Mission = preload("res://scripts/mission.gd")
 const Equipment = preload("res://scripts/equipment.gd")
 const Content = preload("res://content/catalog.tres")
 const Settlement = preload("res://scripts/settlement_rules.gd")
+const Shelter = preload("res://scripts/shelter.gd")
 const Court = preload("res://scripts/court_economy.gd")
 const Journey = preload("res://scripts/journey.gd")
 var run: Dictionary = {}
@@ -277,14 +278,14 @@ func update_vision() -> void:
 	for b in buildings:
 		if not b.dead and not b.hostile: reveal(pos(b),definition_of(b).get("sight",5))
 	for u in units:
-		if not u.dead and not u.hostile: reveal(u.pos,u.definition.sight)
+		if not u.dead and not u.hostile and u.inside==0: reveal(u.pos,u.definition.sight)
 	vision=vision.filter(func(v):return v.until>time)
 	for v in vision: reveal(Vector2(v.x,v.y),v.r)
 	fog_revision+=1
 func rebuild_buckets() -> void:
 	buckets.clear()
 	for u in units:
-		if u.dead: continue
+		if u.dead or u.inside>0: continue
 		var key:=Vector2i(floori(u.pos.x/6),floori(u.pos.y/6))
 		if not buckets.has(key): buckets[key]=[]
 		buckets[key].append(u)
@@ -293,7 +294,7 @@ func nearby(point: Vector2, radius: float, hostile: bool) -> Array:
 	for y in range(floori((point.y-radius)/6),floori((point.y+radius)/6)+1):
 		for x in range(floori((point.x-radius)/6),floori((point.x+radius)/6)+1):
 			for u in buckets.get(Vector2i(x,y),[]):
-				if not u.dead and u.hostile==hostile and point.distance_squared_to(u.pos)<radius*radius: found.append(u)
+				if not u.dead and u.inside==0 and u.hostile==hostile and point.distance_squared_to(u.pos)<radius*radius: found.append(u)
 	return found
 func nearest(point: Vector2, choices: Array) -> Variant:
 	var best=null; var distance: float=INF
@@ -302,10 +303,12 @@ func nearest(point: Vector2, choices: Array) -> Variant:
 		if d<distance: distance=d; best=e
 	return best
 func go(u: Actor, point: Vector2, state: String) -> void:
+	Shelter.leave(self,u)
 	u.target=0; u.state=state
 	if u.destination.distance_to(point)>0.8: u.repath=0
 	u.destination=point
 func navigate(u: Actor, dt: float) -> void:
+	if u.inside>0: return
 	if u.repath<=0 and (u.pos.distance_to(u.destination)>0.5 or u.path_index<u.path.size()):
 		if paths_this_tick>=24: stats.path_deferrals+=1
 		else:
@@ -327,7 +330,7 @@ func stop(u: Actor) -> void: u.path=[]; u.path_index=0; u.destination=u.pos
 func hurt_unit(u: Actor, damage: float) -> void: hurt(u,damage,null)
 func hurt_building(b: Dictionary, damage: float) -> void: hurt(b,damage,null)
 func hurt(e: Variant, damage: float, attacker: Variant, damage_kind: String="physical") -> void:
-	if e==null or e.dead: return
+	if e==null or e.dead or e is Actor and e.inside>0: return
 	var actual: float=maxf(1,damage-(Supplies.armor(self,e) if e is Actor else 0))
 	e.hp-=actual; e.last_hit=time; stats.hits+=1
 	var impact:=fx("hit",pos(e),actual,0.75)
@@ -343,7 +346,7 @@ func hurt(e: Variant, damage: float, attacker: Variant, damage_kind: String="phy
 		return
 	e.hp=0; e.dead=true; stats.kills+=1; stats["slain" if e.hostile else "losses"]+=1; fx("collapse" if e.kind=="building" else "death",pos(e),0,2.2)
 	if e.kind=="building":
-		set_foundation(e,false); ruins.append({"x":e.x,"y":e.y,"size":e.size}); revision+=1
+		set_foundation(e,false); Shelter.evict(self,e); ruins.append({"x":e.x,"y":e.y,"size":e.size}); revision+=1
 		if e.infestation: stats.infestations_cleared+=1; sanitation.timer=0; notify("Rat sewer cleared. Reduce overcrowding to prevent its return.")
 		elif e.hostile: gold+=definition_of(e).reward; stats.lairs+=1; notify(e.site_name+" destroyed. Treasure awaits your heroes.","victory")
 		elif e.demolished: notify("Cottage dismantled. No gold or stored taxes refunded.")
@@ -365,6 +368,7 @@ func hurt(e: Variant, damage: float, attacker: Variant, damage_kind: String="phy
 			for u in claimants: u.gold+=f.reward/claimants.size()
 		stats.bounties+=1
 func attack(u: Actor, e: Variant) -> void:
+	if u.inside>0 or e is Actor and e.inside>0: u.target=0; return
 	var reach: float=u.definition.range+(e.size*0.45 if e.kind=="building" else 0)
 	if u.pos.distance_to(pos(e))>reach: u.destination=pos(e); return
 	stop(u); Supplies.combat_potions(self,u,e); u.facing=1 if (pos(e).x-u.pos.x)-(pos(e).y-u.pos.y)>0 else -1
@@ -383,7 +387,7 @@ func grant_experience(hero: Actor,amount: float) -> void:
 		Settlement.event(self,"level",hero,str(hero.level))
 		fx("level",hero.pos); notify(hero.name+" reached level %d."%hero.level,"level")
 func resolve_attack(u: Actor,e: Variant) -> void:
-	if e==null or e.dead or u.dead: return
+	if e==null or e.dead or u.dead or u.inside>0 or e is Actor and e.inside>0: return
 	var reach: float=u.definition.range+(e.size*0.45 if e.kind=="building" else 0)
 	if u.pos.distance_to(pos(e))>reach+0.5: return
 	var amount: float=Supplies.damage(self,u,e)
@@ -400,7 +404,7 @@ func update_projectiles(dt: float) -> void:
 	var keep: Array=[]
 	for p in projectiles:
 		var e=entity(p.target); var attacker=entity(p.attacker); p.life-=dt
-		if e==null or e.dead or p.life<=0: continue
+		if e==null or e.dead or p.life<=0 or e is Actor and e.inside>0: continue
 		var point:=Vector2(p.x,p.y); var destination: Vector2=pos(e)
 		var distance: float=point.distance_to(destination); var step: float=p.speed*dt
 		if distance<step+0.3:
@@ -421,6 +425,7 @@ func tick(dt: float) -> void:
 	for u in units:
 		if u.dead: continue
 		Supplies.update_unit(self,u,dt); Magic.update_unit(self,u,dt)
+		if u.inside>0 and building(u.inside).type in ["inn","brothel"]: u.hp=minf(u.max_hp,u.hp+2*dt)
 		if u.definition.has("regeneration") and time-u.last_hit>6: u.hp=minf(u.max_hp,u.hp+u.definition.regeneration*dt)
 		u.think-=dt; u.cooldown-=dt; u.repath-=dt; u.attacking=maxf(0,u.attacking-dt)
 		if u.id==mission.boss_id and mission.slam_remaining>0: stop(u); continue
@@ -547,6 +552,7 @@ func restore(input: Dictionary) -> bool:
 	var actor_schema: Dictionary=Actor.new().save(); var ids: Dictionary={}
 	actor_schema.erase("heading") # Optional in version 3 saves made before directional casting.
 	actor_schema.erase("journey") # Earlier saves did not track narrative journeys.
+	actor_schema.erase("inside") # Earlier saves kept resting heroes outside.
 	for i in data.fixture.tiles.size():
 		var t=data.fixture.tiles[i]
 		if not shape(t,fixture.tiles[0]) or t.kind not in ["grass","path","water","bridge"] or t.x!=i%size or t.y!=int(i/size): return false
@@ -563,6 +569,7 @@ func restore(input: Dictionary) -> bool:
 		if (b.tier!=1 and b.tier!=2) or b.upgrade_remaining<0 or (b.tier==2 and b.upgrade_remaining>0): return false
 	for item in data.units:
 		if not shape(item,actor_schema) or not definitions.units.has(item.type) or not valid_id(item.id,data.next_id,ids): return false
+		if not Shelter.valid(item.get("inside",0),item,data): return false
 		if not Journey.valid(item.get("journey",{})): return false
 		if not item.get("journey",{}).is_empty() and (restored_run.is_empty() or not item.hero): return false
 		if not item.get("journey",{}).is_empty():
@@ -606,6 +613,7 @@ func restore(input: Dictionary) -> bool:
 	for item in data.units:
 		var u:=Actor.new()
 		for key in Actor.FIELDS: u.set(key,item[key])
+		u.inside=int(item.get("inside",0))
 		u.journey=item.get("journey",{}).duplicate(true)
 		u.pos=Vector2(item.pos[0],item.pos[1]); u.destination=Vector2(item.destination[0],item.destination[1])
 		for p in item.path: u.path.append(Vector2(p[0],p[1]))
