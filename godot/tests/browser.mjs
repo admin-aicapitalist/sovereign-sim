@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { reports, origin, cdp, page, ws, errors, messages, send, ev, delay, state, command, click, shot, load } from './cdp.mjs';
+import { reports, origin, cdp, page, ws, errors, messages, send, ev, delay, state, command, click, shot, loadStandalone as load } from './cdp.mjs';
 const checks=[];
 const pass=name=>{checks.push(name);console.log('PASS:',name);};
 const key=async name=>{const s=await state(); assert(s.widgets[name],`Missing control ${name}`); assert(!s.widgets[name].disabled,`Disabled control ${name}`); await click(s.widgets[name].point);};

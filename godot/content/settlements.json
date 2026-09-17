@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "scenario": {
+    "name": "The Ashen March",
+    "description": "Recover the Ashen Monastery and defeat the Ember Warlord while your Palace stands. Other lairs offer optional treasure and safer borders.",
+    "raid_after": 180,
+    "arrival_delay": 90,
+    "slam_warning": 2.4,
+    "starting_gold": 1500
+  },
+  "charters": {
+    "crown": {"name": "Crown Charter", "cost": 0, "description": "1,500 starting gold. Standard guild prices and tax income.", "guild_cost": 1.0, "tax": 1.0},
+    "guild_compact": {"name": "Guild Compact", "cost": 10, "description": "Guild construction costs 15% less. Periodic Palace, cottage and Marketplace taxes are 10% lower. Recruitment and research keep their normal prices.", "guild_cost": 0.85, "tax": 0.9}
+  },
+  "conditions": {
+    "untroubled": {"name": "Untroubled Province", "description": "Standard threats and treasure. A three-minute opening before scheduled Palace raids.", "frontier_hp": 1.0, "frontier_gold": 1.0},
+    "rich_ruins": {"name": "Rich Ruins", "description": "Original frontier lairs drop 25% more gold for heroes. Their defenders and reinforcements have 10% more health. The monastery and Warlord are unchanged.", "frontier_hp": 1.1, "frontier_gold": 1.25}
+  },
+  "rewards": {"first_lair": 2, "second_lair": 2, "monastery": 3, "victory": 8, "frontier": 1, "frontier_limit": 2},
+  "hints": {
+    "recruit": "Select a completed guild and choose Recruit. Heroes act on their own; you provide the buildings, services and incentives.",
+    "bounty": "Use Bounties to mark a hostile site or an exploration spot. Select an existing flag to raise its reward. An offer does not guarantee obedience.",
+    "retreat": "A wounded hero is returning to recover. Guilds and the Palace provide free rest; a Temple improves recovery. Potions can help on the road.",
+    "shopping": "Heroes buy potions with their own gold. You fund Marketplace research; collectors deliver the proceeds back to the Palace."
+  }
+}

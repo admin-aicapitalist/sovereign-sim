@@ -1,0 +1,14 @@
+{
+  "recorded_at": "2026-09-17T10:37:08.568Z",
+  "origin": "http://127.0.0.1:8131/",
+  "checks": [
+    "Founding starts live movement; Pause, Space, and Reign menu preserve time controls",
+    "Heroes roster, journal, XP guidance, recovery history and service/bounty navigation work on desktop and phone",
+    "Ordinary construction, recruitment, hints, saved hero history and live resume",
+    "Out-of-order encounter saves, boss victory, and interruption recovery award Renown once",
+    "Persistent unlock purchase and older-save restoration cannot duplicate or replace the result",
+    "Replay creates a fresh cast and applies the unlocked charter",
+    "390px setup, fresh-run reset, abandonment and Palace defeat complete the loop"
+  ],
+  "errors": []
+}

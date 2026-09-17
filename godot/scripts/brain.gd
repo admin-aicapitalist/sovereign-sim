@@ -19,9 +19,14 @@ static func hero(s,u) -> void:
 		if home==null: home=s.entity(u.home)
 		if home==null or home.dead: home=s.palace()
 		if u.pos.distance_to(s.pos(home))<3.5:
+			if u.state!="Resting": s.Settlement.event(s,"recovery",u,home.site_name)
 			u.state="Resting"; u.target=0; s.stop(u); u.hp=minf(u.max_hp,u.hp+(11 if home.type=="temple" else 7))
-		else: s.go(u,s.pos(home),"Fleeing")
+		else:
+			if u.state!="Fleeing": s.Settlement.event(s,"retreat",u)
+			s.go(u,s.pos(home),"Fleeing")
 		return
+	if u.state in ["Resting","Fleeing"]:
+		s.Settlement.event(s,"recovered",u); u.state="Seeking adventure"; s.stop(u)
 	var enemy=s.nearest(u.pos,s.nearby(u.pos,u.definition.range+3,true))
 	if enemy!=null: u.target=enemy.id; u.state="Fighting "+enemy.definition.name; return
 	if Supplies.seek(s,u): return
@@ -42,7 +47,7 @@ static func hero(s,u) -> void:
 		u.goal=best.id
 		if best.type=="attack": u.target=best.target; u.state="Answering a bounty"
 		elif u.pos.distance_to(s.pos(best))<1.9:
-			best.dead=true; u.gold+=best.reward; u.xp+=20; s.reveal(s.pos(best),9); s.notify(u.name+" claimed an exploration bounty."); s.fx("level",u.pos); u.goal=0
+			best.dead=true; u.gold+=best.reward; s.Settlement.event(s,"explore",u); s.grant_experience(u,20); s.reveal(s.pos(best),9); s.notify(u.name+" claimed an exploration bounty."); s.fx("level",u.pos); u.goal=0
 		else: s.go(u,s.pos(best),"Exploring for gold")
 		return
 	u.goal=0; u.target=0
@@ -86,5 +91,5 @@ static func monster(s,u) -> void:
 	var near=s.nearest(u.pos,s.buildings.filter(func(b):return not b.dead and not b.hostile and u.pos.distance_to(s.pos(b))<6))
 	if near!=null: u.target=near.id; u.state="Raiding the kingdom"; return
 	var home=s.entity(u.home)
-	if s.time>100 and (u.raider or u.type=="troll" or home!=null and home.dead): u.target=s.palace().id; u.state="Marching on the Palace"
+	if s.time>(100.0 if s.run.is_empty() else s.raid_after()) and (u.raider or u.type=="troll" or home!=null and home.dead): u.target=s.palace().id; u.state="Marching on the Palace"
 	else: u.target=0; wander(s,u,s.pos(home) if home!=null else u.pos,4)

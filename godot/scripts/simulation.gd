@@ -10,6 +10,8 @@ const Sanitation = preload("res://scripts/sanitation.gd")
 const Mission = preload("res://scripts/mission.gd")
 const Equipment = preload("res://scripts/equipment.gd")
 const Content = preload("res://content/catalog.tres")
+const Settlement = preload("res://scripts/settlement_rules.gd")
+var run: Dictionary = {}
 var definitions: Dictionary = Content.definitions()
 var mission: Dictionary = Mission.empty()
 var fixture: Dictionary = {}
@@ -62,7 +64,10 @@ func fx(type: String, point: Vector2, value: float=0, life: float=1.2) -> Dictio
 	var effect: Dictionary={"type":type,"x":point.x,"y":point.y,"value":value,"started":time,"life":life,"serial":effect_serial}
 	if not stress: effects.append(effect)
 	return effect
-func reset(seed_value: int = -1) -> void:
+func reset(seed_value: int = -1, configuration: Dictionary = {}) -> void:
+	if not run.is_empty() or not configuration.is_empty(): definitions=Content.definitions()
+	run={} if configuration.is_empty() else Settlement.state(configuration)
+	if not run.is_empty(): Settlement.apply(definitions,configuration)
 	if seed_value<0:
 		seed_value=int(Crypto.new().generate_random_bytes(4).decode_u32(0))
 		if seed_value==fixture.get("seed",-1): seed_value=(seed_value+1)&0xffffffff
@@ -88,6 +93,14 @@ func reset(seed_value: int = -1) -> void:
 	for i in 2: add_unit("guard",near_point(pos(palace())+Vector2(2,2),3),palace().id)
 	add_unit("collector",near_point(pos(palace())+Vector2(0,2),2),palace().id)
 	update_vision(); rebuild_buckets(); notify("Build a guild and invite heroes to your kingdom."); revision+=1
+func start_settlement(configuration: Dictionary) -> bool:
+	if not Settlement.valid_config(configuration): return false
+	reset(int(configuration.seed),configuration)
+	gold=configuration.rules.scenario.starting_gold
+	Mission.start(self,configuration.scenario)
+	return true
+func raid_after() -> float:
+	return float(run.config.rules.scenario.raid_after) if not run.is_empty() else 110.0
 func point_data(point: Vector2) -> Dictionary: return {"x":point.x,"y":point.y}
 func pos(e: Variant) -> Vector2: return e.pos if e is Actor else Vector2(e.x,e.y)
 func bpos(b: Dictionary) -> Vector2: return pos(b)
@@ -162,6 +175,8 @@ func add_unit(type: String, point: Vector2, home: int=0) -> Actor:
 	u.max_mana=u.definition.get("mana",0); u.mana=u.max_mana; u.bravery=u.definition.get("bravery",1); u.animation=rng.next()*4
 	u.name=definitions.names[type][int(rng.next()*definitions.names[type].size())] if u.hero else u.definition.name
 	u.state="Seeking adventure" if u.hero else "On duty"; u.infestation=building(u.home).get("infestation",false)
+	Settlement.prepare_unit(self,u)
+	if u.hero: Settlement.event(self,"recruit",u)
 	units.append(u); actors[u.id]=u; by_id[u.id]=u; return u
 func can_build(type: String, tile: Vector2i) -> bool:
 	if not definitions.buildings.has(type) or type=="palace" or definitions.buildings[type].get("hostile",false) or result!="": return false
@@ -329,13 +344,11 @@ func hurt(e: Variant, damage: float, attacker: Variant, damage_kind: String="phy
 		elif e.demolished: notify("Cottage dismantled. No gold or stored taxes refunded.")
 		else: notify(definition_of(e).name+" has fallen!","danger")
 	Mission.killed(self,e)
+	Settlement.killed(self,e,attacker)
 	if e.hostile and not e.infestation and not stress: Supplies.drop_loot(self,e)
 	if e is Actor and e.hero: Equipment.drop_hero(self,e)
 	if attacker is Actor and attacker.hero and not attacker.dead and e.hostile and not e.infestation:
-		attacker.xp+=definition_of(e).get("xp",60)
-		while attacker.xp>=attacker.level*45:
-			attacker.xp-=attacker.level*45; attacker.level+=1; attacker.max_hp+=22; attacker.hp=minf(attacker.max_hp,attacker.hp+60)
-			fx("level",attacker.pos); notify(attacker.name+" reached level %d."%attacker.level,"level")
+		grant_experience(attacker,definition_of(e).get("xp",60))
 	if e is Actor and e.hero: notify(e.name+" has fallen.","danger")
 	for f in flags.values():
 		if f.dead or f.target!=e.id: continue
@@ -356,6 +369,13 @@ func attack(u: Actor, e: Variant) -> void:
 		u.pending_attack={"target":e.id,"remaining":0.24 if u.definition.range<=2 else 0.36,"duration":0.24 if u.definition.range<=2 else 0.36}
 		u.attacking=float(u.pending_attack.duration)+0.2; return
 	resolve_attack(u,e)
+func grant_experience(hero: Actor,amount: float) -> void:
+	if not hero.hero or hero.dead or amount<=0: return
+	hero.xp+=amount
+	while hero.xp>=hero.level*45:
+		hero.xp-=hero.level*45; hero.level+=1; hero.max_hp+=22; hero.hp=minf(hero.max_hp,hero.hp+60)
+		Settlement.event(self,"level",hero,str(hero.level))
+		fx("level",hero.pos); notify(hero.name+" reached level %d."%hero.level,"level")
 func resolve_attack(u: Actor,e: Variant) -> void:
 	if e==null or e.dead or u.dead: return
 	var reach: float=u.definition.range+(e.size*0.45 if e.kind=="building" else 0)
@@ -383,7 +403,7 @@ func update_projectiles(dt: float) -> void:
 				fx("fire",destination,0,0.9)
 				if is_visible(destination): events.append("fire-impact")
 				for other in nearby(destination,1.6,e.hostile):
-					if other!=e: hurt(other,p.damage*0.35,attacker,"fireball")
+					if other.id!=e.id: hurt(other,p.damage*0.35,attacker,"fireball")
 		else:
 			point=point.move_toward(destination,step); p.x=point.x; p.y=point.y; keep.append(p)
 	projectiles=keep
@@ -428,7 +448,7 @@ func tick(dt: float) -> void:
 		if b.spawn<=0:
 			b.spawn=definitions.sanitation.ratInterval if b.infestation else d.interval*maxf(0.65,1-time/2400)
 			if units.filter(func(u):return not u.dead and u.hostile and u.home==b.id).size()<6:
-				var u=add_unit(d.spawn,near_point(pos(b),2.7),b.id); u.raider=b.infestation or time>110 and rng.next()<0.72
+				var u=add_unit(d.spawn,near_point(pos(b),2.7),b.id); u.raider=b.infestation or time>raid_after() and rng.next()<0.72
 	if not stress: Sanitation.update(self,dt)
 	economy+=dt
 	if economy>=10:
@@ -443,7 +463,7 @@ func tick(dt: float) -> void:
 		for type in ["peasant","collector","guard"]:
 			var count: int=units.filter(func(u):return not u.dead and u.type==type).size()
 			if count<(3 if type=="peasant" else 2 if type=="guard" else 1): add_unit(type,near_point(pos(palace()),4),palace().id)
-	if time>=600 and not troll_spawned and not stress:
+	if time>=600 and not troll_spawned and not stress and run.is_empty():
 		troll_spawned=true; add_unit("troll",near_point(Vector2(fixture.level.trollEntry.x,fixture.level.trollEntry.y),3)); notify("A Hill Troll approaches from the borderlands!","danger")
 	vision_timer+=dt
 	if vision_timer>=0.6: vision_timer=0; update_vision()
@@ -464,7 +484,7 @@ func tick(dt: float) -> void:
 	effects=effects.filter(func(e):return time-e.started<e.life)
 	if not stress:
 		if palace().dead: result="defeat"
-		elif lairs().is_empty() and (mission.id=="classic" or mission.boss_defeated): result="victory"
+		elif (not run.is_empty() and mission.boss_defeated) or (run.is_empty() and lairs().is_empty() and (mission.id=="classic" or mission.boss_defeated)): result="victory"
 	if result!="": events.append("victory" if result=="victory" else "danger")
 func setup_stress(count: int) -> void:
 	reset(41972); stress=true
@@ -485,9 +505,17 @@ func snapshot() -> Dictionary:
 	for key in SAVE_FIELDS:
 		var value=get(key); out[key]=value.duplicate(true) if value is Dictionary or value is Array else value
 	for u in units: out.units.append(u.save())
+	if not run.is_empty(): out.version=4; out.run=run.duplicate(true)
 	return out
 func restore(input: Dictionary) -> bool:
 	var data: Dictionary=input.duplicate(true)
+	var restored_run: Dictionary={}
+	if data.get("version")==4:
+		if not Settlement.valid_state(data.get("run")) or data.run.is_empty(): return false
+		if not data.get("mission") is Dictionary or not data.get("fixture") is Dictionary: return false
+		restored_run=data.run.duplicate(true); data.version=3
+		if data.get("mission",{}).get("id")!=restored_run.config.scenario or data.get("fixture",{}).get("seed")!=restored_run.config.seed: return false
+	elif data.has("run"): return false
 	if data.get("version",0)==2:
 		if not data.get("stats") is Dictionary or not data.get("units") is Array or not data.get("buildings") is Array or not data.get("loot") is Array: return false
 		data.version=3; data.mission=Mission.empty()
@@ -502,6 +530,7 @@ func restore(input: Dictionary) -> bool:
 			p.items=[]
 		for key in ["equipment_found","upgrades","boss_slams"]: data.stats[key]=0
 	var schema: Dictionary=snapshot()
+	schema.version=3; schema.erase("run")
 	schema.alchemy={"unlocked":{},"project":{}}
 	schema.magic={"unlocked":{},"project":{},"impacts":[]}
 	schema.mission=Mission.empty()
@@ -545,7 +574,10 @@ func restore(input: Dictionary) -> bool:
 	for p in data.loot:
 		for key in p.items:
 			if not key is String or not definitions.items.has(key): return false
-	if data.gold<0 or data.time<0 or data.result not in ["","victory","defeat"]: return false
+	if data.gold<0 or data.time<0 or data.result not in ["","victory","defeat","abandoned"]: return false
+	if data.result=="abandoned" and restored_run.is_empty(): return false
+	run=restored_run; definitions=Content.definitions()
+	if not run.is_empty(): Settlement.apply(definitions,run.config)
 	for key in SAVE_FIELDS: set(key,data[key].duplicate(true) if data[key] is Dictionary or data[key] is Array else data[key])
 	for effect in effects: effect_serial=maxi(effect_serial,int(effect.get("serial",0)))
 	rng.state=int(data.rng); loot_rng.state=int(data.loot_rng); sanitation_rng.state=int(data.sanitation_rng)
@@ -559,6 +591,7 @@ func restore(input: Dictionary) -> bool:
 		u.pos=Vector2(item.pos[0],item.pos[1]); u.destination=Vector2(item.destination[0],item.destination[1])
 		for p in item.path: u.path.append(Vector2(p[0],p[1]))
 		u.definition=definitions.units[u.type]
+		Settlement.prepare_unit(self,u,true)
 		u.heading=Vector2(u.facing,0)
 		if u.path_index<u.path.size(): u.heading=(u.path[u.path_index]-u.pos).normalized()
 		if item.has("heading"): u.heading=Vector2(item.heading[0],item.heading[1])

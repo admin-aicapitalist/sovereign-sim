@@ -1,6 +1,6 @@
 # Sovereign — Godot
 
-Sovereign runs in native GDScript, with the new **Ember Crown** mission and the original **Classic Kingdom** campaign. It keeps the illustrated isometric presentation and targets browsers first. The earlier one-lair experiment remains on `migration/godot-slice`.
+Sovereign runs in native GDScript. **The Ashen March** adds replayable settlement runs: choose province conditions and a charter, build a kingdom, recover the monastery, defeat the Warlord, earn Renown, and found another settlement. This branch is a local build; it has not been deployed. The standalone **Ember Crown** and **Classic Kingdom** remain available for older saves.
 
 The **Royal art pass** adds a composed title screen, a matching browser loading screen, carved wood and brass frames, parchment command cards, Cinzel headings and Alegreya body/italic text. Civic buildings have newly rendered slate roofs and warm stone. Terrain includes broad meadow variation, shoreline highlights and slow cloud shadows. Sprite mipmaps keep distant views stable while the closer view retains crisp detail. See [art sources and reproduction](../assets/art/royal/README.md) and [visual verification](reports/ROYAL_ART.md).
 
@@ -14,9 +14,19 @@ Open `project.godot` in **Godot 4.7.2 Standard** and press F5. The checked-in da
 
 [Play locally](http://127.0.0.1:8131/) while the server below is running. [Ember Crown verification](reports/MILESTONE.md), [original port measurements](reports/RESULTS.md), [port coverage](PORT_STATUS.md).
 
+[Settlement implementation and verification](reports/SETTLEMENT.md) covers the new loop, compatibility checks, campaign matrix and remaining human playtest gates.
+
 ## Play
 
-Build guilds and recruit warriors, rangers, wizards and thieves. Heroes choose their own tasks; attack and exploration bounties influence their decisions. Choose **The Ember Crown** or **Classic Kingdom** on the welcome screen. Both require destroying eight campaign lairs while protecting the Palace. In The Ember Crown, uncover the Ashen Monastery, recover its relics, and defeat the Ember Warlord. His ground slam gives heroes a visible warning before impact.
+Build guilds and recruit warriors, rangers, wizards and thieves. Heroes choose their own tasks; attack and exploration bounties influence their decisions. The default setup shows a fresh province, seed, condition and starting charter. Founding or resuming a settlement starts time immediately; press Space or Pause to stop time when needed. Four dismissible hints explain recruitment, bounties, recovery and personal shopping.
+
+Open **Heroes → Journal & next steps** to see a hero's current activity, goal, health, XP remaining, and ways to support them. Guild, potion, recovery and bounty controls lead to the relevant service or placement tool. Journals retain recruitment, exploration rewards, level gains, retreats, recovery, relics and major objective participation across saves. These are factual local histories; the full narrative Journey stages, bonds and shadow behavior remain deferred.
+
+In **The Ashen March**, victory requires defeating the Ember Warlord while the Palace stands. Other lairs provide optional preparation and rewards. Two lairs reveal the monastery, or heroes can discover it naturally. Clearing it starts a visible 90-second recovery window before the Warlord arrives. He guards the ruins, marks his ground slam, and calls reinforcements once at half health. Scheduled Palace raids begin after three minutes; there is no unrelated ten-minute troll arrival.
+
+Results record accomplishments, losses, notable heroes and 0–17 Renown. **Guild Compact** costs 10 Renown and trades 15% cheaper guild construction for 10% lower periodic taxes. **Rich Ruins** trades stronger frontier defenders for better frontier treasure. Base classes and services are available immediately. The **Reign** menu offers save-and-leave or abandonment; completed results offer a fresh settlement or replay of the same conditions with a new run identity.
+
+**Standalone chronicles / older saves** opens the previous Ember Crown and Classic Kingdom menu. Their original eight-lair victory requirements and save slot are retained; they do not award Renown.
 
 Completed hero guilds can train to tier II, increasing capacity and providing attack/armor support to their recruits. Heroes automatically equip better weapons and armor from treasure; another hero can recover their equipment after death.
 
@@ -24,7 +34,11 @@ Marketplaces research potions, sell supplies to heroes and accumulate taxable re
 
 Click or tap to select and place. Right-drag, touch-drag, WASD or arrows pan; wheel or +/− zoom; the minimap moves the camera. Space pauses, 1/2/3 selects speed, F centers the Palace, and Esc/right-click cancels placement. Shift-click keeps a placement tool active. Command cards scroll horizontally; longer panels scroll vertically. Help explains the rules in-game.
 
-Start with a random map, enter a numeric or named seed, or use `?seed=41972`. Help and the ending screen offer replay. Save/Load stores the full kingdom in this browser and origin (`sovereign-godot-save-v2`); native play uses `user://kingdom-v2.json`. Save format 3 includes mission progress, equipment, guild training and attack windups. Existing format-2 saves load as classic kingdoms through the same save slot; older game builds cannot read new saves. JavaScript prototype and trial saves use different formats.
+Start with a random map, enter a numeric or named seed, or use `?seed=41972`. The full configuration includes the selected charter and condition. Format-4 settlement saves retain resolved rules, hero records, timers, equipment, research and RNG state. Autosave runs every 60 seconds; manual Save and Reign → Save and leave are also available.
+
+Settlement saves and profiles are separate: browser keys begin `sovereign-settlement-v1-`, and native files use `user://settlement-*.json`. Checksummed writes retain backups. A durable completion receipt prevents duplicate awards and recovers interruptions between result and profile writes. Storage failures expose a retry; a new run cannot replace unsaved completion progress. A previously completed run loads its recorded result even when an earlier active save is restored. Unlocks and seen-hint preferences survive new runs. Test URLs use a separate settlement profile namespace.
+
+Standalone saves keep `sovereign-godot-save-v2` / `user://kingdom-v2.json`. Formats 2 and 3 remain readable. Older game builds cannot read format 4; JavaScript prototype and trial saves use different formats.
 
 ## Browser build
 
@@ -62,6 +76,7 @@ For GCP, deploy this `godot/` directory to the existing Cloud Run service. The s
 | Overcrowding, safe sewer placement, recurring rats, demolition | `sanitation.gd` |
 | Editor-authored unit/building/spell/item definitions | `content/catalog.tres`, typed scripts in `scripts/content/` |
 | Monastery encounter, boss telegraph/enrage, relic equipment, guild upgrades | `mission.gd`, `equipment.gd`, `simulation.gd` |
+| Settlement configuration, factual hero records, rewards, profile storage, setup and results | `settlement_rules.gd`, `settlement_store.gd`, `settlement_ui.gd`, `content/settlements.json` |
 | Reusable AnimationPlayer impact, death, upgrade and relic cues | `scenes/combat_cue.tscn`, `combat_cue.gd` |
 | Original sprites, depth ordering, animated terrain, fog, bridge details, spell atlases | `world_view.gd`, terrain/fog shaders |
 | Build/recruit/bounty/spell cards, inspection, research, objectives, minimap, start/help/end | `kingdom_ui.gd`, `minimap.gd` |
@@ -101,6 +116,8 @@ From the repository root:
 /path/to/Godot --headless --path godot --script tests/extended_simulation_test.gd
 /path/to/Godot --headless --path godot --script tests/milestone_test.gd
 /path/to/Godot --headless --path godot --script tests/milestone_campaign.gd
+/path/to/Godot --headless --path godot --script tests/settlement_test.gd
+/path/to/Godot --headless --path godot --script tests/settlement_campaign.gd
 ```
 
 These check original RNG/map parity, 100 generated kingdoms, construction and economy, a full autonomous campaign, all spell effects and research, potion shopping and loot, save continuity/corruption, sanitation, and a controlled 30-minute run. Milestone checks cover Resources, training, equipment, boss mechanics, combat windups, save compatibility and a complete Ember Crown campaign. Reports are written under `reports/`. The immutable format-2 save in `tests/fixtures/` verifies older-save migration independently of generated reports.
@@ -112,6 +129,7 @@ For browser tests, export and serve the game, then start a separate Chrome with 
 node godot/tests/browser.mjs
 node godot/tests/milestone_browser.mjs
 node godot/tests/royal_browser.mjs
+node godot/tests/settlement_browser.mjs
 ```
 
 Node 22+ supplies the built-in WebSocket client. `GODOT_TEST_URL`, `GODOT_CDP_URL` and `GODOT_BENCH_SECONDS` override the defaults. `GODOT_SKIP_BENCH=1` runs interaction checks only. The suite opens its own tab, uses real mouse/touch events for controls, and uses a test bridge for scenario setup and accelerated simulation. It checks desktop and 390px/DPR2 mobile layouts, research, casting, save/reload, seed controls and the ordinary player URL, then measures 100/300/1,000 actors. The harness disables browser caching so every run exercises the current export. `?test=1` explicitly enables the automation bridge; ordinary player URLs do not expose it.

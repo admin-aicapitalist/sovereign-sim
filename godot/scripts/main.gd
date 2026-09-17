@@ -5,6 +5,13 @@ const KingdomUI=preload("res://scripts/kingdom_ui.gd")
 const Sound=preload("res://scripts/sound.gd")
 const Magic=preload("res://scripts/magic.gd")
 const Supplies=preload("res://scripts/supplies.gd")
+const SettlementStore=preload("res://scripts/settlement_store.gd")
+var settlements:=SettlementStore.new()
+var settlement_mode: bool=true
+var completion_attempted: bool=false
+var completion_saved: bool=false
+var autosave_elapsed: float=0
+var storage_message: String=""
 var mission_id: String="ember_crown"
 var sim:=Simulation.new()
 var world:=WorldView.new()
@@ -38,10 +45,14 @@ func _ready() -> void:
 		if seed!=null and str(seed).strip_edges()!="": pinned_seed=Simulation.SeedRng.normalize(seed)
 		started=bool(JavaScriptBridge.eval("new URLSearchParams(location.search).has('auto')"))
 		sync_viewport()
-	sim.reset(pinned_seed); Simulation.Mission.start(sim,mission_id)
+	if test_enabled: settlements=SettlementStore.new("user://settlement-test","sovereign-settlement-test-v1-")
+	settlements.initialize()
+	var auto_start: bool=started
+	prepare_settlement(pinned_seed)
 	add_child(sound); world.sim=sim; add_child(world); ui.main=self; add_child(ui); center()
 	if test_enabled:
 		bridge_callback=JavaScriptBridge.create_callback(_web_command); window.sovereignCommand=bridge_callback
+	if auto_start: begin_settlement()
 	if not started: ui.show_welcome()
 	update_ui()
 func sync_viewport() -> void:
@@ -59,9 +70,53 @@ func set_mode(kind: String,key: String) -> void:
 	world.mode_kind=kind; world.mode_key=key if kind!="" else ""; world.build_type=key if kind=="build" else ""
 	Input.set_default_cursor_shape(Input.CURSOR_CROSS if kind!="" else Input.CURSOR_ARROW)
 func new_game(seed_value: int=-1) -> void:
+	settlement_mode=false; completion_attempted=false; completion_saved=false; storage_message=""
+	ui.hint_key=""
 	if ui.modal!=null: ui.close_modal(false)
 	sim.reset(seed_value if seed_value>=0 else pinned_seed); Simulation.Mission.start(sim,mission_id); accumulator=0; benchmark.clear(); speed=1; zoom=1.15; world.selected=0; world.hovered=0; set_mode("",""); center()
 	ui.last_result=""; ui.action_signature=""; ui.objective_ids=[]; ui.last_selection=-1; ui.objectives_open=false; update_ui()
+func prepare_settlement(seed_value: int=-1, charter: String="crown", condition: String="") -> void:
+	if ui.modal!=null: ui.close_modal(false)
+	if seed_value<0: seed_value=int(Crypto.new().generate_random_bytes(4).decode_u32(0))
+	if condition=="": condition=["untroubled","rich_ruins"][Simulation.SeedRng.new(seed_value ^ 0x5f3759df).integer(0,1)]
+	sim.start_settlement(Simulation.Settlement.config(seed_value,charter,condition))
+	settlement_mode=true; mission_id="ember_crown"; started=false; sim.paused=true
+	ui.hint_key=""; ui.tab="build"
+	completion_attempted=false; completion_saved=false; storage_message=""; autosave_elapsed=0
+	accumulator=0; speed=1; zoom=1.15; world.selected=0; world.hovered=0; set_mode("",""); center()
+	ui.last_result=""; ui.action_signature=""; ui.card_signature=""; ui.objective_ids=[]; ui.last_selection=-1; ui.objectives_open=false
+func begin_settlement(replace_saved: bool=false) -> bool:
+	storage_message=""
+	if not settlements.ready and not settlements.initialize(): storage_message=settlements.error; return false
+	if not settlements.profile.unlocks.has(sim.run.config.charter): storage_message="This charter has not been unlocked."; return false
+	if settlements.has_active():
+		var saved=settlements.load_active()
+		if saved==null: storage_message=settlements.error; return false
+		if saved.get("result","")=="" and not settlements.profile.completed.has(saved.get("run",{}).get("config",{}).get("id","")):
+			if not replace_saved: ui.show_replace_saved(); return false
+			var previous:=Simulation.new()
+			if not previous.restore(saved): storage_message="The existing save cannot be read. It has been preserved."; return false
+			previous.result="abandoned"
+			if not settlements.complete(Simulation.Settlement.record(previous)): storage_message=settlements.error; return false
+	if not settlements.write_slot("profile",settlements.profile) or not settlements.save_active(sim.snapshot()): storage_message=settlements.error; return false
+	if ui.modal!=null: ui.close_modal(false)
+	started=true; sim.paused=false; sound.enable(); update_ui(); return true
+func finish_settlement(retry: bool=false) -> bool:
+	if sim.run.is_empty() or sim.result=="": return true
+	if completion_attempted and not retry: return completion_saved
+	completion_attempted=true
+	if not settlements.ready and not settlements.initialize(): storage_message=settlements.error; return false
+	completion_saved=settlements.complete(Simulation.Settlement.record(sim))
+	storage_message="" if completion_saved else settlements.error
+	# The receipt is sufficient for recovery even if this final active-save write fails.
+	if completion_saved and not settlements.save_active(sim.snapshot()): storage_message=settlements.error
+	return completion_saved
+func abandon_settlement() -> void:
+	if sim.run.is_empty(): return
+	sim.result="abandoned"; sim.paused=true; completion_attempted=false; finish_settlement(); ui.last_result=""; update_ui()
+func save_and_leave() -> void:
+	if not save_game(): return
+	started=false; ui.show_title()
 func _process(dt: float) -> void:
 	var began: int=Time.get_ticks_usec()
 	sync_viewport(); ui.layout()
@@ -85,6 +140,11 @@ func _process(dt: float) -> void:
 			if not benchmark.is_empty() and benchmark.elapsed>=3: benchmark_ticks.append((Time.get_ticks_usec()-before)/1000.0)
 			accumulator-=0.05
 	else: accumulator=0
+	if started and not sim.run.is_empty() and sim.result=="":
+		autosave_elapsed+=dt
+		if autosave_elapsed>=60:
+			autosave_elapsed=0
+			if not settlements.save_active(sim.snapshot()): storage_message=settlements.error; sim.notify(storage_message)
 	var size:=get_viewport_rect().size
 	var title_screen: bool=ui.modal_kind=="welcome"
 	var view_origin:=size*(Vector2(0.73,0.64) if title_screen and size.x>=900 else Vector2(0.5,0.47))
@@ -110,6 +170,7 @@ func _process(dt: float) -> void:
 			profile[key].append(current[key])
 func update_ui() -> void:
 	if not ui.is_inside_tree(): return
+	if started and not sim.run.is_empty() and sim.result!="": finish_settlement()
 	ui.refresh()
 	if test_enabled and benchmark.is_empty(): window.sovereignState=JSON.stringify(debug_state())
 func _unhandled_input(event: InputEvent) -> void:
@@ -131,7 +192,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		update_ui()
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.physical_keycode==KEY_ESCAPE:
-		if ui.modal!=null and ui.modal_kind not in ["welcome","end"]: ui.close_modal()
+		if ui.modal!=null and ui.modal_kind not in ["welcome","end","setup","title","replace_saved"]: ui.close_modal()
 		elif world.mode_kind!="": set_mode("","")
 		else: world.selected=0
 		update_ui(); get_viewport().set_input_as_handled()
@@ -160,7 +221,11 @@ func click_world(point: Vector2,shift: bool=false) -> void:
 		"spell": ok=Magic.cast(sim,world.mode_key,Magic.target_point(sim,world.mode_key,ground,hit))
 		_: world.selected=id; sound.play("select"); ui.objectives_open=false
 	if ok and not shift: set_mode("","")
-func save_game() -> void:
+func save_game() -> bool:
+	if not sim.run.is_empty():
+		var saved: bool=settlements.save_active(sim.snapshot())
+		storage_message="" if saved else settlements.error
+		sim.notify("Settlement saved." if saved else storage_message); update_ui(); return saved
 	var text: String=JSON.stringify(sim.snapshot(),"",true,true)
 	var ok: bool=false
 	if OS.has_feature("web"): ok=bool(JavaScriptBridge.eval("(function(){try{localStorage.setItem('sovereign-godot-save-v2',"+JSON.stringify(text)+");return true;}catch(e){return false;}})()"))
@@ -168,7 +233,21 @@ func save_game() -> void:
 		var file=FileAccess.open("user://kingdom-v2.json",FileAccess.WRITE)
 		if file!=null: file.store_string(text); ok=true
 	sim.notify("Kingdom saved in this browser." if ok and OS.has_feature("web") else "Kingdom saved." if ok else "Could not store the save. Check available storage and site permissions."); update_ui()
-func load_game() -> void:
+	return ok
+func load_game(legacy: bool=false) -> void:
+	if not legacy and settlements.has_active():
+		var saved=settlements.load_active()
+		if not saved is Dictionary or not sim.restore(saved):
+			storage_message=settlements.error if settlements.error!="" else "No compatible saved settlement was found."
+			sim.notify(storage_message); update_ui(); return
+		if ui.modal!=null: ui.close_modal(false)
+		settlement_mode=true; mission_id=sim.mission.id; started=true; accumulator=0; autosave_elapsed=0
+		ui.hint_key=""
+		world.selected=0; set_mode("",""); center(); ui.last_result=""; ui.action_signature=""; ui.objective_ids=[]
+		completion_attempted=false; completion_saved=false; storage_message=""
+		if settlements.ready and settlements.profile.completed.has(sim.run.config.id): sim.result=settlements.profile.completed[sim.run.config.id].outcome
+		sim.paused=sim.result!=""; sound.enable()
+		update_ui(); return
 	var text: String=""
 	if OS.has_feature("web"):
 		var stored=JavaScriptBridge.eval("(function(){try{return localStorage.getItem('sovereign-godot-save-v2');}catch(e){return null;}})()")
@@ -178,7 +257,7 @@ func load_game() -> void:
 	if not data is Dictionary or not sim.restore(data): sim.notify("No compatible saved kingdom was found.")
 	else:
 		if ui.modal!=null: ui.close_modal(false)
-		mission_id=sim.mission.id; started=true; accumulator=0; world.selected=0; set_mode("",""); center(); ui.last_result=""; ui.action_signature=""
+		settlement_mode=false; mission_id=sim.mission.id; started=true; accumulator=0; world.selected=0; set_mode("",""); center(); ui.last_result=""; ui.action_signature=""
 	update_ui()
 func percentile(values: Array,fraction: float) -> float:
 	if values.is_empty(): return 0
@@ -202,6 +281,8 @@ func debug_state() -> Dictionary:
 	for e in sim.units+sim.buildings+sim.flags.values()+sim.loot:
 		var p=world.to_global(WorldView.iso(sim.pos(e))+Vector2(0,-20 if e.kind=="unit" else -35 if e.kind=="building" else 0)); state.entities_on_screen.append({"id":e.id,"point":[p.x,p.y]})
 	state.character_visuals=[]
+	state.run=sim.run; state.settlement_profile=settlements.profile; state.completion_saved=completion_saved; state.storage_message=storage_message
+	state.modal_text="\n".join(ui.modal.find_children("*","Label",true,false).map(func(label):return label.text)) if ui.modal!=null else ""
 	state.arcane_count=world.arcane_effects.size(); state.effects=sim.effects; state.projectiles=sim.projectiles
 	state.presentation_time=world.presentation_time; state.camera_impulse=[world.camera_impulse.x,world.camera_impulse.y]
 	state.wizard_visuals=[]
@@ -290,7 +371,8 @@ func _web_command(args: Array) -> void:
 		"center": center()
 		"mode": set_mode(request.get("kind","build"),request.get("type","warriors"))
 		"save": save_game()
-		"load": load_game()
+		"load": load_game(sim.run.is_empty())
+		"settlement": prepare_settlement(int(request.get("seed",41972)),request.get("charter","crown"),request.get("condition","untroubled")); begin_settlement(true)
 		"damage": sim.hurt(sim.entity(int(request.id)),request.amount,null)
 		"reveal": sim.reveal(Vector2(request.x,request.y),request.get("radius",10))
 		"laboratory":

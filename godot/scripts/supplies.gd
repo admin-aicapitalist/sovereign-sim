@@ -36,7 +36,7 @@ static func damage(s, u, target=null) -> float:
 	var value: float=u.definition.damage+s.Equipment.bonus(s,u,"damage")+((u.level-1)*4 if u.hero else 0)
 	if u.type=="thief" and target!=null and target.kind=="unit" and target.hostile:
 		var distracted=s.entity(target.target)
-		if distracted!=null and not distracted.dead and not distracted.hostile and distracted!=u: value+=14
+		if distracted!=null and not distracted.dead and not distracted.hostile and distracted.id!=u.id: value+=14
 	if u.buffs.strength>0: value*=s.definitions.potions.strength.damageMultiplier
 	return floorf(value+0.5)
 static func update_unit(s, u, dt: float) -> void:
@@ -59,6 +59,7 @@ static func drop_loot(s,e) -> Variant:
 	var table=loot_table(s,e)
 	if table.is_empty(): return null
 	var amount: int=s.loot_rng.integer(int(table.gold[0]),int(table.gold[1]))
+	if not s.run.is_empty() and e.kind=="building" and s.Settlement.frontier(s,e.id): amount=ceili(amount*s.run.config.rules.condition.frontier_gold)
 	var potions: Dictionary={"healing":0,"strength":0,"stoneskin":0}
 	for entry in table.potions:
 		if s.loot_rng.next()<entry[1]: potions[entry[0]]+=int(entry[2]) if entry.size()>2 else 1
@@ -89,7 +90,7 @@ static func drop_loot(s,e) -> Variant:
 	if s.mission.id=="ember_crown":
 		if e.id==s.mission.boss_id: pile.items=["ember_crown"]
 		elif e.id==s.mission.encounter_id: pile.items=["runeblade","warden_mail"]
-		elif e.kind=="building": pile.items=["iron_blade" if s.stats.lairs%2 else "warden_mail"]
+		elif e.kind=="building": pile.items=["iron_blade" if int(s.stats.lairs)%2 else "warden_mail"]
 	s.next_id+=1; s.loot.append(pile); s.by_id[pile.id]=pile; return pile
 static func usable(s,u,p) -> float:
 	var value: float=p.gold

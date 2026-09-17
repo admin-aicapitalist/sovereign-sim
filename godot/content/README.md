@@ -2,6 +2,8 @@
 
 Open `godot/project.godot` in Godot. The game loads `content/catalog.tres`, which references the unit, building, spell, item and mission resources in these folders. Double-click a `.tres` file and edit its exported fields in the Inspector, save, then restart play. These resources are now the runtime source for those definitions; `data/balance.json` retains the original potion, map and economy tables.
 
+`settlements.json` authors The Ashen March's starting grant, encounter timing, charters, province conditions, Renown awards and four hints. Run setup copies the selected rules into a format-4 save. Loading uses those resolved values, so editing a discount or countdown does not reapply it to an existing settlement. Keep IDs stable; version schema or reward changes explicitly. The standalone Ember Crown resource retains its original balance and objectives.
+
 - `units/warrior.tres`: health, damage, armor, range, movement and recruitment cost. The `properties` dictionary contains additional class-specific values such as bravery and wizard mana.
 - `buildings/warriors.tres`: building cost/health and the guild upgrade’s price, training time, added capacity and support bonuses.
 - `spells/heal.tres`: research, price, mana, cooldown and area. Extra effect parameters are in `properties`.

@@ -18,6 +18,7 @@ static func collect(s,u,p) -> int:
 		if not wants(s,u,key): remaining.append(key); continue
 		var slot: String=s.definitions.items[key].slot; var old: String=u.equipment.get(slot,"")
 		u.equipment[slot]=key
+		s.Settlement.event(s,"equipment",u,s.definitions.items[key].name)
 		if old!="": remaining.append(old)
 		taken+=1; s.notify(u.name+" equipped "+s.definitions.items[key].name+".","complete"); s.fx("relic",u.pos,0,1.4)
 	p.items=remaining; s.stats.equipment_found+=taken; return taken

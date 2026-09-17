@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import {reports,cdp,page,ws,errors,send,load,state,click,command,shot,delay} from './cdp.mjs';
+import {reports,cdp,page,ws,errors,send,loadStandalone as load,state,click,command,shot,delay} from './cdp.mjs';
 const checks=[];
 const key=async name=>click((await state()).widgets[name].point);
 function inside(widget,width,height,name){

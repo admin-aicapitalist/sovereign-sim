@@ -59,4 +59,18 @@ const load = async (query = '?test=1&seed=41972') => {
   throw Error(`Godot did not start: ${JSON.stringify({ errors, messages })}`);
 };
 
-export { reports, origin, cdp, page, ws, errors, messages, send, ev, delay, state, command, click, shot, load };
+// Existing scenario suites exercise the standalone chronicles through their menu.
+const loadStandalone = async (query) => {
+  const elapsed=await load(query);
+  for(let i=0;i<24;i++) {
+    const s=await state();
+    if(s.modal==='welcome')return elapsed;
+    const w=s.widgets.legacy;assert(w,'Standalone chronicles entry exists');
+    const [x,y]=w.point,[rx,ry,rw,rh]=w.clip_rect||s.modal_rect;
+    if(y>ry+8&&y<ry+rh-8){await click([x,y]);return elapsed;}
+    await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:rx+rw/2,y:ry+rh/2});
+    await send('Input.dispatchMouseEvent',{type:'mouseWheel',x:rx+rw/2,y:ry+rh/2,deltaX:0,deltaY:y<ry+20?-240:240});await delay(200);
+  }
+  throw Error('Could not open standalone chronicles');
+};
+export { reports, origin, cdp, page, ws, errors, messages, send, ev, delay, state, command, click, shot, load, loadStandalone };

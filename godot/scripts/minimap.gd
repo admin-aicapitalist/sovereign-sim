@@ -1,5 +1,6 @@
 extends Control
 var main
+var preview: bool=false
 var draw_ms: float=0
 var geography: Image
 var texture: ImageTexture
@@ -22,9 +23,9 @@ func _draw() -> void:
 		revision=s.revision; fog_revision=s.fog_revision
 		geography=Image.create(s.size,s.size,false,Image.FORMAT_RGBA8); geography.fill(Color("1c2c25"))
 		for t in s.fixture.tiles:
-			if not t.explored: continue
+			if not preview and not t.explored: continue
 			var color:=Color("7d9065") if t.kind=="grass" else Color("ac9d72") if t.kind=="path" else Color("9b8157") if t.kind=="bridge" else Color("49757c")
-			geography.set_pixel(t.x,t.y,color if t.visible else color.darkened(0.45))
+			geography.set_pixel(t.x,t.y,color if t.visible or preview else color.darkened(0.45))
 	var pixels: Image=geography.duplicate()
 	for b in s.buildings:
 		if not b.dead and s.is_explored(s.pos(b)): pixels.fill_rect(Rect2i(Vector2i(s.pos(b))-Vector2i.ONE,Vector2i(3,3)),Color("ce8360") if b.hostile else Color("f3dca5"))
@@ -49,6 +50,7 @@ func _draw() -> void:
 	draw_polyline(corners,Color("e3ce94"),1.0,true)
 	draw_ms=(Time.get_ticks_usec()-began)/1000.0
 func _gui_input(event: InputEvent) -> void:
+	if preview: return
 	if event is InputEventMouseButton and event.pressed and event.button_index==MOUSE_BUTTON_LEFT:
 		main.camera=(event.position-Vector2(size.x*0.5,3))/Vector2(size.x/(main.sim.size*64.0),size.y/(main.sim.size*32.0))
 		accept_event()

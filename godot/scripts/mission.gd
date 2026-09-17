@@ -10,15 +10,15 @@ static func start(s,key: String) -> void:
 	for b in s.buildings:
 		if b.type=="graveyard":
 			s.mission.encounter_id=b.id; b.site_name="Ashen Monastery"; break
-	s.notify("The Ember Crown: clear two lairs to uncover the lost monastery.")
+	s.notify("The Ashen March: recover the monastery and defeat the Warlord. Other lairs are optional." if not s.run.is_empty() else "The Ember Crown: clear two lairs to uncover the lost monastery.")
 static func title(s) -> String: return s.definitions.mission.name if s.mission.id=="ember_crown" else "The Young Kingdom"
 static func objective(s) -> String:
 	if s.mission.id!="ember_crown": return "Keep your Palace standing."
 	if not s.mission.revealed: return "Break %d lairs to uncover the monastery."%s.definitions.mission.reveal_after
-	if not s.mission.encounter_cleared: return "Recover the Ashen Monastery and its Runeblade."
+	if not s.mission.encounter_cleared: return "Recover the Ashen Monastery. Clearing it calls the Warlord in %ds."%s.definitions.mission.arrival_delay
 	if s.mission.boss_id==0: return "Recover the relics. Warlord arrives in %ds."%ceili(s.mission.arrival_remaining)
 	if not s.mission.boss_defeated: return "Defeat the Ember Warlord. Heroes try to dodge the marked ground slam."
-	return "The Warlord has fallen. Clear the remaining lairs."
+	return "The Warlord has fallen. The march is yours." if not s.run.is_empty() else "The Warlord has fallen. Clear the remaining lairs."
 static func apply_boss(s,u) -> void:
 	u.definition=s.definitions.units.troll.duplicate(true)
 	u.definition.name="Ember Warlord"; u.definition.damage=s.definitions.mission.boss_damage
@@ -28,6 +28,8 @@ static func killed(s,e) -> void:
 	if s.mission.id!="ember_crown": return
 	if e.id==s.mission.encounter_id:
 		s.mission.encounter_cleared=true; s.mission.arrival_remaining=s.definitions.mission.arrival_delay; s.gold+=s.definitions.mission.encounter_reward
+		if not s.run.is_empty(): s.mission.revealed=true
+		s.Settlement.event(s,"monastery",null,"The monastery was recovered")
 		s.notify("The monastery is free. Its Runeblade lies in the ruins. +%dg."%s.definitions.mission.encounter_reward,"complete")
 	if e.id==s.mission.boss_id:
 		s.mission.boss_defeated=true; s.mission.slam_remaining=0
@@ -40,6 +42,11 @@ static func update(s,dt: float) -> void:
 		var site=s.building(m.encounter_id)
 		s.vision.append({"x":site.x,"y":site.y,"r":8.0,"until":s.time+3600}); s.reveal(s.pos(site),8)
 		s.notify("Scouts found the Ashen Monastery. Recover its relics before challenging the Warlord.","flag")
+	if not s.run.is_empty() and not m.revealed:
+		var site=s.building(m.encounter_id)
+		if s.is_explored(s.pos(site)):
+			m.revealed=true
+			s.notify("The Ashen Monastery is discovered. Clearing it calls the Warlord in %ds."%d.arrival_delay,"flag")
 	if m.encounter_cleared and m.revealed and m.boss_id==0: m.arrival_remaining=maxf(0,m.arrival_remaining-dt)
 	if m.encounter_cleared and m.revealed and m.boss_id==0 and m.arrival_remaining==0:
 		var b=s.building(m.encounter_id); var u=s.add_unit("troll",s.near_point(s.pos(b),3),b.id)

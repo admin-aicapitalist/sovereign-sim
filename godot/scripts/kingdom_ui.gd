@@ -6,6 +6,11 @@ const MiniMap=preload("res://scripts/minimap.gd")
 const Royal=preload("res://scripts/royal_theme.gd")
 const RoyalCard=preload("res://scripts/royal_card.gd")
 const RoyalOverlay=preload("res://scripts/royal_overlay.gd")
+const SettlementUI=preload("res://scripts/settlement_ui.gd")
+const HeroUI=preload("res://scripts/hero_ui.gd")
+var hint_panel: PanelContainer
+var hint_label: Label
+var hint_key: String=""
 var main
 var refresh_ms: float=0
 var root: Control
@@ -30,6 +35,7 @@ var widgets: Dictionary={}
 var modal: Control
 var modal_panel: PanelContainer
 var modal_column: VBoxContainer
+var modal_footer: VBoxContainer
 var modal_kind: String=""
 var was_paused: bool=false
 var compact: bool=false
@@ -66,14 +72,15 @@ func _ready() -> void:
 	line.add_child(button("pause","Pause",func():main.sim.paused=not main.sim.paused; refresh()))
 	controls=HFlowContainer.new(); controls.add_theme_constant_override("h_separation",7); top_col.add_child(controls)
 	for n in [1,2,3]: controls.add_child(button("speed_"+str(n),str(n)+"×",func():main.speed=n; main.sim.paused=false; refresh()))
+	controls.add_child(button("heroes","Heroes",func():HeroUI.roster(self)))
 	controls.add_child(button("sound","Sound",func():main.sound.toggle(); refresh()))
-	controls.add_child(button("save","Save",main.save_game)); controls.add_child(button("load","Load",main.load_game))
-	controls.add_child(button("help","Help",show_help)); controls.add_child(button("new","New",func():main.new_game(); show_welcome()))
+	controls.add_child(button("save","Save",main.save_game)); controls.add_child(button("load","Load",func():main.load_game(main.sim.run.is_empty())))
+	controls.add_child(button("help","Help",show_help)); controls.add_child(button("new","Reign",show_run_menu))
 	controls.add_child(button("objectives","Objectives",func():objectives_open=not objectives_open; layout(true)))
 	controls.add_child(button("map","Map",func():map_open=not map_open; layout(true)))
 	controls.add_child(button("center","Palace",main.center)); controls.add_child(button("zoom_out","−",func():main.change_zoom(0.86))); controls.add_child(button("zoom_in","+",func():main.change_zoom(1.16)))
 	campaign=panel(root); var campaign_scroll:=ScrollContainer.new(); campaign_scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; campaign.add_child(campaign_scroll); var campaign_col:=VBoxContainer.new(); campaign_col.size_flags_horizontal=Control.SIZE_EXPAND_FILL; campaign_scroll.add_child(campaign_col)
-	campaign_col.add_child(label("THE ROYAL CAMPAIGN",11,"866640")); chapter=label("The Young Kingdom",20); chapter.add_theme_font_override("font",Royal.DISPLAY); chapter.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; campaign_col.add_child(chapter)
+	campaign_col.add_child(label("THE ROYAL CHRONICLE",11,"866640")); chapter=label("The Young Kingdom",20); chapter.add_theme_font_override("font",Royal.DISPLAY); chapter.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; campaign_col.add_child(chapter)
 	campaign_progress=ProgressBar.new(); campaign_progress.custom_minimum_size.y=5; campaign_progress.show_percentage=false; campaign_progress.max_value=8
 	var track:=StyleBoxFlat.new(); track.bg_color=Color("b5a27a"); var fill:=StyleBoxFlat.new(); fill.bg_color=Color("875039"); campaign_progress.add_theme_stylebox_override("background",track); campaign_progress.add_theme_stylebox_override("fill",fill); campaign_col.add_child(campaign_progress)
 	quest=label("",16); quest.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; campaign_col.add_child(quest)
@@ -101,6 +108,12 @@ func _ready() -> void:
 	cards=HBoxContainer.new(); cards.add_theme_constant_override("separation",7); scroll.add_child(cards)
 	status=label("",14,"c4b799"); status.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS; deck_col.add_child(status)
 	notice=label("",17,"f4e7c6"); notice.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; notice.mouse_filter=Control.MOUSE_FILTER_IGNORE; root.add_child(notice)
+	hint_panel=panel(root); var hint_col:=VBoxContainer.new(); hint_panel.add_child(hint_col)
+	hint_label=label("",16); hint_label.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; hint_col.add_child(hint_label)
+	var hint_actions:=HBoxContainer.new(); hint_col.add_child(hint_actions)
+	hint_actions.add_child(button("dismiss_hint","Got it",func():dismiss_hint(true)))
+	hint_actions.add_child(button("disable_hints","Turn hints off",func():dismiss_hint(false)))
+	hint_panel.visible=false
 	layout(true); refresh()
 func label(text: String,font_size: int=18,color: String="453525") -> Label:
 	var out:=Label.new(); out.text=text; out.add_theme_font_size_override("font_size",font_size); out.add_theme_color_override("font_color",Color(color))
@@ -141,6 +154,9 @@ func layout(force: bool=false) -> void:
 	map_panel.size=Vector2(242,197) if not compact else Vector2(150,0)
 	notice.position=Vector2(300 if not compact else 18,top_height+12)
 	notice.size=Vector2(maxf(100,s.x-610) if not compact else s.x-36,90)
+	if hint_panel!=null:
+		hint_panel.size=Vector2(minf(520,s.x-36),0)
+		hint_panel.position=Vector2((s.x-hint_panel.size.x)/2,deck.position.y-hint_panel.get_combined_minimum_size().y-10)
 	if modal!=null: layout_modal()
 	for p in [top,deck,campaign,inspector,map_panel]:
 		if modal_kind=="welcome": p.visible=false
@@ -191,8 +207,10 @@ func refresh() -> void:
 	chapter.text=s.Mission.title(s)
 	encounter_button.visible=s.mission.id=="ember_crown" and s.mission.revealed
 	encounter_button.text="Locate Warlord" if s.mission.boss_id and not s.mission.boss_defeated else "Locate Monastery"
-	campaign_progress.value=s.stats.lairs
+	campaign_progress.max_value=8 if s.run.is_empty() else 4
+	campaign_progress.value=s.stats.lairs if s.run.is_empty() else mini(s.stats.lairs,2)+int(s.mission.encounter_cleared)+int(s.mission.boss_defeated)
 	quest.text="%d of 8 lairs vanquished\n%s\n\nCottages: %d / 6 safe%s"%[s.stats.lairs,s.Mission.objective(s),sanitation.cottages,"\nRat sewers: %d · next in %ds"%[sanitation.active,sanitation.next_in] if sanitation.next_in>=0 else "\nActive rat sewers: %d"%sanitation.active if sanitation.active>0 else ""]
+	if not s.run.is_empty(): quest.text=s.Mission.objective(s)+"\n\n%d lairs cleared · Other lairs optional\nCottages: %d / 6 safe"%[s.stats.lairs,sanitation.cottages]+("\nRat sewers: %d · next in %ds"%[sanitation.active,sanitation.next_in] if sanitation.next_in>=0 else "")
 	var ids: Array=s.buildings.filter(func(b):return b.hostile and not b.infestation).map(func(b):return b.id)
 	if ids!=objective_ids: clear(objective_list); objective_ids=ids
 	for b in s.buildings:
@@ -210,6 +228,7 @@ func refresh() -> void:
 	if main.world.mode_kind!="": status.text="%s: %s · Esc/right-click cancels"%[main.world.mode_kind.capitalize(),main.world.mode_key]
 	notice.text="\n".join(s.notifications.filter(func(n):return s.time-n.at<5).map(func(n):return n.text))
 	notice.visible=not compact and modal==null
+	refresh_hint()
 	update_cards(); layout(true); minimap.queue_redraw()
 	if s.result!="" and s.result!=last_result: last_result=s.result; show_end()
 	refresh_ms=(Time.get_ticks_usec()-began)/1000.0
@@ -241,6 +260,9 @@ func inspect(e) -> void:
 		details.text=e.name+"\n"+("Level %d %s\n"%[e.level,e.definition.name] if e.hero else "")+e.state+"\n\nHealth: %d / %d\nAttack: %d · Armor: %d"%[e.hp,e.max_hp,Supplies.damage(s,e),Supplies.armor(s,e)]
 		if e.id==s.mission.boss_id: details.text+="\n\nGround slam: leave the marked circle.\n"+("Enraged: faster slams." if s.mission.enraged else "Enrages at half health.")
 		if e.hero:
+			var progress=HeroUI.Progress.context(s,e)
+			details.text+="\n\nNext: level %d · %d XP to go\n%s"%[e.level+1,progress.xp_needed,progress.advice]
+			add_action("hero_journal","Journal & next steps",func():HeroUI.journal(self,e.id))
 			details.text+="\n\nEquipment"
 			if e.equipment.is_empty(): details.text+="\nNo relics equipped. Recover lair treasure."
 			for key in e.equipment.values(): details.text+="\n"+s.definitions.items[key].name+" · "+s.definitions.items[key].description
@@ -278,10 +300,14 @@ func research_status(kind: String) -> String:
 	if not state.project.is_empty(): return "Studying: %s · %ds"%[state.project.key,state.project.remaining]
 	return "%d learned"%state.unlocked.size()
 func open_modal(kind: String) -> void:
+	var resume_state: bool=was_paused if modal!=null else main.sim.paused
 	if modal!=null: close_modal(false)
-	was_paused=main.sim.paused; main.sim.paused=true; modal_kind=kind
+	was_paused=resume_state; main.sim.paused=true; modal_kind=kind
 	modal=ColorRect.new(); modal.color=Color(0.035,0.045,0.04,0.82); modal.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); root.add_child(modal)
-	modal_panel=panel(modal); modal_panel.add_theme_stylebox_override("panel",Royal.box("parchment",20)); var scroll:=ScrollContainer.new(); scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; modal_panel.add_child(scroll)
+	modal_panel=panel(modal); modal_panel.add_theme_stylebox_override("panel",Royal.box("parchment",20))
+	var body:=VBoxContainer.new(); modal_panel.add_child(body)
+	var scroll:=ScrollContainer.new(); scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL; body.add_child(scroll)
+	modal_footer=VBoxContainer.new(); modal_footer.visible=false; body.add_child(modal_footer)
 	modal_column=VBoxContainer.new(); modal_column.size_flags_horizontal=Control.SIZE_EXPAND_FILL; modal_column.add_theme_constant_override("separation",12); scroll.add_child(modal_column); layout_modal()
 func layout_modal() -> void:
 	var s: Vector2=main.get_viewport_rect().size
@@ -317,6 +343,7 @@ func show_research(kind: String,id: int) -> void:
 		b.disabled=done or locked or not state.project.is_empty() or s.gold<d.get("research",0); modal_column.add_child(b)
 	modal_column.add_child(button("close_modal","Return to the kingdom",func():close_modal(); refresh()))
 func show_welcome() -> void:
+	if main.settlement_mode: SettlementUI.setup(self); return
 	open_modal("welcome"); modal.color=Color.TRANSPARENT
 	menu_overlay=RoyalOverlay.new(); menu_overlay.welcome=true; modal.add_child(menu_overlay); modal.move_child(menu_overlay,0)
 	modal_panel.add_theme_stylebox_override("panel",StyleBoxEmpty.new()); modal_column.add_theme_constant_override("separation",14)
@@ -338,32 +365,58 @@ func show_welcome() -> void:
 		close_modal(false); main.sim.paused=false; main.started=true; main.sound.enable(); refresh())
 	Royal.primary(begin); begin.custom_minimum_size.y=54; modal_column.add_child(begin)
 	var secondary:=HBoxContainer.new(); modal_column.add_child(secondary)
-	for b in [button("random_map","A fresh map",func():main.pinned_seed=-1; main.new_game(); show_welcome()),button("load_welcome","Load kingdom",func():main.load_game())]: b.size_flags_horizontal=Control.SIZE_EXPAND_FILL; secondary.add_child(b)
+	for b in [button("random_map","A fresh map",func():main.pinned_seed=-1; main.new_game(); show_welcome()),button("load_welcome","Load kingdom",func():main.load_game(true))]: b.size_flags_horizontal=Control.SIZE_EXPAND_FILL; secondary.add_child(b)
+	modal_column.add_child(button("settlements","The Ashen March · settlement runs",func():main.prepare_settlement(); show_welcome()))
 	menu_caption=label(main.sim.fixture.name.to_upper()+"\nMap "+str(main.sim.fixture.seed)+"  ·  The untamed borderlands",14,"d8c89f"); menu_caption.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT; menu_caption.mouse_filter=Control.MOUSE_FILTER_IGNORE; modal.add_child(menu_caption)
 	layout(true)
 func SimulationSeed(text: String) -> int: return main.sim.SeedRng.normalize(text)
 func show_help() -> void:
 	open_modal("help"); modal_text("The art of ruling",30)
-	modal_text("Build a guild, then recruit heroes. They choose their own targets; attack and exploration bounties give them reasons to follow your plans. Destroy all eight campaign lairs and keep the Palace standing.")
+	modal_text("Build a guild, then recruit heroes. They choose their own targets; attack and exploration bounties give them reasons to follow your plans. "+("Defeat the Warlord and keep the Palace standing. Other lairs are optional." if not main.sim.run.is_empty() else "Destroy all eight campaign lairs and keep the Palace standing."))
+	modal_text("Open Heroes, then Journal & next steps to see a hero’s current goal, XP needed for the next level, supplies, and recorded deeds. Find hero returns to their position; support buttons open the relevant service or bounty tool.")
 	modal_text("Build Marketplaces to research potions and Temples to learn spells. Heroes buy supplies using their own gold and collect treasure when ground is safe. Wizards share learned spells and spend regenerating mana.")
 	modal_text("Guild upgrades add two beds, 25% building health, and guild support (+4 attack, +2 armor). Select a completed guild to fund training. Heroes automatically equip better relic weapons and armor from safe treasure; equipment drops on death for another hero to recover.")
-	modal_text("The Ember Crown: destroy two lairs to reveal the Ashen Monastery. Recover its Runeblade, defeat the Ember Warlord, and destroy all eight lairs. Heroes try to leave his marked ground slam; healing and protective magic help them survive. He enrages at half health.")
+	modal_text("The Ashen March: two lairs reveal the monastery; you can also discover it naturally. Clearing it calls the Warlord in 90 seconds. He guards the ruins until heroes approach. Heroes try to dodge marked slams; healing and protective magic help them survive. He enrages at half health." if not main.sim.run.is_empty() else "The Ember Crown: reveal the monastery, defeat the Warlord and clear all eight lairs.")
 	modal_text("Six completed cottages are safe. Each group of four excess cottages sustains another rat sewer after 60 seconds. Demolish cottages without a refund to reduce pressure. Urban rats give no loot or experience.")
 	modal_text("Click/tap to select or place. Drag with a finger or right mouse button to pan. Wheel or +/− to zoom. WASD/arrows pan, Space pauses, 1/2/3 changes speed, F centers the Palace, Esc/right-click cancels. Shift-click builds several. Use the minimap to travel.")
 	modal_text(main.sim.fixture.name+" · Map seed "+str(main.sim.fixture.seed))
-	modal_column.add_child(button("replay","Replay this map",func():var seed:int=main.sim.fixture.seed; close_modal(false); main.new_game(seed); main.started=true; main.sim.paused=false; refresh()))
+	if main.sim.run.is_empty(): modal_column.add_child(button("replay","Replay this map",func():var seed:int=main.sim.fixture.seed; close_modal(false); main.new_game(seed); main.started=true; main.sim.paused=false; refresh()))
+	else: modal_column.add_child(button("enable_hints","Enable contextual hints",func():main.settlements.set_hint("",true); close_modal(); refresh()))
 	modal_column.add_child(button("close_modal","Return to the kingdom",func():close_modal(); refresh()))
 func show_end() -> void:
+	if not main.sim.run.is_empty(): SettlementUI.result(self); return
 	open_modal("end"); var s=main.sim
 	modal_text("Long live the sovereign." if s.result=="victory" else "A kingdom remembered.",32)
 	modal_text("The Ember Crown is yours. The Warlord and his lairs have fallen." if s.result=="victory" and s.mission.id=="ember_crown" else "The last lair lies in ruins. Your heroes have brought peace to the kingdom." if s.result=="victory" else "The Palace has fallen. Raise more guilds, protect your roads, and let your next reign be a wiser one.")
 	modal_text("Reign: %d:%02d\nLairs: %d / 8\nRecruits: %d\nRecovered: %dg and %d potions\n%s · Seed %d"%[int(s.time/60),int(s.time)%60,s.stats.lairs,s.stats.recruits,s.stats.loot_gold,s.stats.loot_potions,s.fixture.name,s.fixture.seed])
 	modal_column.add_child(button("replay","Replay this map",func():var seed:int=s.fixture.seed; close_modal(false); main.new_game(seed); main.started=true; main.sim.paused=false; refresh()))
 	modal_column.add_child(button("fresh","A new kingdom",func():close_modal(false); main.pinned_seed=-1; main.new_game(); main.started=true; main.sim.paused=false; refresh()))
+func show_run_menu() -> void: SettlementUI.menu(self)
+func show_title() -> void: SettlementUI.title(self)
+func show_replace_saved() -> void: SettlementUI.replace_saved(self)
+func dismiss_hint(enabled: bool) -> void:
+	if main.settlements.set_hint(hint_key,enabled): hint_key=""; hint_panel.visible=false
+	else: main.sim.notify(main.settlements.error)
+func refresh_hint() -> void:
+	var s=main.sim; var p: Dictionary=main.settlements.profile
+	hint_panel.visible=false
+	if s.run.is_empty() or not main.started or modal!=null or s.result!="" or not p.get("hints_enabled",false): return
+	if hint_key!="" and p.hints.has(hint_key): hint_key=""
+	if hint_key=="":
+		var candidates={"recruit":s.operating("").any(func(b):return s.definition_of(b).has("recruits")) and s.stats.recruits==0,"bounty":s.stats.recruits>0 and s.flags.is_empty(),"retreat":s.units.any(func(u):return u.hero and u.state in ["Fleeing","Resting"]),"shopping":s.stats.potions_bought>0}
+		for key in candidates:
+			if candidates[key] and not p.hints.has(key): hint_key=key; break
+	if hint_key!="":
+		hint_label.text=s.Settlement.content().hints[hint_key]; hint_panel.visible=not compact or not inspector.visible and not objectives_open
 func debug_widgets() -> Dictionary:
 	var out: Dictionary={}
 	for key in widgets:
 		var b=widgets[key]
 		if is_instance_valid(b) and b.is_inside_tree() and b.is_visible_in_tree():
 			var r: Rect2=b.get_global_rect(); out[key]={"point":[r.get_center().x,r.get_center().y],"rect":[r.position.x,r.position.y,r.size.x,r.size.y],"disabled":b.disabled if b is Button else false,"text":b.text if b is Button or b is LineEdit else ""}
+			var ancestor=b.get_parent()
+			while ancestor!=null:
+				if ancestor is ScrollContainer:
+					var clip: Rect2=ancestor.get_global_rect(); out[key].clip_rect=[clip.position.x,clip.position.y,clip.size.x,clip.size.y]; break
+				ancestor=ancestor.get_parent()
 	return out
