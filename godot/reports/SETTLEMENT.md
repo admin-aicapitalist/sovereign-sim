@@ -10,7 +10,7 @@ Victory requires defeating the Warlord while the Palace stands. Clearing the mon
 
 The setup uses a geography preview, persistent primary action and four dismissible in-game hints. All four existing hero classes and essential services are available immediately. The game makes no runtime model calls.
 
-Open **Heroes → Journal & next steps**, or select a hero and use the journal button. The view explains their current goal, recovery needs, XP to the next level, stat gains, personal shopping and available support. Buttons locate services and targets or open bounty/build placement. Recent history records real recruitment, exploration, leveling, retreat, recovery, equipment and objective participation. Full Journey stages, bonds and shadow behavior remain deferred.
+Open **Hero Journeys** to see the entire roster's stages, locations, calling objectives, blockers and next support actions in one live menu. Stages now affect real decisions, including refusal, commitment, ordeal, Shadow recovery and Mastery. Journals provide optional XP, equipment and history detail. See [journey rules, scope and verification](JOURNEYS.md).
 
 ## Verification
 
@@ -39,7 +39,7 @@ Standalone formats 2 and 3 retain their previous save slot, balance and victory 
 
 ## Pacing still needs human playtesting
 
-The automated policy wins in **328–496 simulation seconds** (about 5.5–8.3 minutes), with **0–2 hero deaths**. These results demonstrate viable configurations; they do not establish the proposed 20–30-minute player pacing, difficulty, clarity or replay appeal. The setup therefore does not advertise an unverified duration. The five-player gates in the [level plan](../../FIRST_SETTLEMENT_LEVEL_PLAN.md) remain pending.
+With journey decisions enabled, the automated policy wins in **377–557 simulation seconds** (about 6.3–9.3 minutes), with **0–2 hero deaths**. These results demonstrate viable configurations; they do not establish the proposed 20–30-minute player pacing, difficulty, clarity or replay appeal. The setup therefore does not advertise an unverified duration. The five-player gates in the [level plan](../../FIRST_SETTLEMENT_LEVEL_PLAN.md) remain pending.
 
 ## Local screenshots
 

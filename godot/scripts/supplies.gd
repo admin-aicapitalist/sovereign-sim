@@ -34,6 +34,7 @@ static func armor(s, u) -> float:
 	return u.definition.get("armor",0)+s.Equipment.bonus(s,u,"armor")+(s.definitions.potions.stoneskin.armor if u.buffs.stoneskin>0 else 0)+(s.definitions.spells.ward.armor if u.magic_buffs.ward>0 else 0)
 static func damage(s, u, target=null) -> float:
 	var value: float=u.definition.damage+s.Equipment.bonus(s,u,"damage")+((u.level-1)*4 if u.hero else 0)
+	if u.hero: value+=mini(int(u.journey.get("cycles",0)),10)*2
 	if u.type=="thief" and target!=null and target.kind=="unit" and target.hostile:
 		var distracted=s.entity(target.target)
 		if distracted!=null and not distracted.dead and not distracted.hostile and distracted.id!=u.id: value+=14

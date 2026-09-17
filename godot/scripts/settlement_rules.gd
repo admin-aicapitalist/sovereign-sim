@@ -1,4 +1,5 @@
 extends RefCounted
+const Journey=preload("res://scripts/journey.gd")
 ## Run rules and factual records. No rendering or profile persistence dependencies.
 static func content() -> Dictionary:
 	return JSON.parse_string(FileAccess.get_file_as_string("res://content/settlements.json"))
@@ -114,6 +115,7 @@ static func valid_state(value: Variant) -> bool:
 		for field in ["level","lairs"]:
 			if not number(h.get(field)) or h[field]<0: return false
 		if not h.get("dead") is bool or not h.get("boss") is bool or not h.get("equipment") is Array: return false
+		if not Journey.valid(h.get("journey",{})): return false
 		for item in h.equipment:
 			if not item is String: return false
 	for e in value.events:

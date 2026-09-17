@@ -13,8 +13,9 @@ static func think(s,u) -> void:
 		if enemy!=null: u.target=enemy.id; u.state="Defending the kingdom"
 		else: u.target=0; wander(s,u,s.pos(s.palace()),5)
 static func hero(s,u) -> void:
+	s.Journey.update(s,u)
 	if s.Mission.dodge(s,u): return
-	if u.hp<u.max_hp*0.3 or u.state in ["Resting","Fleeing"] and u.hp<u.max_hp*0.86:
+	if u.hp<u.max_hp*s.Journey.retreat_threshold(u) or u.state in ["Resting","Fleeing"] and u.hp<u.max_hp*0.86:
 		var home=s.nearest(u.pos,s.operating("temple"))
 		if home==null: home=s.entity(u.home)
 		if home==null or home.dead: home=s.palace()
@@ -29,6 +30,7 @@ static func hero(s,u) -> void:
 		s.Settlement.event(s,"recovered",u); u.state="Seeking adventure"; s.stop(u)
 	var enemy=s.nearest(u.pos,s.nearby(u.pos,u.definition.range+3,true))
 	if enemy!=null: u.target=enemy.id; u.state="Fighting "+enemy.definition.name; return
+	if s.Journey.override_behavior(s,u): return
 	if Supplies.seek(s,u): return
 	if not Supplies.shopping_list(s,u).is_empty():
 		var shop=s.nearest(u.pos,s.operating("marketplace"))
@@ -37,20 +39,24 @@ static func hero(s,u) -> void:
 			else: s.go(u,s.pos(shop),"Buying potions"); return
 	var best=null; var best_score: float=0.045
 	for f in s.flags.values():
+		if not s.Journey.allows(s,u,f): continue
 		var target=s.entity(f.target)
 		if f.dead or target!=null and target.dead: continue
 		var threat: float=maxf(0.8,s.definition_of(target).get("damage",14)/14.0+target.hp/500.0) if target!=null else 1
 		var affinity: float=(2.5 if u.type=="ranger" else 1.7 if u.type=="thief" else 0.55) if f.type=="explore" else u.definition.affinity
-		var score: float=f.reward/(30*threat)*affinity*u.bravery*(1+(u.level-1)*0.18)*(u.hp/u.max_hp)/(1+u.pos.distance_to(s.pos(f))*0.08)
+		var score: float=f.reward/(30*threat)*affinity*u.bravery*s.Journey.bravery(u)*(1+(u.level-1)*0.18)*(u.hp/u.max_hp)/(1+u.pos.distance_to(s.pos(f))*0.08)
+		if not u.journey.is_empty() and u.journey.stage in s.Journey.COMMITTED and f.id==u.journey.calling: score=maxf(score,1)
 		if score>best_score: best=f; best_score=score
 	if best!=null:
 		u.goal=best.id
 		if best.type=="attack": u.target=best.target; u.state="Answering a bounty"
 		elif u.pos.distance_to(s.pos(best))<1.9:
-			best.dead=true; u.gold+=best.reward; s.Settlement.event(s,"explore",u); s.grant_experience(u,20); s.reveal(s.pos(best),9); s.notify(u.name+" claimed an exploration bounty."); s.fx("level",u.pos); u.goal=0
+			best.dead=true; u.gold+=best.reward; s.Settlement.event(s,"explore",u); s.grant_experience(u,20); s.Journey.explored(s,u,best); s.reveal(s.pos(best),9); s.notify(u.name+" claimed an exploration bounty."); s.fx("level",u.pos); u.goal=0
 		else: s.go(u,s.pos(best),"Exploring for gold")
 		return
 	u.goal=0; u.target=0
+	if not u.journey.is_empty() and u.journey.stage=="shadow":
+		wander(s,u,s.pos(s.palace()),4); return
 	var lair=s.nearest(u.pos,s.buildings.filter(func(b):return not b.dead and b.hostile and u.pos.distance_to(s.pos(b))<5))
 	if lair!=null and u.hp>u.max_hp*0.8 and (u.level>1 or u.type=="warrior"): u.target=lair.id; u.state="Raiding a lair"; return
 	if u.type in ["ranger","thief"]:

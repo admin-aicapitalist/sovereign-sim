@@ -1,0 +1,9 @@
+{
+  "checks": [
+    "All heroes expose real journey stages, locations, blockers and actions in one overview",
+    "Inline support spending advances refusal while the overview stays live, with working pause control",
+    "Filters, fallen heroes and support actions are accessible on a 390px phone without opening journals",
+    "Saved journey stages, transition history and fallen-hero records return in the overview"
+  ],
+  "errors": []
+}

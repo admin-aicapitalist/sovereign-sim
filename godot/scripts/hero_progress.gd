@@ -1,7 +1,7 @@
 extends RefCounted
 ## Player-facing explanations of the current simulation, without inventing journey stages.
 static func recovery(s,u) -> bool:
-	return u.hp<u.max_hp*0.3 or u.state in ["Resting","Fleeing"] and u.hp<u.max_hp*0.86
+	return u.hp<u.max_hp*s.Journey.retreat_threshold(u) or u.state in ["Resting","Fleeing"] and u.hp<u.max_hp*0.86
 static func context(s,u) -> Dictionary:
 	var info={"activity":u.state,"goal":"Seeking an opportunity","advice":"","focus":0,"focus_label":"","xp_needed":maxi(0,ceili(u.level*45-u.xp))}
 	var flag=s.entity(u.goal)
@@ -51,6 +51,7 @@ static func history(s,id: int) -> Array:
 			"boss": description="Helped defeat the Ember Warlord"
 			"equipment": description="Equipped "+event.detail
 			"death": description="Fell in service to the kingdom"
+			"journey": description=event.detail
 		if description!="": lines.append("%d:%02d · %s"%[int(event.at/60),int(event.at)%60,description])
 	lines.reverse(); return lines.slice(0,8)
 static func deeds(s,u) -> String:

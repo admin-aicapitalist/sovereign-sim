@@ -11,6 +11,7 @@ const Mission = preload("res://scripts/mission.gd")
 const Equipment = preload("res://scripts/equipment.gd")
 const Content = preload("res://content/catalog.tres")
 const Settlement = preload("res://scripts/settlement_rules.gd")
+const Journey = preload("res://scripts/journey.gd")
 var run: Dictionary = {}
 var definitions: Dictionary = Content.definitions()
 var mission: Dictionary = Mission.empty()
@@ -177,6 +178,7 @@ func add_unit(type: String, point: Vector2, home: int=0) -> Actor:
 	u.state="Seeking adventure" if u.hero else "On duty"; u.infestation=building(u.home).get("infestation",false)
 	Settlement.prepare_unit(self,u)
 	if u.hero: Settlement.event(self,"recruit",u)
+	Journey.initialize(self,u)
 	units.append(u); actors[u.id]=u; by_id[u.id]=u; return u
 func can_build(type: String, tile: Vector2i) -> bool:
 	if not definitions.buildings.has(type) or type=="palace" or definitions.buildings[type].get("hostile",false) or result!="": return false
@@ -335,7 +337,9 @@ func hurt(e: Variant, damage: float, attacker: Variant, damage_kind: String="phy
 	if is_visible(pos(e)) and damage_kind in ["physical","arrow"]:
 		events.append("shield-hit" if impact.warded else "combat-metal" if impact.armored else "combat-body")
 	if e.kind=="building" and e.hostile and not e.reinforced: e.reinforced=true; e.spawn=minf(e.spawn,4)
-	if e.hp>0: return
+	if e.hp>0:
+		if e is Actor and e.hero: Journey.wounded(self,e)
+		return
 	e.hp=0; e.dead=true; stats.kills+=1; stats["slain" if e.hostile else "losses"]+=1; fx("collapse" if e.kind=="building" else "death",pos(e),0,2.2)
 	if e.kind=="building":
 		set_foundation(e,false); ruins.append({"x":e.x,"y":e.y,"size":e.size}); revision+=1
@@ -345,6 +349,7 @@ func hurt(e: Variant, damage: float, attacker: Variant, damage_kind: String="phy
 		else: notify(definition_of(e).name+" has fallen!","danger")
 	Mission.killed(self,e)
 	Settlement.killed(self,e,attacker)
+	Journey.killed(self,e)
 	if e.hostile and not e.infestation and not stress: Supplies.drop_loot(self,e)
 	if e is Actor and e.hero: Equipment.drop_hero(self,e)
 	if attacker is Actor and attacker.hero and not attacker.dead and e.hostile and not e.infestation:
@@ -539,6 +544,7 @@ func restore(input: Dictionary) -> bool:
 	if not validate_collections(data): return false
 	var actor_schema: Dictionary=Actor.new().save(); var ids: Dictionary={}
 	actor_schema.erase("heading") # Optional in version 3 saves made before directional casting.
+	actor_schema.erase("journey") # Earlier saves did not track narrative journeys.
 	for i in data.fixture.tiles.size():
 		var t=data.fixture.tiles[i]
 		if not shape(t,fixture.tiles[0]) or t.kind not in ["grass","path","water","bridge"] or t.x!=i%size or t.y!=int(i/size): return false
@@ -555,6 +561,12 @@ func restore(input: Dictionary) -> bool:
 		if (b.tier!=1 and b.tier!=2) or b.upgrade_remaining<0 or (b.tier==2 and b.upgrade_remaining>0): return false
 	for item in data.units:
 		if not shape(item,actor_schema) or not definitions.units.has(item.type) or not valid_id(item.id,data.next_id,ids): return false
+		if not Journey.valid(item.get("journey",{})): return false
+		if not item.get("journey",{}).is_empty() and (restored_run.is_empty() or not item.hero): return false
+		if not item.get("journey",{}).is_empty():
+			var journey: Dictionary=item.journey
+			if journey.entered>data.time or journey.returned>data.time or journey.calling>=data.next_id or journey.target>=data.next_id: return false
+			if journey.history.any(func(event):return event.at>data.time): return false
 		if item.has("heading"):
 			if not item.heading is Array or item.heading.size()!=2 or not finite_number(item.heading[0]) or not finite_number(item.heading[1]): return false
 			if absf(item.heading[0])>1.001 or absf(item.heading[1])>1.001: return false
@@ -588,6 +600,7 @@ func restore(input: Dictionary) -> bool:
 	for item in data.units:
 		var u:=Actor.new()
 		for key in Actor.FIELDS: u.set(key,item[key])
+		u.journey=item.get("journey",{}).duplicate(true)
 		u.pos=Vector2(item.pos[0],item.pos[1]); u.destination=Vector2(item.destination[0],item.destination[1])
 		for p in item.path: u.path.append(Vector2(p[0],p[1]))
 		u.definition=definitions.units[u.type]
@@ -596,6 +609,7 @@ func restore(input: Dictionary) -> bool:
 		if u.path_index<u.path.size(): u.heading=(u.path[u.path_index]-u.pos).normalized()
 		if item.has("heading"): u.heading=Vector2(item.heading[0],item.heading[1])
 		if u.id==mission.boss_id: Mission.apply_boss(self,u)
+		Journey.initialize(self,u,true)
 		units.append(u); actors[u.id]=u; by_id[u.id]=u
 	rebuild_grid(); rebuild_buckets(); revision+=1; fog_revision+=1; notifications.clear(); events.clear(); notify("Kingdom restored."); return true
 # Validate every variable-length collection before mutating the live kingdom.

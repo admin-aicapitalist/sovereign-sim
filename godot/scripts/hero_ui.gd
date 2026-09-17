@@ -27,27 +27,7 @@ static func service(ui,type: String,heading: String,description: String) -> void
 	else:
 		ui.modal_column.add_child(ui.button("hero_service_"+type,"Build "+s.definitions.buildings[type].name+" · %dg"%s.definitions.buildings[type].cost,func():build_service(ui,type)))
 static func roster(ui) -> void:
-	var s=ui.main.sim; ui.open_modal("heroes")
-	ui.modal_text("HEROES OF THIS REIGN",28)
-	ui.modal_text("See what each hero is doing, how they grow, and what your kingdom can provide.",17)
-	var heroes: Array=s.units.filter(func(u):return u.hero and not u.dead)
-	if heroes.is_empty():
-		ui.modal_text("No heroes recruited yet",22)
-		ui.modal_text("Build a guild, select it once construction finishes, and choose Recruit. Workers and guards keep the town running; recruited heroes gain levels and pursue bounties.")
-		ui.modal_column.add_child(ui.button("hero_build_guild","Build a Warriors’ Guild",func():build_service(ui,"warriors")))
-	for hero in heroes:
-		var panel=ui.panel(ui.modal_column); var col:=VBoxContainer.new(); panel.add_child(col)
-		text(ui,col,hero.name+" · Level %d %s"%[hero.level,hero.definition.name],20)
-		var info=Progress.context(s,hero)
-		text(ui,col,info.activity+"\n"+info.goal)
-		text(ui,col,"Health %d / %d · %d XP to level %d"%[hero.hp,hero.max_hp,info.xp_needed,hero.level+1],15)
-		meter(ui,col,hero.xp,hero.level*45,"a67c37")
-		col.add_child(ui.button("hero_"+str(hero.id),"Journal & next steps",func():journal(ui,hero.id)))
-	var fallen: Array=s.run.get("heroes",{}).values().filter(func(h):return h.dead)
-	if not fallen.is_empty(): ui.modal_text("REMEMBERED",14)
-	for hero in fallen: ui.modal_text(hero.name+" · "+hero.last+"\n%d lairs helped clear"%hero.lairs,16)
-	ui.modal_footer.visible=true; ui.modal_footer.add_child(ui.button("heroes_close","Return to kingdom",func():ui.close_modal(); ui.refresh()))
-	ui.layout(true)
+	ui.JourneyUI.open(ui)
 static func journal(ui,id: int) -> void:
 	var s=ui.main.sim; var hero=s.entity(id)
 	if hero==null or hero.kind!="unit" or not hero.hero or hero.dead: roster(ui); return
@@ -55,6 +35,10 @@ static func journal(ui,id: int) -> void:
 	var info=Progress.context(s,hero)
 	ui.modal_text(hero.name,30)
 	ui.modal_text("Level %d %s · %dg personal gold"%[hero.level,hero.definition.name,hero.gold],18)
+	if not hero.journey.is_empty():
+		var journey=s.Journey.describe(s,hero)
+		ui.modal_text("JOURNEY · "+journey.stage,22); ui.modal_text(journey.next,17)
+		ui.modal_text("%d journeys completed · +%d attack from experience on the road"%[journey.cycles,mini(journey.cycles,10)*2],15)
 	ui.modal_text("NOW · "+info.activity,16); ui.modal_text(info.goal,20); ui.modal_text(info.advice,17)
 	ui.modal_text("Health %d / %d"%[hero.hp,hero.max_hp],15); meter(ui,ui.modal_column,hero.hp,hero.max_hp,"668459")
 	if info.focus>0: ui.modal_column.add_child(ui.button("hero_goal",info.focus_label,func():focus(ui,info.focus)))

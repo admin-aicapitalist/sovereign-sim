@@ -132,7 +132,7 @@ func _process(dt: float) -> void:
 			if mouse.x>size.x-8: direction.x+=1
 		camera+=direction*440*dt/zoom
 	camera=WorldView.iso(WorldView.uniso(camera).clamp(Vector2.ZERO,Vector2.ONE*sim.size))
-	if started and not sim.paused and sim.result=="" and ui.modal==null:
+	if started and not sim.paused and sim.result=="" and (ui.modal==null or ui.modal_kind=="journeys"):
 		accumulator+=dt*speed
 		if accumulator>0.5: dropped_time+=accumulator-0.5; accumulator=0.5
 		while accumulator>=0.05:
@@ -373,6 +373,22 @@ func _web_command(args: Array) -> void:
 		"save": save_game()
 		"load": load_game(sim.run.is_empty())
 		"settlement": prepare_settlement(int(request.get("seed",41972)),request.get("charter","crown"),request.get("condition","untroubled")); begin_settlement(true)
+		"journey_fixture":
+			# Browser-only fixture for the overview; transitions are verified separately through real simulation events.
+			prepare_settlement(41972); begin_settlement(true); sim.paused=true; sim.gold=20000
+			var cast: Array=[]
+			for type in ["warriors","rangers","wizards","thieves"]:
+				var guild=sim.add_building(type,sim.find_site(type)); cast.append(sim.recruit(guild.id))
+			var warrior=cast[0]; warrior.pos=sim.near_point(sim.pos(sim.palace())+Vector2(-14,-14),1)
+			var lair=sim.lairs()[0]; var call=sim.place_flag("attack",sim.pos(lair),lair.id)
+			sim.Journey.start_call(sim,warrior,call); sim.Journey.change(sim,warrior,"refusal","Needs confidence before committing."); warrior.state="Waiting for support"
+			var ranger=cast[1]; call=sim.place_flag("explore",sim.near_point(sim.pos(lair)),0)
+			sim.Journey.start_call(sim,ranger,call); sim.Journey.change(sim,ranger,"tests","On the road to the calling objective."); ranger.state="Exploring for gold"
+			var wizard=cast[2]; var monastery=sim.building(sim.mission.encounter_id); call=sim.place_flag("attack",sim.pos(monastery),monastery.id)
+			sim.Journey.start_call(sim,wizard,call); sim.Journey.change(sim,wizard,"ordeal","Facing the calling objective."); sim.hurt(wizard,wizard.max_hp*0.85,null)
+			var thief=cast[3]; thief.journey.cycles=1; sim.Journey.change(sim,thief,"mastery","Completed a journey. Stronger, and more selective about offers.")
+			var fallen=sim.recruit(sim.building(warrior.home).id); sim.hurt(fallen,999999,null)
+			sim.rebuild_buckets(); sim.update_vision(); center()
 		"damage": sim.hurt(sim.entity(int(request.id)),request.amount,null)
 		"reveal": sim.reveal(Vector2(request.x,request.y),request.get("radius",10))
 		"laboratory":

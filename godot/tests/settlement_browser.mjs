@@ -38,7 +38,7 @@ try{
  await shot('settlement-setup');await key('condition_rich_ruins');assert.equal((await state()).run.config.condition,'rich_ruins');await key('condition_untroubled');
  await key('start');s=await state();const first=s.run.config.id;
  assert.equal((await saved('active')).run.config.id,first);await moving('Found settlement');
- await key('heroes');s=await state();assert.equal(s.modal,'heroes');assert.match(s.modal_text,/No heroes recruited yet/);assert(s.widgets.hero_build_guild);await key('heroes_close');
+ await key('heroes');s=await state();assert.equal(s.modal,'journeys');assert.match(s.modal_text,/No heroes recruited yet/);assert(s.widgets.hero_build_guild);await key('heroes_close');
  await key('pause');await frozen('Pause button');
  for(const type of ['keyDown','keyUp'])await send('Input.dispatchKeyEvent',{type,key:' ',code:'Space',windowsVirtualKeyCode:32,nativeVirtualKeyCode:32});
  await delay(300);await moving('Space resumes');

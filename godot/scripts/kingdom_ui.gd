@@ -8,6 +8,11 @@ const RoyalCard=preload("res://scripts/royal_card.gd")
 const RoyalOverlay=preload("res://scripts/royal_overlay.gd")
 const SettlementUI=preload("res://scripts/settlement_ui.gd")
 const HeroUI=preload("res://scripts/hero_ui.gd")
+const JourneyUI=preload("res://scripts/journey_ui.gd")
+var journey_rows: Dictionary={}
+var journey_signature: String=""
+var journey_filter: String="all"
+var journey_summary: Label
 var hint_panel: PanelContainer
 var hint_label: Label
 var hint_key: String=""
@@ -36,6 +41,8 @@ var modal: Control
 var modal_panel: PanelContainer
 var modal_column: VBoxContainer
 var modal_footer: VBoxContainer
+var modal_header: VBoxContainer
+var modal_scroll: ScrollContainer
 var modal_kind: String=""
 var was_paused: bool=false
 var compact: bool=false
@@ -72,7 +79,7 @@ func _ready() -> void:
 	line.add_child(button("pause","Pause",func():main.sim.paused=not main.sim.paused; refresh()))
 	controls=HFlowContainer.new(); controls.add_theme_constant_override("h_separation",7); top_col.add_child(controls)
 	for n in [1,2,3]: controls.add_child(button("speed_"+str(n),str(n)+"×",func():main.speed=n; main.sim.paused=false; refresh()))
-	controls.add_child(button("heroes","Heroes",func():HeroUI.roster(self)))
+	controls.add_child(button("heroes","Hero Journeys",func():HeroUI.roster(self)))
 	controls.add_child(button("sound","Sound",func():main.sound.toggle(); refresh()))
 	controls.add_child(button("save","Save",main.save_game)); controls.add_child(button("load","Load",func():main.load_game(main.sim.run.is_empty())))
 	controls.add_child(button("help","Help",show_help)); controls.add_child(button("new","Reign",show_run_menu))
@@ -231,6 +238,7 @@ func refresh() -> void:
 	refresh_hint()
 	update_cards(); layout(true); minimap.queue_redraw()
 	if s.result!="" and s.result!=last_result: last_result=s.result; show_end()
+	if modal_kind=="journeys": JourneyUI.refresh(self)
 	refresh_ms=(Time.get_ticks_usec()-began)/1000.0
 func inspect(e) -> void:
 	var s=main.sim
@@ -300,13 +308,15 @@ func research_status(kind: String) -> String:
 	if not state.project.is_empty(): return "Studying: %s · %ds"%[state.project.key,state.project.remaining]
 	return "%d learned"%state.unlocked.size()
 func open_modal(kind: String) -> void:
-	var resume_state: bool=was_paused if modal!=null else main.sim.paused
+	var resume_state: bool=was_paused if modal!=null and modal_kind!="journeys" else main.sim.paused
 	if modal!=null: close_modal(false)
-	was_paused=resume_state; main.sim.paused=true; modal_kind=kind
+	was_paused=resume_state; main.sim.paused=resume_state if kind=="journeys" else true; modal_kind=kind
 	modal=ColorRect.new(); modal.color=Color(0.035,0.045,0.04,0.82); modal.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); root.add_child(modal)
 	modal_panel=panel(modal); modal_panel.add_theme_stylebox_override("panel",Royal.box("parchment",20))
 	var body:=VBoxContainer.new(); modal_panel.add_child(body)
+	modal_header=VBoxContainer.new(); modal_header.visible=false; body.add_child(modal_header)
 	var scroll:=ScrollContainer.new(); scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL; body.add_child(scroll)
+	modal_scroll=scroll
 	modal_footer=VBoxContainer.new(); modal_footer.visible=false; body.add_child(modal_footer)
 	modal_column=VBoxContainer.new(); modal_column.size_flags_horizontal=Control.SIZE_EXPAND_FILL; modal_column.add_theme_constant_override("separation",12); scroll.add_child(modal_column); layout_modal()
 func layout_modal() -> void:
@@ -317,12 +327,15 @@ func layout_modal() -> void:
 		if is_instance_valid(menu_title): menu_title.add_theme_font_size_override("font_size",35 if small else 49)
 		if is_instance_valid(menu_tagline): menu_tagline.add_theme_font_size_override("font_size",21 if small else 25)
 		if is_instance_valid(menu_caption): menu_caption.visible=not small; menu_caption.position=Vector2(s.x-420,s.y-90); menu_caption.size=Vector2(370,50)
+	elif modal_kind=="journeys":
+		modal_panel.size=Vector2(minf(1240,s.x-24),minf(920,s.y-32)); modal_panel.position=(s-modal_panel.size)/2
 	else:
 		modal_panel.size=Vector2(minf(720,s.x-24),minf(740,s.y-32)); modal_panel.position=(s-modal_panel.size)/2
 func modal_text(text: String,font_size: int=18) -> void:
 	var l=label(text,font_size,"ddcfaf" if modal_kind=="welcome" else "453525"); l.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; modal_column.add_child(l)
 func close_modal(resume: bool=true) -> void:
 	if modal==null: return
+	if modal_kind=="journeys": was_paused=main.sim.paused
 	root.remove_child(modal); modal.queue_free(); modal=null; modal_kind=""
 	if resume: main.sim.paused=was_paused
 	top.visible=true; deck.visible=true; layout(true)
@@ -373,7 +386,8 @@ func SimulationSeed(text: String) -> int: return main.sim.SeedRng.normalize(text
 func show_help() -> void:
 	open_modal("help"); modal_text("The art of ruling",30)
 	modal_text("Build a guild, then recruit heroes. They choose their own targets; attack and exploration bounties give them reasons to follow your plans. "+("Defeat the Warlord and keep the Palace standing. Other lairs are optional." if not main.sim.run.is_empty() else "Destroy all eight campaign lairs and keep the Palace standing."))
-	modal_text("Open Heroes, then Journal & next steps to see a hero’s current goal, XP needed for the next level, supplies, and recorded deeds. Find hero returns to their position; support buttons open the relevant service or bounty tool.")
+	modal_text("Open Hero Journeys to track every hero’s stage, location, current call and next support action together. The overview stays live and has its own pause control. Filter heroes needing support, on quests, recovering or at Mastery. Journals remain available for equipment and history.")
+	modal_text("Journeys move from Ordinary World through Call, Refusal, Threshold, Tests & Allies and Ordeal to Return and Mastery. Calls take 30–90 seconds to consider. Refusal needs 60% health and either a healthy ally nearby, healing supplies/a nearby Temple, or a 150g calling bounty. Failure below 20% health during an ordeal leads to Shadow, with recovery conditions shown in the overview.")
 	modal_text("Build Marketplaces to research potions and Temples to learn spells. Heroes buy supplies using their own gold and collect treasure when ground is safe. Wizards share learned spells and spend regenerating mana.")
 	modal_text("Guild upgrades add two beds, 25% building health, and guild support (+4 attack, +2 armor). Select a completed guild to fund training. Heroes automatically equip better relic weapons and armor from safe treasure; equipment drops on death for another hero to recover.")
 	modal_text("The Ashen March: two lairs reveal the monastery; you can also discover it naturally. Clearing it calls the Warlord in 90 seconds. He guards the ruins until heroes approach. Heroes try to dodge marked slams; healing and protective magic help them survive. He enrages at half health." if not main.sim.run.is_empty() else "The Ember Crown: reveal the monastery, defeat the Warlord and clear all eight lairs.")

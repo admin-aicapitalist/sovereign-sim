@@ -35,7 +35,7 @@ Use [SETTLEMENT_ROGUELITE_PLAN.md](SETTLEMENT_ROGUELITE_PLAN.md) for milestone s
 | Run structure | One settlement is one complete run; Renown and alternative starts persist. |
 | Technology | Extend the active Godot game and its content resources. |
 | Heroes | Warrior, Ranger, Wizard, and Thief. The Temple provides recovery and spell research; it does not recruit Clerics. |
-| Character stories | Surface real decisions, recoveries, equipment, and accomplishments. The full Journey state machine, bonds, and shadow behavior remain later work. |
+| Character stories | The Journey is a core feature: implement real stages, conditional commitment, ordeals, Shadow recovery and Mastery for the four existing classes. Track all heroes together in a live overview. Social bonds and additional classes remain later work. |
 | Narration | Short authored text, selected from recorded events; entirely offline. |
 | Progression | Alternative starts with tradeoffs. Basic services and all four classes remain available from the first run. |
 | Art | Use the existing illustrated kingdom, royal interface, and Ember encounter assets. |
@@ -113,7 +113,7 @@ These values are first playtest candidates. Tune early hero survival, warning re
 
 ## 6. Heroes carry the story
 
-Use the current AI to produce the beginning of a character arc: arrival, first risk, retreat or success, recovery, and another attempt. Guidance follows whichever hero actually performs the event. It does not require a named hero to survive.
+Use saved Journey stages to direct the existing autonomous AI: arrival, a calling offer, hesitation, supported commitment, ordeal, return or Shadow, and another cycle. Guidance follows each hero's real transition conditions and accomplishments. It does not require a named hero to survive.
 
 | Actual behavior | Useful player-facing explanation | Available response |
 | --- | --- | --- |
@@ -127,7 +127,7 @@ Do not label ordinary retreat as a psychological shadow state or claim heroes ha
 
 Keep selected-hero status visible. Add a compact factual event record sufficient to retain recruitment, major objective participation, relic equipment, and deaths, including heroes removed from the live actor list. Result examples must use those facts: “Wren discovered the monastery” only if discovery attribution was recorded. Otherwise describe the settlement's discovery without naming a hero.
 
-The **Heroes** roster and **Journal & next steps** view expose each hero's current goal, health, next-level XP requirement, support options and recorded history. Finishing enemies and lairs grants combat XP; claiming an exploration bounty grants 20 XP and can immediately trigger a level. Guild training and personal equipment strengthen a hero separately from levels. Journals record actual exploration rewards, level gains, retreats and recovery without labeling them as the deferred Journey stages.
+The **Hero Journeys** menu exposes every hero's narrative stage, location, current call, unmet conditions and next support action together. It stays live, supports pausing, and filters support needs, quests, recovery, Mastery and fallen heroes. Stages are saved simulation states that affect decisions. Journals provide optional XP, equipment and history detail. Finishing enemies and lairs grants combat XP; claiming an exploration bounty grants 20 XP and can immediately trigger a level. Guild training and equipment strengthen heroes separately from levels and completed journeys. See [implemented journey rules](godot/reports/JOURNEYS.md).
 
 Limit onboarding to four short contextual hints: recruiting from a completed guild, posting or increasing a bounty, understanding a wounded hero's retreat, and distinguishing hero shopping money from the treasury. Show at most one at a time, allow dismissal or disabling all hints, and retain seen-hint preferences across sessions. There is no tutorial checklist or required action before objectives advance. Pause and speed controls remain available throughout. Monastery, raid, and defeat messages are ordinary scenario feedback on every run.
 
@@ -218,4 +218,4 @@ Automated victory establishes that a configuration can complete. Human tests dec
 
 ## 11. Implemented direction
 
-The local implementation uses the standard replayable format with light onboarding, victory at the Warlord's defeat, factual hero records before the full Journey system, and a first charter unlock that changes spending priorities. The timing and balance values remain provisional. Human clarity, difficulty, and replay-appeal gates are still pending; see the verification record for completed automated checks.
+The local implementation uses the standard replayable format with light onboarding, victory at the Warlord's defeat, a live overview backed by real hero journeys, and a first charter unlock that changes spending priorities. The timing and balance values remain provisional. Human clarity, difficulty, and replay-appeal gates are still pending; see the verification record for completed automated checks.
