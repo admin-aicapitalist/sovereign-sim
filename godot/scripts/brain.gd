@@ -28,9 +28,11 @@ static func hero(s,u) -> void:
 		return
 	if u.state in ["Resting","Fleeing"]:
 		s.Settlement.event(s,"recovered",u); u.state="Seeking adventure"; s.stop(u)
+	if s.Journey.is_shadow(u): s.Journey.override_behavior(s,u); return
 	var enemy=s.nearest(u.pos,s.nearby(u.pos,u.definition.range+3,true))
 	if enemy!=null: u.target=enemy.id; u.state="Fighting "+enemy.definition.name; return
 	if s.Journey.override_behavior(s,u): return
+	if s.Court.thieve(s,u): return
 	if Supplies.seek(s,u): return
 	if not Supplies.shopping_list(s,u).is_empty():
 		var shop=s.nearest(u.pos,s.operating("marketplace"))
@@ -55,8 +57,6 @@ static func hero(s,u) -> void:
 		else: s.go(u,s.pos(best),"Exploring for gold")
 		return
 	u.goal=0; u.target=0
-	if not u.journey.is_empty() and u.journey.stage=="shadow":
-		wander(s,u,s.pos(s.palace()),4); return
 	var lair=s.nearest(u.pos,s.buildings.filter(func(b):return not b.dead and b.hostile and u.pos.distance_to(s.pos(b))<5))
 	if lair!=null and u.hp>u.max_hp*0.8 and (u.level>1 or u.type=="warrior"): u.target=lair.id; u.state="Raiding a lair"; return
 	if u.type in ["ranger","thief"]:

@@ -37,7 +37,7 @@ static func journal(ui,id: int) -> void:
 	ui.modal_text("Level %d %s · %dg personal gold"%[hero.level,hero.definition.name,hero.gold],18)
 	if not hero.journey.is_empty():
 		var journey=s.Journey.describe(s,hero)
-		ui.modal_text("JOURNEY · "+journey.stage,22); ui.modal_text(journey.next,17)
+		ui.modal_text(("SHADOW · " if journey.aspect=="shadow" else "PERSONA · ")+journey.stage,22); ui.modal_text(journey.next,17)
 		ui.modal_text("%d journeys completed · +%d attack from experience on the road"%[journey.cycles,mini(journey.cycles,10)*2],15)
 	ui.modal_text("NOW · "+info.activity,16); ui.modal_text(info.goal,20); ui.modal_text(info.advice,17)
 	ui.modal_text("Health %d / %d"%[hero.hp,hero.max_hp],15); meter(ui,ui.modal_column,hero.hp,hero.max_hp,"668459")

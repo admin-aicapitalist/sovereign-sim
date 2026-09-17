@@ -36,6 +36,8 @@ func campaign(seed_value: int,charter: String,condition: String) -> Dictionary:
 				if b.id==s.mission.boss_id: return false
 				return s.pos(a).distance_to(s.pos(s.palace()))<s.pos(b).distance_to(s.pos(s.palace())))
 			if not targets.is_empty(): s.place_flag("attack",s.pos(targets[0]),targets[0].id,150)
+		for u in s.units:
+			if u.hero and not u.dead and s.Journey.is_shadow(u) and u.journey.recovery_site==0 and s.gold>200: s.Journey.sponsor(s,u)
 		advance(s,1)
 		if second==150:
 			var resumed=S.new()
@@ -53,5 +55,5 @@ func run() -> void:
 				var report=campaign(seed_value,charter,condition); reports.append(report); print("SETTLEMENT ",JSON.stringify(report))
 	var passed: bool=reports.all(func(r):return r.pass)
 	var file=FileAccess.open("res://reports/settlement-campaign.json",FileAccess.WRITE)
-	file.store_string(JSON.stringify({"pass":passed,"runs":reports,"note":"Paid construction, recruitment, upgrades, potion/spell research, and bounties on explored targets. Autonomous heroes, no combat cheats. Each run resumes from a save. Human pacing and replay appeal remain untested."},"\t")+"\n")
+	file.store_string(JSON.stringify({"pass":passed,"runs":reports,"note":"Paid construction, recruitment, upgrades, potion/spell research, targeted Shadow recovery, and bounties on explored targets. Autonomous heroes, no combat cheats. Each run resumes from a save. Human pacing and replay appeal remain untested."},"\t")+"\n")
 	quit(0 if passed else 1)

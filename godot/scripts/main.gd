@@ -276,7 +276,7 @@ func debug_state() -> Dictionary:
 	var units: Array=[]
 	for u in sim.units: units.append(u.save())
 	var state={"mission":sim.mission,"mission_objective":Simulation.Mission.objective(sim),"cue_count":world.cues.size(),"seed":sim.fixture.seed,"region":sim.fixture.name,"time":sim.time,"gold":sim.gold,"result":sim.result,"paused":sim.paused,"speed":speed,"started":started,"selection":world.selected,"mode_kind":world.mode_kind,"mode":world.mode_key,"modal":ui.modal_kind,"units":units,"buildings":sim.buildings,"flags":sim.flags.values().filter(func(f):return not f.dead),"loot":sim.loot,"alchemy":sim.alchemy,"magic":sim.magic,"cooldowns":sim.cooldowns,"stats":sim.stats,"rng":sim.rng.state,"message":sim.message,"camera":[camera.x,camera.y],"zoom":zoom,"viewport":[get_viewport_rect().size.x,get_viewport_rect().size.y],"widgets":ui.debug_widgets(),"explored":sim.fixture.tiles.filter(func(t):return t.explored).size(),"visible":sim.fixture.tiles.filter(func(t):return t.visible).size(),"build_sites":{},"entities_on_screen":[],"rendered_units":world.rendered_units,"sound":sound.enabled,"inspector_text":ui.details.text,"modal_rect":[ui.modal_panel.position.x,ui.modal_panel.position.y,ui.modal_panel.size.x,ui.modal_panel.size.y] if ui.modal!=null else [],"minimap_rect":[ui.minimap.global_position.x,ui.minimap.global_position.y,ui.minimap.size.x,ui.minimap.size.y]}
-	for type in ["warriors","rangers","wizards","marketplace","temple","house","tower","thieves"]:
+	for type in ["warriors","rangers","wizards","marketplace","temple","house","tower","thieves","inn","brothel"]:
 		var tile=sim.find_site(type); var p=world.to_global(WorldView.iso(Vector2(tile)+Vector2.ONE*0.1)); state.build_sites[type]={"tile":[tile.x,tile.y],"point":[p.x,p.y]}
 	for e in sim.units+sim.buildings+sim.flags.values()+sim.loot:
 		var p=world.to_global(WorldView.iso(sim.pos(e))+Vector2(0,-20 if e.kind=="unit" else -35 if e.kind=="building" else 0)); state.entities_on_screen.append({"id":e.id,"point":[p.x,p.y]})
@@ -387,6 +387,10 @@ func _web_command(args: Array) -> void:
 			var wizard=cast[2]; var monastery=sim.building(sim.mission.encounter_id); call=sim.place_flag("attack",sim.pos(monastery),monastery.id)
 			sim.Journey.start_call(sim,wizard,call); sim.Journey.change(sim,wizard,"ordeal","Facing the calling objective."); sim.hurt(wizard,wizard.max_hp*0.85,null)
 			var thief=cast[3]; thief.journey.cycles=1; sim.Journey.change(sim,thief,"mastery","Completed a journey. Stronger, and more selective about offers.")
+			sim.add_building("temple",sim.find_site("temple"))
+			var inn=sim.add_building("inn",sim.find_site("inn")); sim.add_building("brothel",sim.find_site("brothel"))
+			wizard.hp=wizard.max_hp; wizard.gold=200; wizard.pos=sim.near_open(sim.pos(inn)); wizard.journey.leisure_place=inn.id; sim.Court.leisure(sim,wizard)
+			thief.pos=wizard.pos+Vector2(0.2,0.2)
 			var fallen=sim.recruit(sim.building(warrior.home).id); sim.hurt(fallen,999999,null)
 			sim.rebuild_buckets(); sim.update_vision(); center()
 		"damage": sim.hurt(sim.entity(int(request.id)),request.amount,null)

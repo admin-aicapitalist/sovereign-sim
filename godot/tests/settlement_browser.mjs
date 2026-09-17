@@ -10,7 +10,7 @@ async function key(name){
   const s=await state(),w=s.widgets[name];assert(w,`Control ${name} exists`);assert(!w.disabled,`${name} enabled`);
   const [x,y]=w.point;
   const bounds=w.clip_rect||s.modal_rect;
-  if(!s.modal || (y>bounds[1]+20 && y<bounds[1]+bounds[3]-20)) {await click([x,y]);return;}
+  if(!s.modal || (y>bounds[1]+20 && y<bounds[1]+bounds[3]-20)) {await click([x,y]);if(name==='load_welcome'&&['setup','title'].includes((await state()).modal)){await delay(250);continue;}return;}
   const [rx,ry,rw,rh]=bounds;
   await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:rx+rw/2,y:ry+rh/2});
   await send('Input.dispatchMouseEvent',{type:'mouseWheel',x:rx+rw/2,y:ry+rh/2,deltaX:0,deltaY:y<ry+28?-230:230});await delay(180);

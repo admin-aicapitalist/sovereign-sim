@@ -86,7 +86,8 @@ copyfile(ROOT/'assets/fonts/alegreya-italic.ttf', OUT/'alegreya-italic.ttf')
 
 assets = json.loads((ROOT/'godot/data/assets.json').read_text())
 for key, meta in assets.items():
-    if key.startswith('terrain-') or key.startswith('bridge-') or key=='unit_warlord' or 'directions' in meta:
+    # Leisure venues have their own reproducible finishing pipeline.
+    if key in ('inn','brothel') or key.startswith('terrain-') or key.startswith('bridge-') or key=='unit_warlord' or 'directions' in meta:
         continue
     src = Image.open(ROOT/meta['source']).convert('RGBA')
     rendered = ROOT/f'assets/art/royal/{key}-render.png'

@@ -13,6 +13,8 @@ static func context(s,u) -> Dictionary:
 		info.goal=("Resting at " if u.state=="Resting" else "Returning to ")+home.site_name
 		info.advice="Let them recover to about 86% health before another expedition. A Temple restores health faster; healing potions help before retreat."
 		info.focus=home.id; info.focus_label="View recovery site"
+	elif s.Journey.is_shadow(u):
+		info.goal="Shadow · "+s.Journey.SHADOWS[u.type]; info.advice=s.Journey.describe(s,u).next
 	elif u.state=="Buying potions":
 		info.goal="Buying supplies before heading out"
 		info.advice="Let the shopping trip finish. Heroes spend their own purse; your treasury funds potion research."
@@ -51,7 +53,7 @@ static func history(s,id: int) -> Array:
 			"boss": description="Helped defeat the Ember Warlord"
 			"equipment": description="Equipped "+event.detail
 			"death": description="Fell in service to the kingdom"
-			"journey": description=event.detail
+			"journey","leisure","theft": description=event.detail
 		if description!="": lines.append("%d:%02d · %s"%[int(event.at/60),int(event.at)%60,description])
 	lines.reverse(); return lines.slice(0,8)
 static func deeds(s,u) -> String:

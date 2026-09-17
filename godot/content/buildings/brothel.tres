@@ -1,0 +1,11 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/content/buildings.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "brothel"
+name = "Brothel"
+description = "A place for idle heroes to spend their fortunes near the castle. Each 18-second visit costs 14 personal gold, collected as taxes. Distracted patrons attract thieves; leisure does not cure Shadow."
+hp = 650
+cost = 240
+size = 2
+properties = {"short":"Brothel","subtitle":"Fortunes spent within the castle walls","sight":6,"buildTime":14,"visit_cost":14}

@@ -51,9 +51,10 @@ const load = async (query = '?test=1&seed=41972') => {
   await send('Network.enable');
   await send('Network.setCacheDisabled', { cacheDisabled: true });
   const start = performance.now();
-  await send('Page.navigate', { url: new URL(query, origin).href });
+  const destination=new URL(query,origin);destination.searchParams.set('_test_load',String(start));
+  await send('Page.navigate', { url: destination.href });
   for (let i = 0; i < 300; i++) {
-    if (await ev('typeof window.sovereignCommand === "function" && !!window.sovereignState')) { await delay(600); return performance.now() - start; }
+    if (await ev(`location.href===${JSON.stringify(destination.href)} && typeof window.sovereignCommand === "function" && !!window.sovereignState`)) { await delay(600); return performance.now() - start; }
     await delay(200);
   }
   throw Error(`Godot did not start: ${JSON.stringify({ errors, messages })}`);
@@ -67,7 +68,7 @@ const loadStandalone = async (query) => {
     if(s.modal==='welcome')return elapsed;
     const w=s.widgets.legacy;assert(w,'Standalone chronicles entry exists');
     const [x,y]=w.point,[rx,ry,rw,rh]=w.clip_rect||s.modal_rect;
-    if(y>ry+8&&y<ry+rh-8){await click([x,y]);return elapsed;}
+    if(y>ry+8&&y<ry+rh-8){await click([x,y]);if((await state()).modal==='welcome')return elapsed;continue;}
     await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:rx+rw/2,y:ry+rh/2});
     await send('Input.dispatchMouseEvent',{type:'mouseWheel',x:rx+rw/2,y:ry+rh/2,deltaX:0,deltaY:y<ry+20?-240:240});await delay(200);
   }

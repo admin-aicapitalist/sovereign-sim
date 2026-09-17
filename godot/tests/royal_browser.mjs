@@ -10,7 +10,7 @@ function inside(widget,width,height,name){
   assert(x>=0&&y>=0&&x+w<=width+1&&y+h<=height+1,`${name} fits ${width}×${height}: ${widget.rect}`);
 }
 try {
-  await send('Runtime.enable'); await send('Page.enable');
+  await send('Runtime.enable'); await send('Page.enable'); await send('Emulation.setFocusEmulationEnabled',{enabled:true});
   for(const [width,height,dpr] of [[1440,900,1],[390,844,2],[768,1024,1]]) {
     await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:dpr,mobile:width<900});
     await load();

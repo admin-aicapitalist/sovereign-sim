@@ -11,6 +11,7 @@ const Mission = preload("res://scripts/mission.gd")
 const Equipment = preload("res://scripts/equipment.gd")
 const Content = preload("res://content/catalog.tres")
 const Settlement = preload("res://scripts/settlement_rules.gd")
+const Court = preload("res://scripts/court_economy.gd")
 const Journey = preload("res://scripts/journey.gd")
 var run: Dictionary = {}
 var definitions: Dictionary = Content.definitions()
@@ -542,6 +543,7 @@ func restore(input: Dictionary) -> bool:
 	if data.get("version",0)!=3 or not shape(data,schema): return false
 	if data.fixture.get("size")!=size or data.fixture.get("tiles",[]).size()!=size*size or data.buildings.is_empty(): return false
 	if not validate_collections(data): return false
+	if restored_run.has("court") and not Court.valid(restored_run.court,data.next_id,data.time,data.buildings): return false
 	var actor_schema: Dictionary=Actor.new().save(); var ids: Dictionary={}
 	actor_schema.erase("heading") # Optional in version 3 saves made before directional casting.
 	actor_schema.erase("journey") # Earlier saves did not track narrative journeys.
@@ -567,6 +569,10 @@ func restore(input: Dictionary) -> bool:
 			var journey: Dictionary=item.journey
 			if journey.entered>data.time or journey.returned>data.time or journey.calling>=data.next_id or journey.target>=data.next_id: return false
 			if journey.history.any(func(event):return event.at>data.time): return false
+			if journey.version==2:
+				if journey.shadow_since>data.time or journey.recovery_at>data.time or journey.recovery_site>=data.next_id or journey.leisure_place>=data.next_id: return false
+				if journey.leisure_until>data.time+18.01 or journey.leisure_next>data.time+30.01 or journey.theft_ready>data.time+Court.THEFT_COOLDOWN+0.01: return false
+				if journey.recovery_site>0 and not data.buildings.any(func(b):return b.id==journey.recovery_site and b.type==("temple" if item.type=="wizard" else {"warrior":"warriors","ranger":"rangers","thief":"thieves"}.get(item.type,""))): return false
 		if item.has("heading"):
 			if not item.heading is Array or item.heading.size()!=2 or not finite_number(item.heading[0]) or not finite_number(item.heading[1]): return false
 			if absf(item.heading[0])>1.001 or absf(item.heading[1])>1.001: return false

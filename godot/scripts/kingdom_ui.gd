@@ -174,7 +174,7 @@ func update_cards(force: bool=false) -> void:
 	card_signature=signature
 	if card_tab!=tab: clear(cards); card_tab=tab
 	for key in ["build","recruit","bounty","spells"]: Royal.active(widgets["tab_"+key],key==tab)
-	var keys: Array=["warriors","rangers","wizards","marketplace","temple","tower","house","thieves"] if tab=="build" else ["warrior","ranger","wizard","thief"] if tab=="recruit" else ["attack","explore"] if tab=="bounty" else s.definitions.spells.keys()
+	var keys: Array=["warriors","rangers","wizards","marketplace","temple","tower","house","thieves","inn","brothel"] if tab=="build" else ["warrior","ranger","wizard","thief"] if tab=="recruit" else ["attack","explore"] if tab=="bounty" else s.definitions.spells.keys()
 	for key in keys:
 		var text: String=""; var tooltip: String=""; var icon: Texture2D=null; var disabled: bool=false
 		if tab=="build":
@@ -261,6 +261,10 @@ func inspect(e) -> void:
 			if d.has("recruits"): add_action("action","Recruit %s · %dg"%[d.recruits,s.definitions.units[d.recruits].cost],func():s.recruit(e.id); refresh(),e.progress<1)
 			if e.type=="marketplace" and e.progress==1: details.text+="\n"+research_status("potion"); add_action("research","Potions & research",func():show_research("potion",e.id))
 			if e.type=="temple" and e.progress==1: details.text+="\n"+research_status("spell"); add_action("research","Spellbook & research",func():show_research("spell",e.id))
+			if e.type=="thieves" and not s.run.is_empty():
+				details.text+="\nGuild bank: %dg · Seizure %s\nThieves keep half; half of each theft enters this bank."%[s.Court.bank(s,e.id),"ready" if s.Court.wait_time(s)==0 else "in %ds"%s.Court.wait_time(s)]
+				add_action("confiscate","Confiscate guild bank",func():s.Court.confiscate(s,e.id); refresh(),e.progress<1 or s.Court.wait_time(s)>0 or s.Court.bank(s,e.id)<=0)
+			if e.type in ["inn","brothel"]: details.text+="\nVisit: %dg from a hero’s purse. Collectors carry the proceeds.\nPatrons nearby: %d"%[d.visit_cost,s.units.filter(func(u):return not u.dead and u.journey.get("leisure_place",0)==e.id and u.journey.get("leisure_until",0)>s.time).size()]
 			if e.type=="house": add_action("demolish","Demolish · no refund",func():s.demolish(e.id); refresh())
 	elif e.kind=="unit":
 		var art_key: String="unit_warlord" if e.id==s.mission.boss_id else "unit_"+e.type
@@ -387,7 +391,7 @@ func show_help() -> void:
 	open_modal("help"); modal_text("The art of ruling",30)
 	modal_text("Build a guild, then recruit heroes. They choose their own targets; attack and exploration bounties give them reasons to follow your plans. "+("Defeat the Warlord and keep the Palace standing. Other lairs are optional." if not main.sim.run.is_empty() else "Destroy all eight campaign lairs and keep the Palace standing."))
 	modal_text("Open Hero Journeys to track every hero’s stage, location, current call and next support action together. The overview stays live and has its own pause control. Filter heroes needing support, on quests, recovering or at Mastery. Journals remain available for equipment and history.")
-	modal_text("Journeys move from Ordinary World through Call, Refusal, Threshold, Tests & Allies and Ordeal to Return and Mastery. Calls take 30–90 seconds to consider. Refusal needs 60% health and either a healthy ally nearby, healing supplies/a nearby Temple, or a 150g calling bounty. Failure below 20% health during an ordeal leads to Shadow, with recovery conditions shown in the overview.")
+	modal_text("Persona and Shadow can alternate throughout a hero’s life. A crushing defeat below 20% health interrupts any journey, even Mastery. Shadow heroes stop adventuring and withdraw to the castle. Healing alone cannot restore purpose: fund support in Hero Journeys, then protect their 25 seconds of practice at a guild or Temple. Refusing heroes spend their own gold at an Inn or Brothel near the castle. Thieves pick patrons’ pockets and bank half the stolen gold. Confiscate a guild bank once per 120 game seconds through Guild banks & leisure.")
 	modal_text("Build Marketplaces to research potions and Temples to learn spells. Heroes buy supplies using their own gold and collect treasure when ground is safe. Wizards share learned spells and spend regenerating mana.")
 	modal_text("Guild upgrades add two beds, 25% building health, and guild support (+4 attack, +2 armor). Select a completed guild to fund training. Heroes automatically equip better relic weapons and armor from safe treasure; equipment drops on death for another hero to recover.")
 	modal_text("The Ashen March: two lairs reveal the monastery; you can also discover it naturally. Clearing it calls the Warlord in 90 seconds. He guards the ruins until heroes approach. Heroes try to dodge marked slams; healing and protective magic help them survive. He enrages at half health." if not main.sim.run.is_empty() else "The Ember Crown: reveal the monastery, defeat the Warlord and clear all eight lairs.")
@@ -434,3 +438,24 @@ func debug_widgets() -> Dictionary:
 					var clip: Rect2=ancestor.get_global_rect(); out[key].clip_rect=[clip.position.x,clip.position.y,clip.size.x,clip.size.y]; break
 				ancestor=ancestor.get_parent()
 	return out
+
+func show_court() -> void:
+	open_modal("court"); render_court()
+func render_court() -> void:
+	var s=main.sim; clear(modal_column)
+	modal_text("GUILD BANKS & LEISURE",26)
+	modal_text("Kingdom paused · return to Hero Journeys to resume time.",15)
+	modal_text("Refusing heroes spend their own gold at an Inn or Brothel within 16 tiles of the castle. A visit lasts 18s. Spending does not cure Shadow.",17)
+	modal_text("Thieves steal up to 20g from a nearby patron every 20s. They keep half and deposit half in their own guild. Collectors carry venue income as taxes; guild banks require a royal seizure.",17)
+	modal_text("Royal seizure ready" if s.Court.wait_time(s)==0 else "Next royal seizure in %ds of kingdom time"%s.Court.wait_time(s),20)
+	var guilds: Array=s.operating("thieves")
+	if guilds.is_empty(): modal_text("Build a Thieves’ Guild and recruit a thief to start a guild bank.",17)
+	for guild in guilds:
+		modal_text(guild.site_name+" · %dg banked"%s.Court.bank(s,guild.id),20)
+		var seize=button("court_seize_"+str(guild.id),"Confiscate · %dg"%s.Court.bank(s,guild.id),func():s.Court.confiscate(s,guild.id); render_court())
+		seize.disabled=s.result!="" or s.Court.wait_time(s)>0 or s.Court.bank(s,guild.id)<=0; modal_column.add_child(seize)
+	for type in ["inn","brothel","thieves"]:
+		var d=s.definitions.buildings[type]
+		modal_text(d.name+" · %d operating"%s.operating(type).size(),20)
+		modal_column.add_child(button("court_build_"+type,"Build "+d.name+" · %dg"%d.cost,func():HeroUI.build_service(self,type)))
+	modal_column.add_child(button("court_journeys","Back to Hero Journeys",func():JourneyUI.open(self)))

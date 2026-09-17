@@ -26,7 +26,7 @@ TYPES = {
     "temple": "Temple of Light", "tower": "Guard Tower",
     "house": "Peasant Cottage", "sewer": "The Old Sewer",
     "graveyard": "Haunted Graveyard", "goblin": "Goblin Camp",
-    "thieves": "Thieves’ Guild",
+    "thieves": "Thieves’ Guild", "inn": "Inn", "brothel": "Brothel",
 }
 TAU = math.tau
 g = None
@@ -627,6 +627,45 @@ def build_thieves():
     crate(2.5,-2.34,s=.43)
     stairs(.6,-2.28,1.18,3)
     chimney(1.7,1.5,4.02,.95)
+
+
+def build_inn():
+    paving()
+    timber_hall(-.3,.55,4.0,3.7,3.0,1.55)
+    door(-.35,-1.33,w=.9,h=1.8)
+    chimney(1.1,1.6,4.1,1.1)
+    group("Inn · tankard sign and outdoor benches")
+    g.rod((1.77,-1.3,2.65),(2.6,-1.3,2.65),.04,art.iron)
+    g.box((2.4,-1.3,2.22),(.7,.1,.62),art.woods[0])
+    g.box((2.33,-1.37,2.2),(.24,.045,.31),art.gold_light)
+    round_ring((2.54,-1.4,2.22),.105,(0,1,0),art.gold_light,.027)
+    for x in (-1.65,.85):
+        g.box((x,-2.25,.93),(1.3,.65,.12),art.woods[1])
+        for dx in (-.43,.43):
+            g.box((x+dx,-2.25,.58),(.13,.48,.67),art.woods[0])
+        for y in (-2.75,-1.8):
+            g.box((x,y,.58),(1.3,.23,.13),art.woods[0])
+    barrel(2.45,.75,s=.85)
+    barrel(2.45,1.65,s=.75)
+
+
+def build_brothel():
+    paving()
+    timber_hall(.1,.65,4.35,3.6,3.65,1.45)
+    door(.15,-1.2,w=1.0,h=1.9)
+    group("Brothel · crimson curtains and lanterned veranda")
+    g.box((.1,-1.65,2.35),(4.6,1.1,.16),art.woods[0])
+    for x in (-1.95,2.15):
+        g.rod((x,-2.08,.24),(x,-2.08,2.4),.065,art.woods[0])
+        art.banner((x,-2.12),0,1.05,.4,.9)
+    for x in (-1.3,1.5):
+        art.banner((x,-1.21),0,2.8,.65,.67)
+        g.box((x,-1.35,1.9),(.23,.23,.4),amber_glass)
+    for i in range(12):
+        x=-2.05+i*.4
+        g.rod((x,-2.1,2.42),(x,-2.1,2.94),.023,art.iron)
+    g.rod((-2.05,-2.1,2.94),(2.35,-2.1,2.94),.035,art.iron)
+    stairs(.15,-2.7,1.4,3)
 
 
 BUILDERS={key:globals()["build_"+key] for key in TYPES}

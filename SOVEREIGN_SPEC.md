@@ -179,6 +179,14 @@ Each hero class maps to a Jungian archetype that defines their journey pattern, 
 | **Rogue** | The Trickster | Subvert the rules, find the clever path | Nihilism — bored, nothing left to exploit, turns destructive | Kill bounties on weakened targets; steal quests |
 | **Barbarian** | The Rebel | Defy death, rage against order | Self-destruction — rage consumes, takes suicidal bounties | Any combat bounty, the more dangerous the better |
 
+#### Current first-level direction: Persona versus Shadow
+
+The playable settlement uses **Persona ↔ Shadow dynamics**, with the journey retained as context rather than a linear upgrade ladder. A crushing defeat below 20% health can interrupt any phase, including Mastery. Warriors stop fighting, Rangers stop exploring, Wizards withhold spells, and Thieves stop their guild work. They withdraw toward the castle; ordinary healing does not restore purpose. The king must fund a named hero’s recovery at a guild or Temple, followed by safe practice there. Experience and the interrupted calling survive; relapse remains possible.
+
+Refusing and Shadow heroes spend personal gold at an **Inn** or **Brothel** near the castle. Available Thieves steal from distracted patrons, keeping half and depositing half in their own guild bank. The king can confiscate an operating guild bank, with a kingdom-wide 120-second cooldown. Venue fees become taxes delivered by collectors. Spending and theft transfer existing money; leisure does not cure Shadow.
+
+The live **Hero Journeys** menu foregrounds Persona/Shadow, interrupted purpose, purse, location and the king’s next action for every hero. It links to **Guild banks & leisure**. See [implemented rules and validation](godot/reports/JOURNEYS.md) for current values and migration. This direction supersedes the passive Shadow recovery triggers and mandatory linear progression described in the original design below; the broader class and social-system proposals remain future scope.
+
 #### 4.2.2 The Journey State Machine
 
 Every hero progresses through journey stages. Stages modify a base personality vector (see 4.2.4) via multipliers. The player cannot directly advance a hero's journey — they can only create the conditions that enable or block transitions.

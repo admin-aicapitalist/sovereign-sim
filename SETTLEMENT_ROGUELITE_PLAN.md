@@ -23,7 +23,7 @@ LLMs are development tools only. They may help author and review personalities, 
 - Reuse the existing geography generator, buildings, four hero classes, equipment, spells, and economy.
 - Keep the next milestone focused on the run loop, a small amount of variation, and persistent unlocks.
 
-A campaign map, connected settlements, traveling hero roster, persistent capital, and multi-settlement campaign simulation are outside this milestone. New hero classes, expanded social systems, and a large technology tree are deferred. Hero journeys are a core mechanic of this milestone: their stages and support needs must be visible for the whole roster in a dedicated overview.
+A campaign map, connected settlements, traveling hero roster, persistent capital, and multi-settlement campaign simulation are outside this milestone. New hero classes, expanded social systems, and a large technology tree are deferred. Hero journeys are a core mechanic of this milestone: Persona/Shadow dynamics, interrupted journeys and the king’s recovery actions must be visible for the whole roster in a dedicated overview. Shadow persists until targeted intervention, including for veteran heroes. Inns and Brothels turn idle heroes’ purses into venue income; Thieves steal from patrons and bank half for royal confiscation on a kingdom-wide cooldown.
 
 ## What resets and what persists
 
@@ -34,7 +34,7 @@ A campaign map, connected settlements, traveling hero roster, persistent capital
 | Heroes, levels, equipment, and local memories | Run records and notable hero summaries |
 | Active threats, treasure, and spell state | Best results and discovered content |
 
-Journey stages and transition history shape individual runs now; richer personality and social memory can deepen them later. Heroes do not travel to the next settlement. A chronicle may preserve their stories without preserving their combat power.
+Persona/Shadow dynamics, royal recovery, personal spending and transition history shape individual runs now; richer personality and social memory can deepen them later. Heroes do not travel to the next settlement. A chronicle may preserve their stories without preserving their combat power.
 
 ## First playable milestone
 

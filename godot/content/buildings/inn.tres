@@ -1,0 +1,11 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/content/buildings.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "inn"
+name = "Inn"
+description = "Refusing and Shadow heroes linger here near the castle. Each 18-second visit costs 8 personal gold, collected as taxes. Patrons attract thieves; leisure does not restore Persona."
+hp = 600
+cost = 180
+size = 2
+properties = {"short":"Inn","subtitle":"Fortunes spent within the castle walls","sight":6,"buildTime":14,"visit_cost":8}

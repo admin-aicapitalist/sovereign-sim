@@ -4,7 +4,7 @@
 script = ExtResource("1")
 id = "thieves"
 name = "Thieves’ Guild"
-description = "Recruits swift thieves with twin daggers. They seek lucrative bounties and deal 14 bonus damage to enemies fighting another ally."
+description = "Recruits swift thieves with twin daggers. Idle thieves pick patrons’ pockets at Inns and Brothels, keeping half and banking half for royal confiscation every 120 seconds. They seek lucrative bounties and deal 14 bonus damage to enemies fighting another ally."
 hp = 650
 cost = 325
 size = 2

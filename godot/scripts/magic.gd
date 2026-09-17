@@ -33,7 +33,7 @@ static func cast(s,key: String,point: Vector2) -> bool:
 	if key!="farsight" and targets(s,key,point).is_empty(): s.notify("Choose a valid target in the spell's area."); return false
 	s.gold-=d.cost; s.cooldowns[key]=d.cooldown; s.stats.royal_spells+=1; apply(s,key,point,null); s.events.append("spell-"+key); return true
 static func wizard_cast(s,u,key: String,point: Vector2) -> bool:
-	if u.journey.get("stage","")=="shadow": return false
+	if s.Journey.is_shadow(u): return false
 	var d=s.definitions.spells.get(key)
 	if s.paused or s.result!="" or u.dead or u.hostile or u.type!="wizard" or not s.units.has(u) or d==null or not available(s,key): return false
 	if not s.in_bounds(point) or u.pos.distance_to(point)>=u.definition.castRange or u.cast_timer>0 or u.spell_cooldowns.get(key,0)>0 or u.mana<d.mana: return false
@@ -92,7 +92,7 @@ static func attack_multiplier(s,u) -> float:
 	return (s.definitions.spells.haste.attackSpeed if u.magic_buffs.haste>0 else 1)*(s.definitions.spells.frost.attackSpeed if u.magic_buffs.frost>0 else 1)
 static func ready(s,u,key: String) -> bool: return available(s,key) and u.spell_cooldowns.get(key,0)<=0 and u.mana>=s.definitions.spells[key].mana
 static func think(s,u) -> void:
-	if u.journey.get("stage","")=="shadow": return
+	if s.Journey.is_shadow(u): return
 	if u.cast_timer>0: return
 	var nearby: Array=[]
 	for e in s.units+s.buildings:

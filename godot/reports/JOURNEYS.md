@@ -1,37 +1,49 @@
-# Hero Journeys — kingdom overview
+# Hero Journeys — Persona, Shadow and the castle economy
 
-The first-level scope now treats the Journey as a core mechanic. **Hero Journeys** opens a separate, live overview of the entire roster. Each row shows the hero's identity, journey stage, location, calling objective, current activity, unmet conditions and an action. Filters cover all heroes, support needs, quests, recovery, Mastery and fallen heroes. The header and pause control stay visible while the list scrolls. Desktop rows use four columns; phones use compact cards. Journals are optional detail.
+**Hero Journeys** is the live overview of every hero: Persona or Shadow, interrupted/current journey, location, activity, personal purse, support needed and an action. Shadow heroes sort first and have their own filter. There is no numbered progression ladder. Journals are optional detail. **Guild banks & leisure** opens the economy menu; the kingdom pauses while managing banks, and resumes its previous state when returning.
 
-## Implemented rules
+## Persona and Shadow
 
-Each settlement hero saves an independent versioned journey, calling bounty, deliberation period, completed-cycle count, recovery conditions and the last 16 transitions. Ordinary activity, XP and narrative stage remain separate. These stages affect actual bounty selection, commitment, retreat thresholds and learned spell use.
+A journey describes what a hero is doing; Persona/Shadow describes whether they can pursue that purpose. A living hero reduced below 20% health by damage enters Shadow from **any** journey phase, including arrival, homecoming and Mastery. Their phase, calling objective, completed journeys, XP and equipment remain intact. Another defeat can cause another relapse.
 
-| Stage | Transition and player influence |
+| Hero | Persona | Shadow | Royal intervention |
+| --- | --- | --- | --- |
+| Warrior | Confronts threats | Cowardice: refuses combat and bounties | Supervised drills at an operating Warriors’ Guild |
+| Ranger | Explores the frontier | Withdrawal: stops exploration and bounties | Guided map work at an operating Rangers’ Lodge |
+| Wizard | Uses learned magic | Hubris: withholds spells and bounties | Mentorship at an operating Temple |
+| Thief | Pursues opportunities and steals from patrons | Disillusionment: refuses bounties and guild theft | Reconciliation at an operating Thieves’ Guild |
+
+Shadow heroes retreat and linger near the castle. They do not acquire nearby combat targets. Physical healing still works, but **health, elapsed time, new bounties, newly revealed terrain, research and leisure cannot clear Shadow**.
+
+The king funds a named hero’s support from their row: **80g** goes into the service building’s tax reserves. The hero must then reach that building, have at least 60% health and spend **25 seconds** there without enemies within six tiles. Travel, unsafe conditions and low health do not count. The progress is saved. Lost facilities or another crushing blow interrupt the arrangement and require renewed support; repeated clicks cannot charge twice.
+
+Recovery restores Persona. A previously committed hero reconsiders the interrupted call in Refusal, retaining its objective and experience. Ended offers release the hero to seek another call. A recovered veteran keeps Mastery and completed-journey bonuses. No hero is permanently immune to Shadow.
+
+Calls, hesitation, commitment, ordeals and homecoming remain journey context: calls take 30–90 seconds to consider; Refusal needs 60% health plus a healthy nearby hero, healing supplies/a nearby Temple, or a 150g reward. Successful objectives lead to homecoming and reflection; completed journeys add 2 attack each, capped at 20. Mastery heroes prefer offers worth 150g or targets with 500+ maximum health.
+
+## Spending, theft and guild banks
+
+| Mechanic | Local rules |
 | --- | --- |
-| Ordinary World | A matching active bounty supplies a call. Warriors seek lairs/trolls; Rangers seek exploration; Wizards seek graveyards, the monastery or Warlord; Thieves seek exploration or enemies below 65% health. |
-| The Call | The hero considers the calling offer for a saved, deterministic 30–90 seconds. They do not accept it early. |
-| Refusal | Requires at least 60% health and one support condition: another healthy hero within 10 tiles, a carried healing potion/an operating Temple within 12 tiles, or a calling reward of at least 150g. The overview reads these same conditions and can raise the actual bounty by 50g. |
-| Threshold Crossing | The hero commits to the calling bounty. A competing offer cannot redirect their bounty choice. Healing, self-defense and supplies still matter. |
-| Tests & Allies | Leaving the departure point advances the journey. Nearby allies can provide support; this first version does not yet simulate social bonds or formed parties. |
-| The Ordeal | Reaching the actual calling objective starts the ordeal. Winning an attack objective within the participation radius, or claiming the calling exploration flag, leads to Return. Falling below 20% health during an ordeal causes Shadow. |
-| Reward & Return | The hero returns to their surviving guild or the Palace, recovers and reflects for 15 seconds. Completing the return adds one cycle and enters Mastery. |
-| Shadow | The hero withdraws from ordinary adventures. Warriors rebuild confidence with two exploration tasks; Rangers need six newly revealed tiles; Wizards need a newly completed Temple or completed spell research and withhold learned spells; Thieves need a new exploration or wounded-target offer. Recovery also requires 60% health. |
-| Mastery | Courage increases; petty offers are refused. Worthy offers require 150g or a target with at least 500 maximum health. A worthy matching call can start another cycle. Each completed cycle adds 2 attack, capped at 20. |
+| Inn | Costs 180g to build. A visit costs the patron 8g. |
+| Brothel | Costs 240g to build. A visit costs the patron 14g. |
+| Patrons | Heroes considering/refusing a call or stuck in Shadow visit operating venues within 16 tiles of the castle. Each paid visit lasts 18s; another can begin after 30s. Broke heroes linger outside. Venues in danger are avoided. |
+| Venue income | The fee leaves the hero’s purse and enters venue tax reserves. A collector must deliver it to the Palace. No passive venue income is created. |
+| Theft | An available Persona thief approaches a living non-thief patron. Within 1.8 tiles, the thief takes 25% of the remaining purse, rounded down, capped at 20g. Each thief has a saved 20s cooldown. The patron must have at least 4g and be physically at an operating venue. |
+| Guild cut | Half the stolen amount, rounded down, enters the thief’s own operating guild bank; the thief keeps the remainder. A lost guild cannot receive new deposits. |
+| Confiscation | Transfer one operating guild’s full bank into the royal treasury. The **120s cooldown is kingdom-wide**, so multiple guilds cannot bypass it. Empty/invalid seizures do not consume the cooldown. Collectors cannot take guild-bank reserves. |
 
-Cancelled or already-finished calls release heroes instead of stranding their state. Fallen heroes retain their final stage and transition history after the actor is removed. Results and Renown rules are unchanged.
-
-The four-class implementation uses the existing attack/exploration bounties and Temple. Artifact-retrieval bounties, additional classes, the full personality vector, social bonds and destructive class-specific Shadow behaviors remain later extensions. Narrative events are generated by deterministic gameplay rules, with no runtime model calls.
+The economy menu shows every operating Thieves’ Guild bank, the next seizure time and build actions for both venues and the guild. Guild selection also exposes its bank and confiscation action. Hero rows show where their money is being spent; journals record visits and thefts.
 
 ## Saves and verification
 
-Existing settlement saves begin journey tracking at their saved time without inventing previous narrative achievements. Standalone chronicles retain their existing behavior. Journey data is validated before the live world changes; saved stages, call timers, histories and recovery counters survive reloads.
+Version-two journey data separates aspect from phase and persists recovery arrangements, visits and theft cooldowns. Version-one journeys migrate; existing Shadow stays Shadow. Earlier settlements without journeys begin tracking at the saved time. Court bank balances and the kingdom-wide seizure timer live in the saved settlement. Malformed state is rejected before the live world changes. Standalone chronicles retain their prior hero behavior.
 
-- [Journey rules checks](journey-systems.json): 56 checks pass for progression, support gates, commitment, ordeals, all four recovery paths, Mastery, cancellation, archives, migration and malformed saves.
-- [Browser checks](journey-browser.json): four groups pass for all-hero visibility, inline bounty funding, live stage updates, pause, filters, phone layout, save/load and fallen heroes. The existing settlement flow and desktop/phone/tablet layout suites also pass.
-- [Settlement campaign matrix](settlement-campaign.json): all 12 configurations still win with autonomous heroes and ordinary paid actions.
+- [Journey and economy checks](journey-systems.json): 112 checks, including all four persistent Shadows, relapse, support, lost recovery sites, purse/bank conservation, cooldowns, migration and malformed saves.
+- [Browser checks](journey-browser.json): roster visibility, inline support, real-time decisions/theft, confiscation, phone layout, saved recovery and cooldowns, and paid construction of both venues. All five groups pass.
+- [Settlement campaigns](settlement-campaign.json): all 12 configurations win with autonomous heroes and paid construction, recruitment, research, bounties and targeted royal recovery. Wins take about **428–568 simulation seconds**, with **0–4 hero deaths**. Human pacing and economic balance remain provisional.
+- Existing settlement rules: 77 checks pass. Standalone simulation: 108 checks pass. The seven settlement-browser groups and four desktop/phone/tablet layout groups also pass.
 
-Browser fixtures arrange a mixed roster for layout testing. State-machine checks exercise transitions through the actual conditions and simulation hooks. Automated campaign wins now take approximately **377–557 simulation seconds**, with **0–2 hero deaths**. Human pacing and readability still need playtesting.
+The new buildings are authored with the repository’s Blender geometry/material helpers in `tools/art/render_buildings.py`, then finished with `godot/tools/finish_leisure.py`. No runtime model calls are used. Social bonds, additional classes and a full personality vector remain future work.
 
-- [Desktop overview](journey-overview.png)
-- [Phone overview](journey-mobile.png)
-- [Phone recovery filter](journey-mobile-recovery.png)
+[Desktop overview](journey-overview.png) · [Phone overview](journey-mobile.png) · [Shadow filter](journey-mobile-recovery.png) · [Guild banks](journey-guild-banks.png) · [New venues in the settlement](journey-leisure-buildings.png)
