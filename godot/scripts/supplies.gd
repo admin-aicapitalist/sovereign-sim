@@ -28,6 +28,7 @@ static func buy(s, u, b) -> int:
 		var d=s.definitions.potions[key]
 		var count: int=mini(int(d.capacity-u.potions[key]),floori(u.gold/d.price))
 		if count<=0: continue
+		s.log_event("economy.potion_purchase",{"hero":u.id,"building":b.id,"potion":key,"count":count,"gold":count*d.price})
 		u.potions[key]+=count; u.gold-=count*d.price; b.tax+=count*d.price; bought+=count
 	s.stats.potions_bought+=bought; return bought
 static func armor(s, u) -> float:
@@ -44,6 +45,7 @@ static func update_unit(s, u, dt: float) -> void:
 	if not u.hero or u.dead: return
 	for key in u.buffs: u.buffs[key]=maxf(0,u.buffs[key]-dt)
 	if u.hp<u.max_hp*0.45 and u.potions.healing>0:
+		s.log_event("hero.potion",{"hero":u.id,"potion":"healing","hp_before":u.hp,"hp_after":minf(u.max_hp,u.hp+s.definitions.potions.healing.heal)})
 		u.potions.healing-=1; s.stats.potions_used+=1; u.hp=minf(u.max_hp,u.hp+s.definitions.potions.healing.heal); s.fx("heal",u.pos)
 	combat_potions(s,u,s.entity(u.target))
 static func combat_potions(s, u, target) -> void:
@@ -51,6 +53,7 @@ static func combat_potions(s, u, target) -> void:
 	if u.pos.distance_to(s.pos(target))>u.definition.range+(target.size*0.45 if target.kind=="building" else 0)+0.5: return
 	for key in ["strength","stoneskin"]:
 		if u.potions[key]>0 and u.buffs[key]<=0:
+			s.log_event("hero.potion",{"hero":u.id,"potion":key})
 			u.potions[key]-=1; s.stats.potions_used+=1; u.buffs[key]=s.definitions.potions[key].duration; s.fx("level",u.pos)
 static func loot_schema() -> Dictionary:
 	return {"id":0,"kind":"loot","type":"loot_pouch","x":0.0,"y":0.0,"chest":false,"source":"","gold":0.0,"potions":{"healing":0,"strength":0,"stoneskin":0},"dead":false,"items":[]}
@@ -110,6 +113,7 @@ static func collect(s,u,p) -> bool:
 		u.potions[key]+=take; p.potions[key]-=take; count+=take
 	var equipped: int=s.Equipment.collect(s,u,p)
 	if gold==0 and count==0 and equipped==0: return false
+	s.log_event("economy.loot_collected",{"hero":u.id,"loot":p.id,"gold":gold,"potions":count,"items":equipped})
 	s.stats.loot_gold+=gold; s.stats.loot_potions+=count
 	if p.items.is_empty() and p.potions.values().all(func(n):return n<=0): p.dead=true; s.stats.loot_caches+=1
 	if gold>0: s.fx("gold",u.pos,gold)

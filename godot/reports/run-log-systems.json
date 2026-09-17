@@ -1,0 +1,9 @@
+{
+	"checks": 16,
+	"control_ms": 587,
+	"events_120_seconds": 4397,
+	"export_bytes": 3977483,
+	"failures": [],
+	"logged_ms": 818,
+	"pass": true
+}

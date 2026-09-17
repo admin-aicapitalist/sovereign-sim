@@ -54,6 +54,7 @@ static func prepare_unit(s,u, restoring: bool=false) -> void:
 static func event(s, kind: String, hero=null, detail: String="") -> void:
 	if s.run.is_empty(): return
 	var record={"at":s.time,"kind":kind,"hero":hero.id if hero!=null else 0,"name":hero.name if hero!=null else "","detail":detail}
+	s.log_event("story.event",record)
 	s.run.events.append(record)
 	if s.run.events.size()>96: s.run.events.pop_front()
 	if hero!=null:

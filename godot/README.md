@@ -42,6 +42,8 @@ Settlement saves and profiles are separate: browser keys begin `sovereign-settle
 
 Standalone saves keep `sovereign-godot-save-v2` / `user://kingdom-v2.json`. Formats 2 and 3 remain readable. Older game builds cannot read format 4; JavaScript prototype and trial saves use different formats.
 
+Runs are now recorded locally. Open **Run logs → Export run log** to share a complete diagnostic timeline across saves and resumes. Previous unrecorded play cannot be reconstructed. See [logging details](reports/RUN_LOGS.md) and the [first-level loop review](reports/LOOP_REVIEW.md).
+
 ## Browser build
 
 Install matching Godot 4.7.2 export templates through **Editor → Manage Export Templates**, then run from the repository root:

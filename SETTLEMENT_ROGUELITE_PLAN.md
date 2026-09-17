@@ -145,6 +145,8 @@ Keep progression independent of rendering. Save the selected conditions with the
 
 Automated campaigns demonstrate that scenarios can complete; human playtesting is needed to establish clarity, pacing, difficulty, and replay appeal.
 
+The [17 September loop review](godot/reports/LOOP_REVIEW.md) reproduced rare Shadow entries and weak mid-game pressure. Its proposed gameplay changes remain future work. [Local run logging](godot/reports/RUN_LOGS.md) now preserves actual playthrough evidence across saves and resumes, with an in-game export menu.
+
 ## Deferred after the loop works
 
 - Additional objective types, such as surviving an assault or recovering a specific relic.

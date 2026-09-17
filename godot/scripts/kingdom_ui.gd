@@ -8,6 +8,7 @@ const RoyalCard=preload("res://scripts/royal_card.gd")
 const RoyalOverlay=preload("res://scripts/royal_overlay.gd")
 const SettlementUI=preload("res://scripts/settlement_ui.gd")
 const HeroUI=preload("res://scripts/hero_ui.gd")
+const RunLogUI=preload("res://scripts/run_log_ui.gd")
 const JourneyUI=preload("res://scripts/journey_ui.gd")
 var journey_rows: Dictionary={}
 var journey_signature: String=""
@@ -82,7 +83,7 @@ func _ready() -> void:
 	controls.add_child(button("heroes","Hero Journeys",func():HeroUI.roster(self)))
 	controls.add_child(button("sound","Sound",func():main.sound.toggle(); refresh()))
 	controls.add_child(button("save","Save",main.save_game)); controls.add_child(button("load","Load",func():main.load_game(main.sim.run.is_empty())))
-	controls.add_child(button("help","Help",show_help)); controls.add_child(button("new","Reign",show_run_menu))
+	controls.add_child(button("run_logs","Run logs",func():RunLogUI.show(self))); controls.add_child(button("help","Help",show_help)); controls.add_child(button("new","Reign",show_run_menu))
 	controls.add_child(button("objectives","Objectives",func():objectives_open=not objectives_open; layout(true)))
 	controls.add_child(button("map","Map",func():map_open=not map_open; layout(true)))
 	controls.add_child(button("center","Palace",main.center)); controls.add_child(button("zoom_out","−",func():main.change_zoom(0.86))); controls.add_child(button("zoom_in","+",func():main.change_zoom(1.16)))
@@ -134,7 +135,7 @@ func resource_label(parent: Node,key: String,caption: String) -> Label:
 func panel(parent: Node,color: String="e5d3af") -> PanelContainer:
 	var p:=PanelContainer.new(); p.add_theme_stylebox_override("panel",Royal.box("timber" if color=="28271f" else "parchment",12)); parent.add_child(p); return p
 func button(key: String,text: String,callback: Callable) -> Button:
-	var b:=Button.new(); b.text=text; b.custom_minimum_size.y=30; b.add_theme_font_size_override("font_size",16); b.focus_mode=Control.FOCUS_NONE; b.mouse_filter=Control.MOUSE_FILTER_PASS; b.mouse_default_cursor_shape=Control.CURSOR_POINTING_HAND; b.pressed.connect(callback)
+	var b:=Button.new(); b.text=text; b.custom_minimum_size.y=30; b.add_theme_font_size_override("font_size",16); b.focus_mode=Control.FOCUS_NONE; b.mouse_filter=Control.MOUSE_FILTER_PASS; b.mouse_default_cursor_shape=Control.CURSOR_POINTING_HAND; b.pressed.connect(func():main.record_action(key,text); callback.call(); main.flush_run_log())
 	if key!="": widgets[key]=b
 	return b
 func clear(parent: Node) -> void:
@@ -192,6 +193,7 @@ func update_cards(force: bool=false) -> void:
 		b.custom_minimum_size=Vector2(136 if compact else maxf(120,floorf((deck.size.x-24-49)/8)),104); b.tooltip_text=tooltip
 		b.configure(text,icon,main.world.mode_key==key,disabled)
 func command(key: String) -> void:
+	main.record_action("command_"+key,tab)
 	if tab=="recruit":
 		var s=main.sim
 		var guilds=s.operating("").filter(func(b):return s.definition_of(b).get("recruits","")==key)
@@ -202,7 +204,7 @@ func command(key: String) -> void:
 		if temples.is_empty(): main.sim.notify("Build a Temple, then select it to learn spells.")
 		else: show_research("spell",temples[0].id)
 	else: main.set_mode("" if main.world.mode_key==key else "spell" if tab=="spells" else "bounty" if tab=="bounty" else "build",key)
-	refresh()
+	main.flush_run_log(); refresh()
 func refresh() -> void:
 	if root==null: return
 	var began: int=Time.get_ticks_usec()
@@ -235,6 +237,8 @@ func refresh() -> void:
 	if main.world.mode_kind!="": status.text="%s: %s · Esc/right-click cancels"%[main.world.mode_kind.capitalize(),main.world.mode_key]
 	notice.text="\n".join(s.notifications.filter(func(n):return s.time-n.at<5).map(func(n):return n.text))
 	notice.visible=not compact and modal==null
+	if main.log_status.get("error","")!="": status.text="Run log not saved · Open Run logs"
+	if modal_kind=="run_logs": RunLogUI.refresh(self)
 	refresh_hint()
 	update_cards(); layout(true); minimap.queue_redraw()
 	if s.result!="" and s.result!=last_result: last_result=s.result; show_end()

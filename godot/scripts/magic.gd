@@ -31,6 +31,7 @@ static func cast(s,key: String,point: Vector2) -> bool:
 	if s.cooldowns[key]>0: s.notify("That spell is still recharging."); return false
 	if s.gold<d.cost: s.notify("Not enough gold for this spell."); return false
 	if key!="farsight" and targets(s,key,point).is_empty(): s.notify("Choose a valid target in the spell's area."); return false
+	s.log_event("magic.royal_cast",{"spell":key,"position":[point.x,point.y],"gold":d.cost})
 	s.gold-=d.cost; s.cooldowns[key]=d.cooldown; s.stats.royal_spells+=1; apply(s,key,point,null); s.events.append("spell-"+key); return true
 static func wizard_cast(s,u,key: String,point: Vector2) -> bool:
 	if u.inside>0 or s.Journey.is_shadow(u): return false
@@ -38,6 +39,7 @@ static func wizard_cast(s,u,key: String,point: Vector2) -> bool:
 	if s.paused or s.result!="" or u.dead or u.hostile or u.type!="wizard" or not s.units.has(u) or d==null or not available(s,key): return false
 	if not s.in_bounds(point) or u.pos.distance_to(point)>=u.definition.castRange or u.cast_timer>0 or u.spell_cooldowns.get(key,0)>0 or u.mana<d.mana: return false
 	if key!="farsight" and targets(s,key,point).is_empty(): return false
+	s.log_event("magic.wizard_cast",{"hero":u.id,"spell":key,"position":[point.x,point.y],"mana":d.mana})
 	u.mana-=d.mana; u.spell_cooldowns[key]=d.cooldown; u.cast_timer=3; u.attacking=0.6; u.cooldown=maxf(u.cooldown,0.7); u.last_spell={"key":key,"at":s.time}; s.stats.wizard_spells+=1
 	if point.distance_squared_to(u.pos)>0.00001: u.heading=(point-u.pos).normalized()
 	apply(s,key,point,u)
@@ -52,7 +54,9 @@ static func apply(s,key: String,point: Vector2,caster) -> void:
 	else:
 		for i in chosen.size():
 			var e=chosen[i]
-			if key=="heal": e.hp=minf(e.max_hp,e.hp+d.heal)
+			if key=="heal":
+				s.log_event("magic.heal",{"target":e.id,"caster":caster.id if caster!=null else 0,"hp_before":e.hp,"hp_after":minf(e.max_hp,e.hp+d.heal)})
+				e.hp=minf(e.max_hp,e.hp+d.heal)
 			elif key in ["ward","haste"]: e.magic_buffs[key]=d.duration
 			else:
 				s.hurt(e,d.splash if key=="lightning" and i>0 else d.damage,caster,key)

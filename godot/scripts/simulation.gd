@@ -1,5 +1,8 @@
 extends RefCounted
 ## Fixed-step game state; rendering consumes events and never advances the rules.
+const RunLog = preload("res://scripts/run_log.gd")
+var run_log:=RunLog.new()
+func log_event(kind: String,data: Dictionary={}) -> void: run_log.add(self,kind,data)
 const Actor = preload("res://scripts/actor.gd")
 const SeedRng = preload("res://scripts/seed_rng.gd")
 const Generator = preload("res://scripts/world_generator.gd")
@@ -59,6 +62,7 @@ var fog_revision: int = 0
 
 func _init(seed_value: int = 41972) -> void: reset(seed_value)
 func notify(text: String, sound: String = "") -> void:
+	log_event("notice",{"text":text,"sound":sound})
 	message=text; notifications.append({"text":text,"at":time})
 	if notifications.size()>4: notifications.pop_front()
 	if sound!="": events.append(sound)
@@ -68,6 +72,7 @@ func fx(type: String, point: Vector2, value: float=0, life: float=1.2) -> Dictio
 	if not stress: effects.append(effect)
 	return effect
 func reset(seed_value: int = -1, configuration: Dictionary = {}) -> void:
+	run_log=RunLog.new()
 	if not run.is_empty() or not configuration.is_empty(): definitions=Content.definitions()
 	run={} if configuration.is_empty() else Settlement.state(configuration)
 	if not run.is_empty(): Settlement.apply(definitions,configuration)
@@ -332,6 +337,7 @@ func hurt_building(b: Dictionary, damage: float) -> void: hurt(b,damage,null)
 func hurt(e: Variant, damage: float, attacker: Variant, damage_kind: String="physical") -> void:
 	if e==null or e.dead or e is Actor and e.inside>0: return
 	var actual: float=maxf(1,damage-(Supplies.armor(self,e) if e is Actor else 0))
+	log_event("combat.damage",{"target":e.id,"attacker":attacker.id if attacker!=null else 0,"kind":damage_kind,"amount":actual,"hp_before":e.hp,"hp_after":maxf(0,e.hp-actual),"position":[pos(e).x,pos(e).y]})
 	e.hp-=actual; e.last_hit=time; stats.hits+=1
 	var impact:=fx("hit",pos(e),actual,0.75)
 	impact.target=e.id; impact.element=damage_kind
@@ -344,6 +350,7 @@ func hurt(e: Variant, damage: float, attacker: Variant, damage_kind: String="phy
 	if e.hp>0:
 		if e is Actor and e.hero: Journey.wounded(self,e)
 		return
+	log_event("entity.destroyed",{"id":e.id,"type":e.type,"attacker":attacker.id if attacker!=null else 0})
 	e.hp=0; e.dead=true; stats.kills+=1; stats["slain" if e.hostile else "losses"]+=1; fx("collapse" if e.kind=="building" else "death",pos(e),0,2.2)
 	if e.kind=="building":
 		set_foundation(e,false); Shelter.evict(self,e); ruins.append({"x":e.x,"y":e.y,"size":e.size}); revision+=1
@@ -366,6 +373,7 @@ func hurt(e: Variant, damage: float, attacker: Variant, damage_kind: String="phy
 		if claimants.is_empty(): gold+=f.reward
 		else:
 			for u in claimants: u.gold+=f.reward/claimants.size()
+		log_event("economy.bounty_paid",{"bounty":f.id,"target":e.id,"reward":f.reward,"heroes":claimants.map(func(u):return u.id),"refunded":claimants.is_empty()})
 		stats.bounties+=1
 func attack(u: Actor, e: Variant) -> void:
 	if u.inside>0 or e is Actor and e.inside>0: u.target=0; return
@@ -437,6 +445,7 @@ func tick(dt: float) -> void:
 		if u.think<=0:
 			stats.decisions+=1; Brain.think(self,u)
 			if u.type=="wizard": Magic.think(self,u)
+			run_log.decision(self,u)
 			u.think=0.55+rng.next()*0.35
 		var e=entity(u.target)
 		if e!=null and not e.dead and u.state not in ["Fleeing","Resting"]: attack(u,e)
@@ -483,6 +492,7 @@ func tick(dt: float) -> void:
 			var e=entity(f.target)
 			if e!=null:
 				var p: Vector2=pos(e); f.x=p.x; f.y=p.y
+	run_log.observe(self) # Capture consumed loot and flags before cleanup.
 	if units.size()>160:
 		for u in units:
 			if u.dead: actors.erase(u.id); by_id.erase(u.id)
@@ -496,7 +506,8 @@ func tick(dt: float) -> void:
 	if not stress:
 		if palace().dead: result="defeat"
 		elif (not run.is_empty() and mission.boss_defeated) or (run.is_empty() and lairs().is_empty() and (mission.id=="classic" or mission.boss_defeated)): result="victory"
-	if result!="": events.append("victory" if result=="victory" else "danger")
+	if result!="":
+		events.append("victory" if result=="victory" else "danger"); run_log.observe(self)
 func setup_stress(count: int) -> void:
 	reset(41972); stress=true
 	for u in units: by_id.erase(u.id)
@@ -601,6 +612,7 @@ func restore(input: Dictionary) -> bool:
 			if not key is String or not definitions.items.has(key): return false
 	if data.gold<0 or data.time<0 or data.result not in ["","victory","defeat","abandoned"]: return false
 	if data.result=="abandoned" and restored_run.is_empty(): return false
+	run_log=RunLog.new()
 	run=restored_run; definitions=Content.definitions()
 	if not run.is_empty(): Settlement.apply(definitions,run.config)
 	for key in SAVE_FIELDS: set(key,data[key].duplicate(true) if data[key] is Dictionary or data[key] is Array else data[key])

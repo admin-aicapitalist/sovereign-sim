@@ -6,6 +6,11 @@ const Sound=preload("res://scripts/sound.gd")
 const Magic=preload("res://scripts/magic.gd")
 const Supplies=preload("res://scripts/supplies.gd")
 const SettlementStore=preload("res://scripts/settlement_store.gd")
+const RunLogStore=preload("res://scripts/run_log_store.gd")
+var run_logs
+var log_elapsed: float=0
+var log_status: Dictionary={}
+var unwritten_batches: Array=[]
 var settlements:=SettlementStore.new()
 var settlement_mode: bool=true
 var completion_attempted: bool=false
@@ -46,6 +51,7 @@ func _ready() -> void:
 		started=bool(JavaScriptBridge.eval("new URLSearchParams(location.search).has('auto')"))
 		sync_viewport()
 	if test_enabled: settlements=SettlementStore.new("user://settlement-test","sovereign-settlement-test-v1-")
+	run_logs=RunLogStore.new("user://run-logs-test" if test_enabled else "user://run-logs","sovereign-run-logs-test-v1" if test_enabled else "sovereign-run-logs-v1")
 	settlements.initialize()
 	var auto_start: bool=started
 	prepare_settlement(pinned_seed)
@@ -70,12 +76,14 @@ func set_mode(kind: String,key: String) -> void:
 	world.mode_kind=kind; world.mode_key=key if kind!="" else ""; world.build_type=key if kind=="build" else ""
 	Input.set_default_cursor_shape(Input.CURSOR_CROSS if kind!="" else Input.CURSOR_ARROW)
 func new_game(seed_value: int=-1) -> void:
+	close_run_log("left")
 	settlement_mode=false; completion_attempted=false; completion_saved=false; storage_message=""
 	ui.hint_key=""
 	if ui.modal!=null: ui.close_modal(false)
 	sim.reset(seed_value if seed_value>=0 else pinned_seed); Simulation.Mission.start(sim,mission_id); accumulator=0; benchmark.clear(); speed=1; zoom=1.15; world.selected=0; world.hovered=0; set_mode("",""); center()
 	ui.last_result=""; ui.action_signature=""; ui.objective_ids=[]; ui.last_selection=-1; ui.objectives_open=false; update_ui()
 func prepare_settlement(seed_value: int=-1, charter: String="crown", condition: String="") -> void:
+	close_run_log("left")
 	if ui.modal!=null: ui.close_modal(false)
 	if seed_value<0: seed_value=int(Crypto.new().generate_random_bytes(4).decode_u32(0))
 	if condition=="": condition=["untroubled","rich_ruins"][Simulation.SeedRng.new(seed_value ^ 0x5f3759df).integer(0,1)]
@@ -98,12 +106,16 @@ func begin_settlement(replace_saved: bool=false) -> bool:
 			if not previous.restore(saved): storage_message="The existing save cannot be read. It has been preserved."; return false
 			previous.result="abandoned"
 			if not settlements.complete(Simulation.Settlement.record(previous)): storage_message=settlements.error; return false
+			previous.run_log.begin(previous,"abandoned_from_save")
+			unwritten_batches.append(previous.run_log.batch(previous))
+			flush_run_log()
 	if not settlements.write_slot("profile",settlements.profile) or not settlements.save_active(sim.snapshot()): storage_message=settlements.error; return false
 	if ui.modal!=null: ui.close_modal(false)
-	started=true; sim.paused=false; sound.enable(); update_ui(); return true
+	started=true; sim.paused=false; start_run_log(); sound.enable(); update_ui(); return true
 func finish_settlement(retry: bool=false) -> bool:
 	if sim.run.is_empty() or sim.result=="": return true
 	if completion_attempted and not retry: return completion_saved
+	flush_run_log()
 	completion_attempted=true
 	if not settlements.ready and not settlements.initialize(): storage_message=settlements.error; return false
 	completion_saved=settlements.complete(Simulation.Settlement.record(sim))
@@ -117,7 +129,35 @@ func abandon_settlement() -> void:
 func save_and_leave() -> void:
 	if not save_game(): return
 	started=false; ui.show_title()
+func start_run_log(origin: String="new") -> void:
+	if sim.run_log.enabled or sim.stress: return
+	sim.run_log.begin(sim,origin)
+	sim.log_event("session",{"test":test_enabled,"speed":speed,"platform":OS.get_name()})
+	flush_run_log()
+func flush_run_log() -> void:
+	if run_logs==null: return
+	sim.run_log.observe(sim)
+	var batch: Dictionary=sim.run_log.batch(sim)
+	if not batch.is_empty():
+		unwritten_batches.append(batch); sim.run_log.pending.clear()
+	while not unwritten_batches.is_empty():
+		if not run_logs.append(unwritten_batches[0]): break
+		unwritten_batches.pop_front()
+	log_status=run_logs.status()
+	for b in unwritten_batches: log_status.pending=log_status.get("pending",0)+b.events.size()
+func close_run_log(reason: String) -> void:
+	sim.log_event("run."+reason); flush_run_log()
+func record_action(key: String,caption: String="") -> void:
+	if started: start_run_log()
+	sim.log_event("player.action",{"key":key,"caption":caption,"gold":sim.gold,"speed":speed})
+func export_run_log(id: String) -> void:
+	flush_run_log(); run_logs.export_run(id,unwritten_batches); log_status=run_logs.status()
+func retry_run_logs() -> void:
+	run_logs.retry(); flush_run_log()
 func _process(dt: float) -> void:
+	if started: start_run_log()
+	log_elapsed+=dt
+	if log_elapsed>=1: log_elapsed=0; flush_run_log()
 	var began: int=Time.get_ticks_usec()
 	sync_viewport(); ui.layout()
 	if started and ui.modal==null:
@@ -183,6 +223,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and drag.is_empty(): world.hovered=world.hit_test(world.to_local(event.position))
 	if event is InputEventMagnifyGesture: change_zoom(event.factor,event.position)
 	if event is InputEventKey and event.pressed and not event.echo:
+		record_action("key_"+OS.get_keycode_string(event.physical_keycode))
 		match event.physical_keycode:
 			KEY_SPACE: sim.paused=not sim.paused
 			KEY_F: center()
@@ -209,6 +250,7 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled(); update_ui()
 func click_world(point: Vector2,shift: bool=false) -> void:
 	var local:=world.to_local(point); var ground:=WorldView.uniso(local); var id:int=world.hit_test(local); var hit=sim.entity(id)
+	sim.log_event("player.world_click",{"mode":world.mode_kind,"key":world.mode_key,"position":[ground.x,ground.y],"target":id,"shift":shift})
 	var ok: bool=false
 	match world.mode_kind:
 		"build":
@@ -221,7 +263,9 @@ func click_world(point: Vector2,shift: bool=false) -> void:
 		"spell": ok=Magic.cast(sim,world.mode_key,Magic.target_point(sim,world.mode_key,ground,hit))
 		_: world.selected=id; sound.play("select"); ui.objectives_open=false
 	if ok and not shift: set_mode("","")
+	flush_run_log()
 func save_game() -> bool:
+	sim.log_event("run.save_requested"); flush_run_log()
 	if not sim.run.is_empty():
 		var saved: bool=settlements.save_active(sim.snapshot())
 		storage_message="" if saved else settlements.error
@@ -235,6 +279,7 @@ func save_game() -> bool:
 	sim.notify("Kingdom saved in this browser." if ok and OS.has_feature("web") else "Kingdom saved." if ok else "Could not store the save. Check available storage and site permissions."); update_ui()
 	return ok
 func load_game(legacy: bool=false) -> void:
+	sim.log_event("run.load_requested"); flush_run_log()
 	if not legacy and settlements.has_active():
 		var saved=settlements.load_active()
 		if not saved is Dictionary or not sim.restore(saved):
@@ -246,7 +291,7 @@ func load_game(legacy: bool=false) -> void:
 		world.selected=0; set_mode("",""); center(); ui.last_result=""; ui.action_signature=""; ui.objective_ids=[]
 		completion_attempted=false; completion_saved=false; storage_message=""
 		if settlements.ready and settlements.profile.completed.has(sim.run.config.id): sim.result=settlements.profile.completed[sim.run.config.id].outcome
-		sim.paused=sim.result!=""; sound.enable()
+		sim.paused=sim.result!=""; start_run_log("resumed"); sound.enable()
 		update_ui(); return
 	var text: String=""
 	if OS.has_feature("web"):
@@ -258,6 +303,7 @@ func load_game(legacy: bool=false) -> void:
 	else:
 		if ui.modal!=null: ui.close_modal(false)
 		settlement_mode=false; mission_id=sim.mission.id; started=true; accumulator=0; world.selected=0; set_mode("",""); center(); ui.last_result=""; ui.action_signature=""
+		start_run_log("resumed")
 	update_ui()
 func percentile(values: Array,fraction: float) -> float:
 	if values.is_empty(): return 0
@@ -290,6 +336,7 @@ func debug_state() -> Dictionary:
 			var performer: Dictionary=item.performer; var point: Vector2=world.to_global(item.at)
 			state.performers.append({"building":b.id,"actor":performer.actor,"point":[point.x,point.y],"frame":world.leisure.frame(performer.actor,world.presentation_time,performer.phase+b.id*0.017)})
 	state.character_visuals=[]
+	state.run_log={"id":sim.run_log.run_id,"status":log_status}
 	state.run=sim.run; state.settlement_profile=settlements.profile; state.completion_saved=completion_saved; state.storage_message=storage_message
 	state.modal_text="\n".join(ui.modal.find_children("*","Label",true,false).map(func(label):return label.text)) if ui.modal!=null else ""
 	state.arcane_count=world.arcane_effects.size(); state.effects=sim.effects; state.projectiles=sim.projectiles
@@ -307,6 +354,7 @@ func _web_command(args: Array) -> void:
 	var parser:=JSON.new()
 	if args.is_empty() or parser.parse(str(args[0]))!=OK or not parser.data is Dictionary: return
 	var request: Dictionary=parser.data
+	sim.log_event("test.command",request)
 	match request.get("action",""):
 		"reset": mission_id=request.get("mission","classic"); new_game(int(request.get("seed",41972))); started=true; sim.paused=true
 		"pause": sim.paused=request.get("value",true)
@@ -419,4 +467,6 @@ func _web_command(args: Array) -> void:
 			if ui.modal!=null: ui.close_modal(false)
 			sim.setup_stress(clampi(int(request.count),1,2000)); started=true; world.selected=0; set_mode("",""); camera=WorldView.iso(Vector2.ONE*sim.size/2); zoom=0.35; speed=1; accumulator=0; dropped_time=0
 			profile.clear(); benchmark_frames.clear(); benchmark_ticks.clear(); benchmark_visible.clear(); window.sovereignBenchmark=""; benchmark={"elapsed":0.0,"duration":clampf(request.get("seconds",15),5,60)}
+	if started: start_run_log()
+	sim.log_event("test.command_completed",request); flush_run_log()
 	update_ui()

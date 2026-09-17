@@ -6,6 +6,7 @@ static func setup(ui) -> void:
 	var main=ui.main; var s=main.sim; var content=Rules.content()
 	ui.open_modal("setup")
 	ui.modal_text("THE ASHEN MARCH",30)
+	ui.modal_column.add_child(ui.button("saved_run_logs","Run logs",func():ui.RunLogUI.show(ui)))
 	ui.modal_text("A crown. A kingdom. A little chaos.",20)
 	ui.modal_text(content.scenario.description,17)
 	ui.modal_text("Replayable province · Autonomous heroes · Protect the Palace",14)
@@ -70,6 +71,7 @@ static func title(ui) -> void:
 	ui.open_modal("title"); ui.modal_text("SOVEREIGN",38)
 	ui.modal_text("A crown. A kingdom. A little chaos.",22)
 	ui.modal_text("Renown: %d · Recorded settlements: %d"%[ui.main.settlements.profile.get("renown",0),ui.main.settlements.profile.get("completed",{}).size()])
+	ui.modal_column.add_child(ui.button("saved_run_logs","Run logs",func():ui.RunLogUI.show(ui)))
 	if ui.main.settlements.has_active(): ui.modal_column.add_child(ui.button("load_welcome","Resume saved settlement",func():ui.main.load_game(); if_failed(ui)))
 	ui.modal_column.add_child(ui.button("fresh","Choose a new province",func():ui.main.prepare_settlement(); setup(ui)))
 static func result(ui) -> void:
@@ -82,6 +84,7 @@ static func result(ui) -> void:
 	ui.modal_text("%d:%02d · %d lairs cleared · %d recruits · %d losses (people and buildings)\nMonastery: %s · Warlord: %s · Treasury: %dg\n%s · Seed %d"%[int(r.time/60),int(r.time)%60,r.lairs,r.recruits,r.losses,"recovered" if r.monastery else "unrecovered","defeated" if r.boss else "undefeated",r.gold,r.config.rules.scenario.name,r.config.seed],16)
 	ui.modal_text(r.config.rules.charter.name+" · "+r.config.rules.condition.name,15)
 	ui.modal_text("RENOWN · +%d"%r.renown,23)
+	ui.modal_column.add_child(ui.button("saved_run_logs","Run logs",func():ui.RunLogUI.show(ui)))
 	for a in r.awards: ui.modal_text("+%d  %s"%[a.amount,a.label],16)
 	if r.awards.is_empty(): ui.modal_text("No accomplishments completed. Starting or waiting alone earns no Renown.",16)
 	ui.modal_text("Balance: %d Renown"%main.settlements.profile.get("renown",0),18)

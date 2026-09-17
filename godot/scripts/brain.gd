@@ -56,6 +56,7 @@ static func hero(s,u) -> void:
 		u.goal=best.id
 		if best.type=="attack": u.target=best.target; u.state="Answering a bounty"
 		elif u.pos.distance_to(s.pos(best))<1.9:
+			s.log_event("economy.exploration_paid",{"bounty":best.id,"hero":u.id,"gold":best.reward})
 			best.dead=true; u.gold+=best.reward; s.Settlement.event(s,"explore",u); s.grant_experience(u,20); s.Journey.explored(s,u,best); s.reveal(s.pos(best),9); s.notify(u.name+" claimed an exploration bounty."); s.fx("level",u.pos); u.goal=0
 		else: s.go(u,s.pos(best),"Exploring for gold")
 		return
@@ -87,11 +88,14 @@ static func collector(s,u) -> void:
 	u.target=0
 	if u.carried>0:
 		if u.pos.distance_to(s.pos(s.palace()))<3:
+			s.log_event("economy.tax_delivery",{"collector":u.id,"gold":u.carried})
 			s.gold+=u.carried; s.stats.taxes+=u.carried; s.fx("gold",u.pos,u.carried); u.carried=0; s.stop(u)
 		else: s.go(u,s.pos(s.palace()),"Delivering taxes"); return
 	var shop=s.nearest(u.pos,s.buildings.filter(func(b):return not b.dead and not b.hostile and b.tax>=10))
 	if shop!=null:
-		if u.pos.distance_to(s.pos(shop))<shop.size*0.7+1.1: u.carried+=floorf(shop.tax); shop.tax-=floorf(shop.tax); s.stop(u)
+		if u.pos.distance_to(s.pos(shop))<shop.size*0.7+1.1:
+			s.log_event("economy.tax_collection",{"collector":u.id,"building":shop.id,"gold":floorf(shop.tax)})
+			u.carried+=floorf(shop.tax); shop.tax-=floorf(shop.tax); s.stop(u)
 		else: s.go(u,s.pos(shop),"Collecting taxes")
 	else: wander(s,u,s.pos(s.palace()),4)
 static func monster(s,u) -> void:

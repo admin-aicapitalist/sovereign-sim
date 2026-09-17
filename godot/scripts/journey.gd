@@ -45,6 +45,7 @@ static func restore_persona(s,u) -> void:
 	if j.stage in COMMITTED: change(s,u,"refusal","Ready to reconsider the interrupted call with support.")
 	elif j.calling>0 and active_flag(s,u)==null: clear_call(s,u,"The old offer ended. Ready for a new call.")
 static func remember(s,u,reason: String) -> void:
+	s.log_event("hero.journey",{"id":u.id,"name":u.name,"reason":reason,"journey":u.journey})
 	u.journey.history.append({"at":s.time,"stage":u.journey.stage,"aspect":u.journey.aspect,"reason":reason})
 	if u.journey.history.size()>16: u.journey.history.pop_front()
 	var archive: Dictionary=s.run.get("heroes",{}).get(str(u.id),{})

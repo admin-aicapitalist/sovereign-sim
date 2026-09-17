@@ -1,0 +1,9 @@
+{
+  "checks": [
+    "Actual UI exports a JSON file containing checkpoints, choices and player actions",
+    "Browser reload retains history and resuming appends a new segment without duplicates",
+    "Storage failures are visible; export includes unsaved events and retry drains them",
+    "Phone controls fit; completed and new runs both remain available for export"
+  ],
+  "errors": []
+}

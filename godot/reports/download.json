@@ -18,7 +18,7 @@
     {
       "file": "index.html",
       "bytes": 4148,
-      "gzip_bytes": 1988
+      "gzip_bytes": 1987
     },
     {
       "file": "index.icon.png",
@@ -32,8 +32,8 @@
     },
     {
       "file": "index.pck",
-      "bytes": 30422736,
-      "gzip_bytes": 29687621
+      "bytes": 30440348,
+      "gzip_bytes": 29702546
     },
     {
       "file": "index.png",
@@ -46,6 +46,6 @@
       "gzip_bytes": 10054758
     }
   ],
-  "total_bytes": 70274311,
-  "total_gzip_bytes": 39856548
+  "total_bytes": 70291923,
+  "total_gzip_bytes": 39871472
 }
